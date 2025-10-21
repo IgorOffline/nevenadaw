@@ -1,0 +1,15 @@
+# Init Cargo.toml
+
+[dependencies]
+
+avian2d = "0.4.0"
+
+bevy = "0.17.2"
+
+bevy_enhanced_input = "0.19.1"
+
+log = "0.4.28"
+
+rand = "0.9.2"
+
+tracing = "0.1.41"
