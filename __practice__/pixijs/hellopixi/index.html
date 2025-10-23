@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+          name="viewport">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+    <script src="pixi-8-13-2.min.js"></script>
+    <title>Hello Pixi</title>
+    <style>
+        body {
+            background-color: #BDBDBD
+        }
+
+        #hello-pixi {
+            width: 800px;
+            height: 600px;
+            margin: auto;
+            border: 1px solid black;
+            aspect-ratio: 4/3;
+        }
+    </style>
+</head>
+<body>
+<div id="hello-pixi" role="main"></div>
+<script>
+  (async () => {
+    const div = document.getElementById('hello-pixi');
+    const app = new PIXI.Application();
+    await app.init({
+      background: '#455A64',
+      resizeTo: div
+    });
+    const rectangleXDefault = 150;
+    const rectangleWidth = 25;
+    for (let i = 0; i < 12; i++) {
+      const rectangle = new PIXI.Graphics();
+      rectangle.rect(rectangleXDefault + i * (rectangleWidth + 10), 50, rectangleWidth, rectangleWidth);
+      rectangle.fill(0x607D8B);
+      app.stage.addChild(rectangle);
+    }
+    const rectangle = new PIXI.Graphics();
+    rectangle.rect(rectangleXDefault, 50, rectangleWidth * 0.25, rectangleWidth);
+    rectangle.fill(0xFFC107);
+    app.ticker.add((ticker) => {
+      rectangle.x += 5 * ticker.deltaTime;
+      if (rectangle.x > 405) {
+        rectangle.x = 0;
+      }
+    });
+    app.stage.addChild(rectangle);
+    div.appendChild(app.canvas);
+  })();
+</script>
+</body>
+</html>
