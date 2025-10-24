@@ -39,7 +39,6 @@ fn generate_beep(
         let t = i as f32 / sample_rate;
         let sample = (t * frequency * 2.0 * PI).sin();
 
-        // Convert to i16 and apply amplitude
         let sample_value = (sample * amplitude * i16::MAX as f32) as i16;
         writer.write_sample(sample_value)?;
     }
