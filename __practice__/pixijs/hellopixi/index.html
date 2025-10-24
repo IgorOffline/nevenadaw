@@ -51,14 +51,13 @@
     });
     app.stage.addChild(rectangle);
     div.appendChild(app.canvas);
+    PIXI.sound.add('beep_cs3', 'beep_cs3.wav');
+    PIXI.sound.add('beep_d3', 'beep_d3.wav');
     document.addEventListener('keydown', (key) => {
-      if (key.code === 'KeyF') {
-        const randomizedId = Date.now().toString(36) + Math.random().toString(36).substring(2);
-        console.log('[F] ' + randomizedId);
-        const beep_cs3 = 'beep_cs3';
-        const beep_cs3_wav = `${beep_cs3}.wav`;
-        PIXI.sound.add(beep_cs3, beep_cs3_wav);
-        PIXI.sound.play(beep_cs3);
+      if (key.code === 'Digit1') {
+        PIXI.sound.play('beep_cs3');
+      } else if (key.code === 'Digit2') {
+        PIXI.sound.play('beep_d3');
       }
     });
   })();
