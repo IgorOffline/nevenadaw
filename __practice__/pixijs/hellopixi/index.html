@@ -6,6 +6,7 @@
           name="viewport">
     <meta content="ie=edge" http-equiv="X-UA-Compatible">
     <script src="pixi-8-13-2.min.js"></script>
+    <script src="pixi-sound-6.0.1.js"></script>
     <title>Hello Pixi</title>
     <style>
         body {
@@ -50,6 +51,16 @@
     });
     app.stage.addChild(rectangle);
     div.appendChild(app.canvas);
+    document.addEventListener('keydown', (key) => {
+      if (key.code === 'KeyF') {
+        const randomizedId = Date.now().toString(36) + Math.random().toString(36).substring(2);
+        console.log('[F] ' + randomizedId);
+        const beep_cs3 = 'beep_cs3';
+        const beep_cs3_wav = `${beep_cs3}.wav`;
+        PIXI.sound.add(beep_cs3, beep_cs3_wav);
+        PIXI.sound.play(beep_cs3);
+      }
+    });
   })();
 </script>
 </body>
