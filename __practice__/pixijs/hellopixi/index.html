@@ -51,17 +51,38 @@
     });
     app.stage.addChild(rectangle);
     div.appendChild(app.canvas);
+    const sounds = ["cs3", "d3", "e3", "fs3", "g3", "a3", "b3"];
+    sounds.forEach(sound => PIXI.sound.add(`beep_${sound}`, `beep_${sound}.wav`));
     document.addEventListener('keydown', (key) => {
-      if (key.code === 'KeyF') {
-        const randomizedId = Date.now().toString(36) + Math.random().toString(36).substring(2);
-        console.log('[F] ' + randomizedId);
-        const beep_cs3 = 'beep_cs3';
-        const beep_cs3_wav = `${beep_cs3}.wav`;
-        PIXI.sound.add(beep_cs3, beep_cs3_wav);
-        PIXI.sound.play(beep_cs3);
-      }
+      keydownSound(key.code);
     });
   })();
+
+  function keydownSound(keyCode) {
+    switch (keyCode) {
+      case 'Digit1':
+        PIXI.sound.play('beep_cs3');
+        return;
+      case 'Digit2':
+        PIXI.sound.play('beep_d3');
+        return;
+      case 'Digit3':
+        PIXI.sound.play('beep_e3');
+        return;
+      case 'Digit4':
+        PIXI.sound.play('beep_fs3');
+        return;
+      case 'Digit5':
+        PIXI.sound.play('beep_g3');
+        return;
+      case 'Digit6':
+        PIXI.sound.play('beep_a3');
+        return;
+      case 'Digit7':
+        PIXI.sound.play('beep_b3');
+        return;
+    }
+  }
 </script>
 </body>
 </html>
