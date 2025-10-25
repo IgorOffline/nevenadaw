@@ -52,7 +52,7 @@
     app.stage.addChild(rectangle);
     div.appendChild(app.canvas);
     const sounds = ["cs3", "d3", "e3", "fs3", "g3", "a3", "b3"];
-    sounds.forEach(sound => PIXI.sound.add(`saw_${sound}`, `wav/saw_${sound}.wav`));
+    sounds.forEach(sound => PIXI.sound.add(`saw_${sound}`, `wav/saw_${sound}_v2.wav`));
     document.addEventListener('keydown', (key) => {
       keydownSound(key.code);
     });

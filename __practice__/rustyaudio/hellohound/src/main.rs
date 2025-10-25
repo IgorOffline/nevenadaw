@@ -49,13 +49,14 @@ fn main() {
     ];
 
     frequencies.iter().for_each(|frequency| {
-        let filename = format!("{}_{}.wav", uuid, frequency.name);
+        let filename = format!("saw_{}_v2.wav", frequency.name);
         let mut writer = WavWriter::create(filename, spec).expect("<EXPECT-1>");
 
         let sample_rate = 44100.0;
         let mut phase = 0.0;
 
-        for _ in 0..(2 * 44100) {
+        let multiplier = 44100f32 * 0.125;
+        for _ in 0..((2f32 * multiplier) as i32) {
             let sample = 2.0 * phase - 1.0;
             writer
                 .write_sample((sample * 32767.0) as i16)
