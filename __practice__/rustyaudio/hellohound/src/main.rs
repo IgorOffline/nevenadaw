@@ -1,8 +1,12 @@
 use hound::{WavSpec, WavWriter};
-use std::f32::consts::PI;
 use uuid::Uuid;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+struct Frequency {
+    frequency: f64,
+    name: String,
+}
+
+fn main() {
     let uuid = Uuid::new_v4();
     println!("<START {}>", uuid);
     let spec = WavSpec {
@@ -12,36 +16,55 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         sample_format: hound::SampleFormat::Int,
     };
 
-    let filename = uuid.to_string() + ".wav";
-    let mut writer = WavWriter::create(filename, spec)?;
+    let freq_cs3 = Frequency {
+        frequency: 138.59,
+        name: "cs3".to_string(),
+    };
+    let freq_d3 = Frequency {
+        frequency: 146.83,
+        name: "d3".to_string(),
+    };
+    let freq_e3 = Frequency {
+        frequency: 164.81,
+        name: "e3".to_string(),
+    };
+    let freq_fs3 = Frequency {
+        frequency: 184.99,
+        name: "fs3".to_string(),
+    };
+    let freq_g3 = Frequency {
+        frequency: 196.00,
+        name: "g3".to_string(),
+    };
+    let freq_a3 = Frequency {
+        frequency: 220.00,
+        name: "a3".to_string(),
+    };
+    let freq_b3 = Frequency {
+        frequency: 246.94,
+        name: "b3".to_string(),
+    };
+    let frequencies = [
+        freq_cs3, freq_d3, freq_e3, freq_fs3, freq_g3, freq_a3, freq_b3,
+    ];
 
-    let duration = 0.5;
-    let frequency_cs3 = 138.59;
-    let amplitude = 0.3;
+    frequencies.iter().for_each(|frequency| {
+        let filename = format!("{}_{}.wav", uuid, frequency.name);
+        let mut writer = WavWriter::create(filename, spec).expect("<EXPECT-1>");
 
-    generate_beep(&mut writer, duration, frequency_cs3, amplitude)?;
+        let sample_rate = 44100.0;
+        let mut phase = 0.0;
 
-    writer.finalize()?;
-    println!("Beep generated");
-    Ok(())
-}
+        for _ in 0..(2 * 44100) {
+            let sample = 2.0 * phase - 1.0;
+            writer
+                .write_sample((sample * 32767.0) as i16)
+                .expect("EXPECT-2");
+            phase = (phase + frequency.frequency / sample_rate) % 1.0;
+        }
 
-fn generate_beep(
-    writer: &mut WavWriter<std::io::BufWriter<std::fs::File>>,
-    duration: f32,
-    frequency: f32,
-    amplitude: f32,
-) -> Result<(), hound::Error> {
-    let sample_rate = writer.spec().sample_rate as f32;
-    let num_samples = (duration * sample_rate) as usize;
+        writer.finalize().expect("<EXPECT-3>");
+    });
 
-    for i in 0..num_samples {
-        let t = i as f32 / sample_rate;
-        let sample = (t * frequency * 2.0 * PI).sin();
-
-        let sample_value = (sample * amplitude * i16::MAX as f32) as i16;
-        writer.write_sample(sample_value)?;
-    }
-
-    Ok(())
+    println!("<END {}>", uuid);
 }
