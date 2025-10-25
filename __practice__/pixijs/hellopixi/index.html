@@ -52,7 +52,7 @@
     app.stage.addChild(rectangle);
     div.appendChild(app.canvas);
     const sounds = ["cs3", "d3", "e3", "fs3", "g3", "a3", "b3"];
-    sounds.forEach(sound => PIXI.sound.add(`beep_${sound}`, `beep_${sound}.wav`));
+    sounds.forEach(sound => PIXI.sound.add(`saw_${sound}`, `wav/saw_${sound}.wav`));
     document.addEventListener('keydown', (key) => {
       keydownSound(key.code);
     });
@@ -61,25 +61,25 @@
   function keydownSound(keyCode) {
     switch (keyCode) {
       case 'Digit1':
-        PIXI.sound.play('beep_cs3');
+        PIXI.sound.play('saw_cs3');
         return;
       case 'Digit2':
-        PIXI.sound.play('beep_d3');
+        PIXI.sound.play('saw_d3');
         return;
       case 'Digit3':
-        PIXI.sound.play('beep_e3');
+        PIXI.sound.play('saw_e3');
         return;
       case 'Digit4':
-        PIXI.sound.play('beep_fs3');
+        PIXI.sound.play('saw_fs3');
         return;
       case 'Digit5':
-        PIXI.sound.play('beep_g3');
+        PIXI.sound.play('saw_g3');
         return;
       case 'Digit6':
-        PIXI.sound.play('beep_a3');
+        PIXI.sound.play('saw_a3');
         return;
       case 'Digit7':
-        PIXI.sound.play('beep_b3');
+        PIXI.sound.play('saw_b3');
         return;
     }
   }
