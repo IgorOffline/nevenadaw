@@ -53,6 +53,11 @@ class BookIntegrationTest {
   private static void createTestSchema() {
     KeySpaceUtil.createKeyspace(KEYSPACE, REPLICATION_STRATEGY, REPLICATION_FACTOR, session);
     ColumnFamilyUtility.createColumnFamily(KEYSPACE, TABLE, session);
+    // Create secondary indexes needed for querying by non-primary key columns in tests
+    final String indexTitle = "CREATE INDEX IF NOT EXISTS ON " + KEYSPACE + "." + TABLE + " (title);";
+    final String indexSubject = "CREATE INDEX IF NOT EXISTS ON " + KEYSPACE + "." + TABLE + " (subject);";
+    session.execute(indexTitle);
+    session.execute(indexSubject);
   }
 
   @AfterAll
@@ -157,6 +162,214 @@ class BookIntegrationTest {
     // Then
     Book deletedBook = bookRepository.findBookById(bookId);
     Assertions.assertNull(deletedBook, "Book should be deleted");
+  }
+
+  @Test
+  void findBooksByTitle_WhenMatchesExist_ReturnsAllMatches() {
+    // Given
+    UUID id1 = UUID.randomUUID();
+    UUID id2 = UUID.randomUUID();
+    insertBook(id1, "SameTitle", SUBJECT_1);
+    insertBook(id2, "SameTitle", SUBJECT_2);
+    insertBook(UUID.randomUUID(), "OtherTitle", SUBJECT_3);
+
+    // When
+    List<Book> books = bookRepository.findBooksByTitle("SameTitle");
+
+    // Then
+    Assertions.assertEquals(2, books.size());
+    Assertions.assertTrue(books.stream().allMatch(b -> "SameTitle".equals(b.getTitle())));
+  }
+
+  @Test
+  void findBooksByTitle_WhenNoMatch_ReturnsEmptyList() {
+    // Given
+    insertTestBooks();
+
+    // When
+    List<Book> books = bookRepository.findBooksByTitle("unknown");
+
+    // Then
+    Assertions.assertTrue(books.isEmpty());
+  }
+
+  @Test
+  void findBooksBySubject_WhenMatchesExist_ReturnsAllMatches() {
+    // Given
+    UUID id1 = UUID.randomUUID();
+    UUID id2 = UUID.randomUUID();
+    insertBook(id1, TITLE_1, "SameSubject");
+    insertBook(id2, TITLE_2, "SameSubject");
+    insertBook(UUID.randomUUID(), TITLE_3, "OtherSubject");
+
+    // When
+    List<Book> books = bookRepository.findBooksBySubject("SameSubject");
+
+    // Then
+    Assertions.assertEquals(2, books.size());
+    Assertions.assertTrue(books.stream().allMatch(b -> "SameSubject".equals(b.getSubject())));
+  }
+
+  @Test
+  void findBooksBySubject_WhenNoMatch_ReturnsEmptyList() {
+    // Given
+    insertTestBooks();
+
+    // When
+    List<Book> books = bookRepository.findBooksBySubject("unknown");
+
+    // Then
+    Assertions.assertTrue(books.isEmpty());
+  }
+
+  @Test
+  void saveBookOverload_WhenIdNull_GeneratesIdAndPersists() {
+    // When
+    bookRepository.saveBook(null, "Overload Title", "Overload Subject");
+
+    // Then
+    List<Book> books = bookRepository.findBooksByTitle("Overload Title");
+    Assertions.assertEquals(1, books.size());
+    Assertions.assertNotNull(books.getFirst().getId());
+    Assertions.assertEquals("Overload Subject", books.getFirst().getSubject());
+  }
+
+  @Test
+  void saveBookOverload_WhenValidId_PersistsWithSameId() {
+    // Given
+    UUID id = UUID.randomUUID();
+
+    // When
+    bookRepository.saveBook(id, "Overload With Id", "Subj");
+
+    // Then
+    Book found = bookRepository.findBookById(id);
+    Assertions.assertNotNull(found);
+    Assertions.assertEquals("Overload With Id", found.getTitle());
+    Assertions.assertEquals("Subj", found.getSubject());
+  }
+
+  @Test
+  void saveBookOverload_WhenTitleNullOrBlank_ThrowsException() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> bookRepository.saveBook(UUID.randomUUID(), null, "s"));
+    Assertions.assertThrows(IllegalArgumentException.class, () -> bookRepository.saveBook(UUID.randomUUID(), " ", "s"));
+  }
+
+  @Test
+  void saveBook_WhenNullBook_ThrowsException() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> bookRepository.saveBook(null));
+  }
+
+  @Test
+  void updateBook_WhenBookExists_UpdatesAndReturnsTrue() {
+    // Given
+    UUID id = UUID.randomUUID();
+    insertBook(id, "Old", "OldS");
+
+    // When
+    boolean result = bookRepository.updateBook(new Book(id, "New", "NewS"));
+
+    // Then
+    Assertions.assertTrue(result);
+    Book updated = bookRepository.findBookById(id);
+    Assertions.assertEquals("New", updated.getTitle());
+    Assertions.assertEquals("NewS", updated.getSubject());
+  }
+
+  @Test
+  void updateBook_WhenBookDoesNotExist_ReturnsFalse() {
+    boolean result = bookRepository.updateBook(new Book(UUID.randomUUID(), "t", "s"));
+    Assertions.assertFalse(result);
+  }
+
+  @Test
+  void updateBook_WhenNullBookOrId_ThrowsException() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> bookRepository.updateBook(null));
+    Assertions.assertThrows(IllegalArgumentException.class, () -> bookRepository.updateBook(new Book(null, "t", "s")));
+  }
+
+  @Test
+  void updateBookTitle_WhenExists_UpdatesTitleAndReturnsTrue() {
+    // Given
+    UUID id = UUID.randomUUID();
+    insertBook(id, "OldTitle", "S");
+
+    // When
+    boolean result = bookRepository.updateBookTitle(id, "NewTitle");
+
+    // Then
+    Assertions.assertTrue(result);
+    Assertions.assertEquals("NewTitle", bookRepository.findBookById(id).getTitle());
+  }
+
+  @Test
+  void updateBookTitle_WhenNotExists_ReturnsFalse() {
+    boolean result = bookRepository.updateBookTitle(UUID.randomUUID(), "Any");
+    Assertions.assertFalse(result);
+  }
+
+  @Test
+  void updateBookTitle_WhenNullIdOrBlankTitle_ThrowsException() {
+    UUID id = UUID.randomUUID();
+    insertBook(id, "t", "s");
+
+    Assertions.assertThrows(IllegalArgumentException.class, () -> bookRepository.updateBookTitle(null, "x"));
+    Assertions.assertThrows(IllegalArgumentException.class, () -> bookRepository.updateBookTitle(id, " "));
+  }
+
+  @Test
+  void deleteBook_WhenNullId_ThrowsException() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> bookRepository.deleteBook(null));
+  }
+
+  @Test
+  void countAllBooks_ReturnsAccurateCount() {
+    // Initially 0
+    Assertions.assertEquals(0, bookRepository.countAllBooks());
+
+    // After inserts
+    insertTestBooks();
+    Assertions.assertEquals(EXPECTED_BOOK_COUNT, bookRepository.countAllBooks());
+  }
+
+  @Test
+  void existsById_ReturnsTrueWhenExistsAndFalseWhenNot() {
+    UUID id = UUID.randomUUID();
+    insertBook(id, "t", "s");
+
+    Assertions.assertTrue(bookRepository.existsById(id));
+    Assertions.assertFalse(bookRepository.existsById(UUID.randomUUID()));
+    Assertions.assertFalse(bookRepository.existsById(null));
+  }
+
+  @Test
+  void deleteAllBooks_RemovesEverything() {
+    insertTestBooks();
+    Assertions.assertEquals(EXPECTED_BOOK_COUNT, bookRepository.findAllBooks().size());
+
+    // When
+    bookRepository.deleteAllBooks();
+
+    // Then
+    Assertions.assertTrue(bookRepository.findAllBooks().isEmpty());
+    Assertions.assertEquals(0, bookRepository.countAllBooks());
+  }
+
+  @Test
+  void findAllBooksWithLimit_WhenValid_ReturnsLimitedNumber() {
+    insertTestBooks();
+
+    List<Book> limited = bookRepository.findAllBooksWithLimit(2);
+    Assertions.assertEquals(2, limited.size());
+
+    List<Book> allOrLess = bookRepository.findAllBooksWithLimit(10);
+    Assertions.assertEquals(EXPECTED_BOOK_COUNT, allOrLess.size());
+  }
+
+  @Test
+  void findAllBooksWithLimit_WhenNonPositive_ThrowsException() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> bookRepository.findAllBooksWithLimit(0));
+    Assertions.assertThrows(IllegalArgumentException.class, () -> bookRepository.findAllBooksWithLimit(-1));
   }
 
   private void insertTestBooks() {
