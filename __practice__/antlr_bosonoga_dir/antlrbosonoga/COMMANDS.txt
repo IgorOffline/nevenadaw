@@ -1,0 +1,1 @@
+../../temurin-25/bin/java -jar ../antlr-4.13.2-complete.jar -Dlanguage=TypeScript -o generated src/main/antlr/BosonogaGrammar.g4
