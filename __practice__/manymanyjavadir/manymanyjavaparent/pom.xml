@@ -6,6 +6,7 @@
   <groupId>igoroffline.manymanyjava</groupId>
   <artifactId>manymanyjavaparent</artifactId>
   <version>0.1.0</version>
+  <packaging>pom</packaging>
 
   <name>parent</name>
 
@@ -81,4 +82,8 @@
       </plugins>
     </pluginManagement>
   </build>
+
+  <modules>
+    <module>manymanymicronaut</module>
+  </modules>
 </project>
