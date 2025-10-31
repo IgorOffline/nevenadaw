@@ -1,4 +1,4 @@
-package igoroffline;
+package igoroffline.manymanyjava.manymanycassandra.bookexample;
 
 import com.datastax.driver.core.Session;
 import org.slf4j.Logger;

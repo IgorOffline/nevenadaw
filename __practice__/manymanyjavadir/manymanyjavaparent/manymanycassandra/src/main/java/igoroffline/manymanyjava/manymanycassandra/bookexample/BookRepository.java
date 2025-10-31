@@ -1,4 +1,4 @@
-package igoroffline;
+package igoroffline.manymanyjava.manymanycassandra.bookexample;
 
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;

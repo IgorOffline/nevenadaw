@@ -9,4 +9,4 @@ object Sum:
 
   @static def var1: Int = 2
 
-  @static def var2: Int = 2
+  @static def var2: Int = 3
