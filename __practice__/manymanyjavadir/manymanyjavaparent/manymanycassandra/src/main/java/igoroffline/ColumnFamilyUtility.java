@@ -1,8 +1,12 @@
 package igoroffline;
 
 import com.datastax.driver.core.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ColumnFamilyUtility {
+
+  private static final Logger log = LoggerFactory.getLogger(ColumnFamilyUtility.class);
 
   public static void createColumnFamily(String keyspaceName, String tableName, Session session) {
 
@@ -12,8 +16,8 @@ public class ColumnFamilyUtility {
       "id uuid PRIMARY KEY, " +
       "title text," +
       "subject text);";
-    System.out.println(query);
+    log.info(query);
     final var rs = session.execute(query);
-    System.out.println(rs.getExecutionInfo().getTriedHosts());
+    log.info("{}", rs.getExecutionInfo().getTriedHosts());
   }
 }
