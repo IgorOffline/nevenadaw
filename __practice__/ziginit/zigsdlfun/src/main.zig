@@ -71,9 +71,21 @@ pub fn iterate(
     const dt = app_state.frame_capper.delay();
     _ = dt;
 
-    try app_state.renderer.setDrawColor(.{ .r = 69, .g = 90, .b = 100, .a = 255 });
+    const blue_gray_dark_primary_color = .{ .r = 69, .g = 90, .b = 100, .a = 255 };
+    try app_state.renderer.setDrawColor(.{
+        .r = blue_gray_dark_primary_color.r,
+        .g = blue_gray_dark_primary_color.g,
+        .b = blue_gray_dark_primary_color.b,
+        .a = blue_gray_dark_primary_color.a,
+    });
     try app_state.renderer.clear();
-    try app_state.renderer.setDrawColor(.{ .r = 255, .g = 235, .b = 59, .a = 255 });
+    const yellow_accent_color = .{ .r = 255, .g = 235, .b = 59, .a = 255 };
+    try app_state.renderer.setDrawColor(.{
+        .r = yellow_accent_color.r,
+        .g = yellow_accent_color.g,
+        .b = yellow_accent_color.b,
+        .a = yellow_accent_color.a,
+    });
 
     var fps_text_buf: [32]u8 = undefined;
     const fps_text = std.fmt.bufPrintZ(&fps_text_buf, "FPS: {d}", .{app_state.frame_capper.getObservedFps()}) catch "[ERR]";
