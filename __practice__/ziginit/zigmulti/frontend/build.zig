@@ -14,12 +14,7 @@ pub fn build(b: *std.Build) !void {
         .root_module = exe_mod,
     });
 
-    const core = b.dependency("core", .{
-        .target = target,
-        .optimize = optimize,
-        .callbacks = true,
-        .ext_image = true,
-    });
+    const core = b.dependency("core", .{});
     exe.root_module.addImport("core", core.module("core"));
     b.installArtifact(exe);
 
