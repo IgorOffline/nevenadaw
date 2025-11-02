@@ -1,0 +1,15 @@
+.{
+    .name = .frontend,
+    .version = "0.1.0",
+    .dependencies = .{
+        .core = .{
+            .path = "../core",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+    .fingerprint = 0xcc111e9cb7c6e699,
+}
