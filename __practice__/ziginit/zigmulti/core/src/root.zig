@@ -10,7 +10,7 @@ pub fn log_info(message: ?[]const u8) void {
 }
 
 pub fn log_info_args(comptime format: []const u8, args: anytype) void {
-    var buffer: [1024]u8 = undefined;
+    var buffer: [512]u8 = undefined;
     const message = std.fmt.bufPrint(&buffer, format, args) catch format;
 
     std.fs.File.stdout().writeAll(message) catch |err| {
