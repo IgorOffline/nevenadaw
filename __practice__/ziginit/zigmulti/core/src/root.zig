@@ -6,19 +6,17 @@ pub fn math_sum(a: i32, b: i32) i32 {
 
 pub fn log_info(message: ?[]const u8) void {
     const write: []const u8 = message orelse "";
+    std.debug.print("{s}\n", .{write});
+}
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
+pub fn log_info_args(comptime format: []const u8, args: anytype) void {
+    var buffer: [1024]u8 = undefined;
+    const message = std.fmt.bufPrint(&buffer, format, args) catch format;
 
-    const line_with_newline = std.fmt.allocPrint(allocator, "{s}\n", .{write}) catch {
-        std.fs.File.stdout().writeAll(write) catch |err| {
-            std.debug.print("err-be2c4251: {s}\n", .{@errorName(err)});
-        };
-        return;
+    std.fs.File.stdout().writeAll(message) catch |err| {
+        std.debug.print("err-9ff96916: {s}\n", .{@errorName(err)});
     };
-
-    std.fs.File.stdout().writeAll(line_with_newline) catch |err| {
-        std.debug.print("err-b4e9b1d0: {s}\n", .{@errorName(err)});
+    std.fs.File.stdout().writeAll("\n") catch |err| {
+        std.debug.print("err-d03e7948: {s}\n", .{@errorName(err)});
     };
 }
