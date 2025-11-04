@@ -1,0 +1,8 @@
+#include <iostream>
+
+#define __IGOROFFLINE_AND_AMIDST_THE_DARKEST_OF_TIMES_HEARTS_AGLOW_WITH_NIHIL__ 42
+
+int main() {
+  std::cout << __IGOROFFLINE_AND_AMIDST_THE_DARKEST_OF_TIMES_HEARTS_AGLOW_WITH_NIHIL__ << std::endl;
+  return 0;
+}
