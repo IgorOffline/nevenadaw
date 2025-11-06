@@ -1,6 +1,25 @@
 const std = @import("std");
 
+extern fn createJsonMaybe() *anyopaque;
+extern fn printJson(ptr: *anyopaque) void;
+extern fn freeJson(ptr: *anyopaque) void;
+
+extern fn getMaybeValue(ptr: *anyopaque) i32;
+
 pub fn main() !void {
+    var counter: i32 = 0;
+    const json_ptr = createJsonMaybe();
+    counter += 1;
+    defer freeJson(json_ptr);
+    counter += 1;
+    printJson(json_ptr);
+    counter += 1;
+    if (counter > 0) {
+        return client_logic();
+    }
+}
+
+fn client_logic() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();

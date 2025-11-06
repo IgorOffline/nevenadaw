@@ -6,6 +6,7 @@
         "build.zig",
         "build.zig.zon",
         "src",
+        "src/cpp",
     },
-    .fingerprint = 0xc74404552b225462,
+    .fingerprint = 0xc744045584183720,
 }
