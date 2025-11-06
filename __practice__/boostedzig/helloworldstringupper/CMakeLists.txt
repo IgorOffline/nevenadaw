@@ -1,11 +1,9 @@
 cmake_minimum_required(VERSION 3.26)
 
-# Ensure vcpkg toolchain is picked up (must be set before project())
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE AND DEFINED ENV{VCPKG_ROOT})
   set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 endif()
 
-# Prefer explicit target triplet if not provided
 if(NOT DEFINED VCPKG_TARGET_TRIPLET)
   if(DEFINED ENV{VCPKG_DEFAULT_TRIPLET})
     set(VCPKG_TARGET_TRIPLET "$ENV{VCPKG_DEFAULT_TRIPLET}" CACHE STRING "")
@@ -19,20 +17,16 @@ project(helloworldstringupper LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Diagnostics for vcpkg/CMake integration
 message(STATUS "VCPKG_ROOT=$ENV{VCPKG_ROOT}")
 message(STATUS "CMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
 message(STATUS "VCPKG_DEFAULT_TRIPLET=$ENV{VCPKG_DEFAULT_TRIPLET}")
 message(STATUS "VCPKG_TARGET_TRIPLET=${VCPKG_TARGET_TRIPLET}")
 message(STATUS "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
 
-# Boost.Algorithm is header-only; use Boost CONFIG package from vcpkg
 find_package(Boost CONFIG REQUIRED)
 
 add_executable(helloworldstringupper main.cpp)
 
-# vcpkg/Boost CONFIG exports an interface headers target
-# Accept either Boost::boost or Boost::headers
 if(TARGET Boost::boost)
   set(_boost_headers_target Boost::boost)
 elseif(TARGET Boost::headers)
