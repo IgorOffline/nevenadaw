@@ -14,6 +14,20 @@ pub fn build(b: *std.Build) !void {
         .root_module = exe_mod,
     });
 
+    exe.linkLibC();
+    exe.linkLibCpp();
+
+    exe.addCSourceFile(.{
+        .file = b.path("src/cpp/bridge.cpp"),
+        .flags = &.{
+            "-std=c++17",
+            "-O2",
+            "-Wall",
+        },
+    });
+
+    exe.addIncludePath(b.path("src/cpp"));
+
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);
