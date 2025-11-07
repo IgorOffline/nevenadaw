@@ -32,7 +32,7 @@ if(TARGET Boost::boost)
 elseif(TARGET Boost::headers)
   set(_boost_headers_target Boost::headers)
 else()
-  message(FATAL_ERROR "Boost headers target not found (neither Boost::boost nor Boost::headers).")
+  message(FATAL_ERROR "Boost headers target not found (neither Boost::boost nor Boost::headers)")
 endif()
 
 target_link_libraries(helloworldstringupper PRIVATE ${_boost_headers_target})
