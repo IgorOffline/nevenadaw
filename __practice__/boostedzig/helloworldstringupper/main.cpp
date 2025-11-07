@@ -20,12 +20,17 @@ int main() {
   boost::trim(text_trim);
   std::cout << text_trim << std::endl;
   std::string text_trimdot = "...[ TRIMDOT ]...";
-  boost::trim_if(text_trimdot, [](char c) { return c == '.'; });
+  boost::trim_if(text_trimdot, [](const char c) { return c == '.'; });
   std::cout << text_trimdot << std::endl;
-  std::string text_replace = "Sometimes we lorem and sometimes we ipsum";
+  std::string text_replace = "sometimes we lorem and sometimes we ipsum";
   boost::replace_all(text_replace, "lorem", "temp");
   boost::replace_all(text_replace, "ipsum", "lorem");
   boost::replace_all(text_replace, "temp", "ipsum");
+  boost::replace_first(text_replace, "sometimes", "alltimes");
+  std::cout << text_replace << std::endl;
+  boost::replace_first(text_replace, "alltimes", "nonetimes");
+  std::cout << text_replace << std::endl;
+  boost::replace_last(text_replace, "sometimes", "replacetimes");
   std::cout << text_replace << std::endl;
   return 0;
 }
