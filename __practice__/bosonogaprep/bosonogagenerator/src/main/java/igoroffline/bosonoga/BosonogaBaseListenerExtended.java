@@ -27,6 +27,26 @@ public class BosonogaBaseListenerExtended extends BosonogaBaseListener {
   }
 
   @Override
+  public void enterBosonogaint32(BosonogaParser.Bosonogaint32Context ctx) {
+    System.out.println("<enterBosonogaint32>");
+  }
+
+  @Override
+  public void exitBosonogaint32(BosonogaParser.Bosonogaint32Context ctx) {
+    System.out.println("<exitBosonogaint32>");
+  }
+
+  @Override
+  public void enterBosonogamainexitpoint(BosonogaParser.BosonogamainexitpointContext ctx) {
+    System.out.println("<enterBosonogamainexitpoint>");
+  }
+
+  @Override
+  public void exitBosonogamainexitpoint(BosonogaParser.BosonogamainexitpointContext ctx) {
+    System.out.println("<exitBosonogamainexitpoint>");
+  }
+
+  @Override
   public void enterEveryRule(ParserRuleContext ctx) {
     System.out.println("<enterEveryRule>");
   }
