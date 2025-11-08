@@ -18,14 +18,15 @@ public class Execute {
       return;
     }
     final var lexer = lexerRaw.get();
-    final var listener = new BosonogaBaseListenerExtended(new BosonogaGlobal(0));
+    final var listener = new BosonogaBaseListenerExtended(new BosonogaGlobal("", 0));
     final var tokens = new CommonTokenStream(lexer);
     final var parser = new BosonogaParser(tokens);
     final var tree = parser.bosonogamaincore();
     final var walker = new ParseTreeWalker();
     walker.walk(listener, tree);
-    final var sum = listener.getGlobal().sum();
-    System.out.println("sum: " + sum);
+
+    final var global = listener.getGlobal();
+    System.out.println(global);
   }
 
   public Optional<BosonogaLexer> prepareLexer() {

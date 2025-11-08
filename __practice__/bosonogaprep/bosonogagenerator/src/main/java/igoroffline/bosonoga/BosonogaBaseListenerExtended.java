@@ -44,7 +44,7 @@ public class BosonogaBaseListenerExtended extends BosonogaBaseListener {
       try {
         final var newValue = Integer.parseInt(first.getText());
         final var newSum = global.sum() + newValue;
-        global = new BosonogaGlobal(newSum);
+        global = new BosonogaGlobal(global.name(), newSum);
       } catch (NumberFormatException ex) {
         System.err.println(first.getText() + " parsing-err-deae8523");
       }
@@ -64,6 +64,55 @@ public class BosonogaBaseListenerExtended extends BosonogaBaseListener {
   @Override
   public void exitBosonogamainexitpoint(BosonogaParser.BosonogamainexitpointContext ctx) {
     System.out.println("<exitBosonogamainexitpoint>");
+  }
+
+  @Override
+  public void enterBosonogainit(BosonogaParser.BosonogainitContext ctx) {
+    System.out.println("<enterBosonogainit>");
+  }
+
+  @Override
+  public void exitBosonogainit(BosonogaParser.BosonogainitContext ctx) {
+    System.out.println("<exitBosonogainit>");
+  }
+
+  @Override
+  public void enterBosonogaimmutablevariable(BosonogaParser.BosonogaimmutablevariableContext ctx) {
+    System.out.println("<enterBosonogaimmutablevariable>");
+  }
+
+  @Override
+  public void exitBosonogaimmutablevariable(BosonogaParser.BosonogaimmutablevariableContext ctx) {
+    System.out.println("<exitBosonogaimmutablevariable>");
+  }
+
+  @Override
+  public void enterBosonogaset(BosonogaParser.BosonogasetContext ctx) {
+    System.out.println("<enterBosonogaset>");
+  }
+
+  @Override
+  public void exitBosonogaset(BosonogaParser.BosonogasetContext ctx) {
+    System.out.println("<exitBosonogaset>");
+  }
+
+  @Override
+  public void enterBosonogastring(BosonogaParser.BosonogastringContext ctx) {
+    if (ctx.children.size() == 1) {
+      final var first = ctx.children.getFirst();
+      System.out.println("<enterBosonogastring>");
+      try {
+        final var name = first.getText();
+        global = new BosonogaGlobal(name, global.sum());
+      } catch (NumberFormatException ex) {
+        System.err.println(first.getText() + " parsing-err-d9c33b6f");
+      }
+    }
+  }
+
+  @Override
+  public void exitBosonogastring(BosonogaParser.BosonogastringContext ctx) {
+    System.out.println("<exitBosonogastring>");
   }
 
   @Override
