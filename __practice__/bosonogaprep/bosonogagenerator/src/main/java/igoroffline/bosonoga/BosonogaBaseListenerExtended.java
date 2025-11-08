@@ -6,6 +6,16 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 public class BosonogaBaseListenerExtended extends BosonogaBaseListener {
 
+  private BosonogaGlobal global;
+
+  public BosonogaBaseListenerExtended(BosonogaGlobal global) {
+    this.global = global;
+  }
+
+  public BosonogaGlobal getGlobal() {
+    return global;
+  }
+
   @Override
   public void enterBosonogamainentrypoint(BosonogaParser.BosonogamainentrypointContext ctx) {
     System.out.println("<enterBosonogamainentrypoint>");
@@ -28,7 +38,17 @@ public class BosonogaBaseListenerExtended extends BosonogaBaseListener {
 
   @Override
   public void enterBosonogaint32(BosonogaParser.Bosonogaint32Context ctx) {
-    System.out.println("<enterBosonogaint32>");
+    if (ctx.children.size() == 1) {
+      final var first = ctx.children.getFirst();
+      System.out.println("<enterBosonogaint32>");
+      try {
+        final var newValue = Integer.parseInt(first.getText());
+        final var newSum = global.sum() + newValue;
+        global = new BosonogaGlobal(newSum);
+      } catch (NumberFormatException ex) {
+        System.err.println(first.getText() + " parsing-err-deae8523");
+      }
+    }
   }
 
   @Override

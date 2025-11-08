@@ -2,7 +2,7 @@ package igoroffline.bosonoga;
 
 public class Main {
 
-  public static void main(String[] args) {
+  static void main() {
     System.out.println("<START>");
     new Execute().execute();
     System.out.println("<END>");
