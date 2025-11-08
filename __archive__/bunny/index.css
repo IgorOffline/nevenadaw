@@ -1,0 +1,19 @@
+:root {
+    --bg-color: #BDBDBD;
+}
+
+@media (min-width: 768px) {
+    :root {
+        --bg-color: #757575;
+    }
+}
+
+@media (min-width: 1200px) {
+    :root {
+        --bg-color: #9E9E9E;
+    }
+}
+
+body {
+    background-color: var(--bg-color);
+}
