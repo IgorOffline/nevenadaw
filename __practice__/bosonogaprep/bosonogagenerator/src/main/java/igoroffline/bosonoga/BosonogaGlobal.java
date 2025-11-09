@@ -1,4 +1,4 @@
 package igoroffline.bosonoga;
 
-public record BosonogaGlobal(String name, int sum) {
+public record BosonogaGlobal(BosonogaName name, BosonogaSum sum) {
 }

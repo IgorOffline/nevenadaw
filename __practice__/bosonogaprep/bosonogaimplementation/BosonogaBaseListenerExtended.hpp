@@ -2,13 +2,27 @@
 #define BOSONOGAIMPLEMENTATION_BOSONOGABASELISTENEREXTENDED_H
 
 #include <iostream>
+#include <utility>
+#include "BosonogaGlobal.hpp"
 #include "antlr4-runtime.h"
 #include "generated/BosonogaBaseListener.h"
 #include "generated/BosonogaParser.h"
 
-class BosonogaBaseListenerExtended : public igorofflinebosonogageneratedantlr::BosonogaBaseListener {
+class BosonogaBaseListenerExtended final : public igorofflinebosonogageneratedantlr::BosonogaBaseListener {
 public:
   bool logLangTrace = false;
+
+private:
+  BosonogaGlobal global;
+
+public:
+  explicit BosonogaBaseListenerExtended(BosonogaGlobal global_)
+    : global(std::move(global_)) {
+  }
+
+  [[nodiscard]] const BosonogaGlobal &getGlobal() const {
+    return global;
+  }
 
   void enterBosonogamainentrypoint(
     igorofflinebosonogageneratedantlr::BosonogaParser::BosonogamainentrypointContext *ctx) override {
@@ -92,9 +106,20 @@ public:
 
   void enterBosonogaint32(
     igorofflinebosonogageneratedantlr::BosonogaParser::Bosonogaint32Context *ctx) override {
-    (void) ctx;
-    if (logLangTrace) {
-      std::cout << "enterBosonogaint32" << std::endl;
+    if (ctx && ctx->children.size() == 1) {
+      const auto first = ctx->children.front();
+      if (logLangTrace) {
+        std::cout << "<enterBosonogaint32>" << std::endl;
+      }
+      try {
+        const int newValue = std::stoi(first->getText());
+        const int newSumValue = global.sum.to_int() + newValue;
+        const auto prevName = global.name;
+        global.~BosonogaGlobal();
+        new(&global) BosonogaGlobal(prevName, BosonogaSum(newSumValue));
+      } catch (const std::exception &ex) {
+        std::cerr << first->getText() << " parsing-err-e1efafdf" << std::endl;
+      }
     }
   }
 
@@ -108,9 +133,19 @@ public:
 
   void enterBosonogastring(
     igorofflinebosonogageneratedantlr::BosonogaParser::BosonogastringContext *ctx) override {
-    (void) ctx;
-    if (logLangTrace) {
-      std::cout << "enterBosonogastring" << std::endl;
+    if (ctx && ctx->children.size() == 1) {
+      const auto first = ctx->children.front();
+      if (logLangTrace) {
+        std::cout << "<enterBosonogastring>" << std::endl;
+      }
+      try {
+        const std::string name = first->getText();
+        const auto prevSum = global.sum;
+        global.~BosonogaGlobal();
+        new(&global) BosonogaGlobal(BosonogaName{name}, prevSum);
+      } catch (const std::exception &ex) {
+        std::cerr << first->getText() << " parsing-err-b99c79ee" << std::endl;
+      }
     }
   }
 
