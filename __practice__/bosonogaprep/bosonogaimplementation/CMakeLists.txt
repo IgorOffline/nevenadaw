@@ -24,6 +24,8 @@ if (antlr4-runtime_FOUND)
             generated/BosonogaLexer.cpp generated/BosonogaLexer.h
             generated/BosonogaListener.cpp generated/BosonogaListener.h
             generated/BosonogaParser.cpp generated/BosonogaParser.h
+            BosonogaBaseListenerExtended.hpp
+            Execute.hpp
     )
 
     if (TARGET antlr4_shared)
@@ -31,8 +33,8 @@ if (antlr4-runtime_FOUND)
     elseif (TARGET antlr4_static)
         target_link_libraries(bosonogaimplementation PRIVATE antlr4_static)
     else ()
-        message(FATAL_ERROR "antlr4-runtime was found, but neither antlr4_shared nor antlr4_static targets exist")
+        message(FATAL_ERROR "ERR-c98f88f5")
     endif ()
 else ()
-    message(WARNING "antlr4-runtime not found")
+    message(WARNING "ERR-c03cfa57")
 endif ()

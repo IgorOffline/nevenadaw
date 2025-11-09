@@ -31,7 +31,7 @@ public class Execute {
 
   public Optional<BosonogaLexer> prepareLexer() {
     try {
-      return Optional.of(new BosonogaLexer(CharStreams.fromFileName("main.bosonoga", StandardCharsets.UTF_8)));
+      return Optional.of(new BosonogaLexer(CharStreams.fromFileName("..\\main.bosonoga", StandardCharsets.UTF_8)));
     } catch (IOException ex) {
       System.err.println(ex.getMessage());
     }
