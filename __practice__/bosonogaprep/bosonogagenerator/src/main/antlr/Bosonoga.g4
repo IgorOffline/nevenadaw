@@ -1,0 +1,12 @@
+grammar Bosonoga;
+bosonogamainentrypoint    : 'BOSONOGA-MAIN' ;
+bosonogamainexitpoint     : 'BOSONOGA-FIN' ;
+bosonogainit              : 'INIT' ;
+bosonogaimmutablevariable : 'VAL' ;
+bosonogaset               : 'EKI' ;
+bosonogaint32             : INT ;
+bosonogastring            : CHAR ;
+bosonogamaincore          : bosonogamainentrypoint (bosonogainit | bosonogaint32 | bosonogaimmutablevariable | bosonogastring | bosonogaset)* bosonogamainexitpoint ;
+INT                       : [0-9]+ ;
+CHAR                      : [a-z]+ ;
+WS                        : [ \t\r\n]+ -> skip ;
