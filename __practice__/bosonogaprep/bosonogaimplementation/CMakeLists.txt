@@ -25,7 +25,8 @@ if (antlr4-runtime_FOUND)
             generated/BosonogaListener.cpp generated/BosonogaListener.h
             generated/BosonogaParser.cpp generated/BosonogaParser.h
             BosonogaBaseListenerExtended.hpp
-            Execute.hpp
+            BosonogaExecute.hpp
+            BosonogaPrimitives.hpp
     )
 
     if (TARGET antlr4_shared)

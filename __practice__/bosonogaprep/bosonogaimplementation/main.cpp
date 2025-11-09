@@ -1,9 +1,10 @@
 #include <iostream>
-#include "Execute.hpp"
+#include "BosonogaExecute.hpp"
+#include "BosonogaPrimitives.hpp"
 
 int main() {
-  std::cout << "<START>" << std::endl;
-  Execute::execute();
-  std::cout << "<END>" << std::endl;
+  std::cout << BOSONOGA_START_STRING << std::endl;
+  BosonogaExecute::execute();
+  std::cout << BOSONOGA_END_STRING << std::endl;
   return 0;
 }
