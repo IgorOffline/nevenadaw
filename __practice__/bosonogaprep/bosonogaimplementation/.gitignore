@@ -2,5 +2,3 @@
 build
 cmake-build-debug
 old
-
-vcpkg-antlr.txt

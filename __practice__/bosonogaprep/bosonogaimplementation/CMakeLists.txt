@@ -20,10 +20,10 @@ find_package(antlr4-runtime CONFIG QUIET)
 if (antlr4-runtime_FOUND)
     add_executable(bosonogaimplementation
             main.cpp
-            BosonogaBaseListener.cpp BosonogaBaseListener.h
-            BosonogaLexer.cpp BosonogaLexer.h
-            BosonogaListener.cpp BosonogaListener.h
-            BosonogaParser.cpp BosonogaParser.h
+            generated/BosonogaBaseListener.cpp generated/BosonogaBaseListener.h
+            generated/BosonogaLexer.cpp generated/BosonogaLexer.h
+            generated/BosonogaListener.cpp generated/BosonogaListener.h
+            generated/BosonogaParser.cpp generated/BosonogaParser.h
     )
 
     if (TARGET antlr4_shared)
