@@ -8,9 +8,9 @@
 #include "BosonogaSum.hpp"
 
 struct BosonogaGlobal {
-  const std::unordered_map<BosonogaName, BosonogaSum> nameSum;
+  const BOSONOGA_UNORDERED_MAP<BosonogaName, BosonogaSum> nameSum;
 
-  explicit BosonogaGlobal(std::unordered_map<BosonogaName, BosonogaSum> nameSum_)
+  explicit BosonogaGlobal(BOSONOGA_UNORDERED_MAP<BosonogaName, BosonogaSum> nameSum_)
     : nameSum(std::move(nameSum_)) {
   }
 

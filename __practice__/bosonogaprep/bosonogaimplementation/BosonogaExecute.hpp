@@ -32,7 +32,7 @@ public:
         igorofflinebosonogageneratedantlr::BosonogaLexer lexer(&input);
         antlr4::CommonTokenStream tokens(&lexer);
         igorofflinebosonogageneratedantlr::BosonogaParser parser(&tokens);
-        BosonogaBaseListenerExtended listener(BosonogaGlobal(std::unordered_map<BosonogaName, BosonogaSum>{}));
+        BosonogaBaseListenerExtended listener(BosonogaGlobal(BOSONOGA_UNORDERED_MAP<BosonogaName, BosonogaSum>{}));
         antlr4::tree::ParseTreeWalker walker;
         auto tree = parser.bosonogamaincore();
         walker.walk(&listener, tree);
