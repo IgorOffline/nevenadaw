@@ -5,6 +5,7 @@
 #include "BosonogaBaseListenerExtended.hpp"
 #include "generated/BosonogaLexer.h"
 #include "generated/BosonogaParser.h"
+#include <unordered_map>
 #include <filesystem>
 #include <string>
 
@@ -30,14 +31,14 @@ public:
         igorofflinebosonogageneratedantlr::BosonogaLexer lexer(&input);
         antlr4::CommonTokenStream tokens(&lexer);
         igorofflinebosonogageneratedantlr::BosonogaParser parser(&tokens);
-        BosonogaBaseListenerExtended listener(BosonogaGlobal(BosonogaName(""), BosonogaSum(0)));
+        BosonogaBaseListenerExtended listener(BosonogaGlobal(std::unordered_map<BosonogaName, BosonogaSum>{}));
         antlr4::tree::ParseTreeWalker walker;
         auto tree = parser.bosonogamaincore();
         walker.walk(&listener, tree);
         const auto &global = listener.getGlobal();
         std::cout << global << std::endl;
 
-        return 0;
+        return BOSONOGA_ZERO;
     }
 };
 

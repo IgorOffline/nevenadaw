@@ -3,19 +3,19 @@
 
 #include <utility>
 #include <functional>
+#include <unordered_map>
 #include "BosonogaName.hpp"
 #include "BosonogaSum.hpp"
 
 struct BosonogaGlobal {
-  const BosonogaName name;
-  const BosonogaSum sum;
+  const std::unordered_map<BosonogaName, BosonogaSum> nameSum;
 
-  explicit BosonogaGlobal(BosonogaName name_, const BosonogaSum sum_)
-    : name(std::move(name_)), sum(sum_) {
+  explicit BosonogaGlobal(std::unordered_map<BosonogaName, BosonogaSum> nameSum_)
+    : nameSum(std::move(nameSum_)) {
   }
 
   friend bool operator==(const BosonogaGlobal &a, const BosonogaGlobal &b) {
-    return a.name == b.name && a.sum == b.sum;
+    return a.nameSum == b.nameSum;
   }
 
   friend bool operator!=(const BosonogaGlobal &a, const BosonogaGlobal &b) {
@@ -23,7 +23,14 @@ struct BosonogaGlobal {
   }
 
   friend std::ostream &operator<<(std::ostream &os, const BosonogaGlobal &g) {
-    os << "BosonogaGlobal[name=" << g.name << ", sum=" << g.sum << "]";
+    os << "BosonogaGlobal[nameSum={";
+    bool first = true;
+    for (const auto &[left, right]: g.nameSum) {
+      if (!first) { os << ", "; }
+      first = false;
+      os << left << "->" << right;
+    }
+    os << "}]";
     return os;
   }
 };
@@ -31,9 +38,13 @@ struct BosonogaGlobal {
 template<>
 struct std::hash<BosonogaGlobal> {
   size_t operator()(const BosonogaGlobal &g) const noexcept {
-    const size_t h1 = std::hash<BosonogaName>{}(g.name);
-    const size_t h2 = std::hash<BosonogaSum>{}(g.sum);
-    return h1 ^ h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2);
+    size_t h = BOSONOGA_ZERO;
+    for (const auto &[left, right]: g.nameSum) {
+      const size_t hk = std::hash<BosonogaName>{}(left);
+      const size_t hv = std::hash<BosonogaSum>{}(right);
+      h ^= hk ^ hv + 0x9e3779b97f4a7c15ULL + (hk << 6) + (hk >> 2);
+    }
+    return h;
   }
 };
 
