@@ -14,6 +14,7 @@ public:
 
 private:
   BosonogaGlobal global;
+  BosonogaName currentImmutableVariableName = BosonogaName(BOSONOGA_EMPTY_STRING);
 
 public:
   explicit BosonogaBaseListenerExtended(BosonogaGlobal global_)
@@ -106,17 +107,26 @@ public:
 
   void enterBosonogaint32(
     igorofflinebosonogageneratedantlr::BosonogaParser::Bosonogaint32Context *ctx) override {
-    if (ctx && ctx->children.size() == 1) {
+    if (ctx && ctx->children.size() == BOSONOGA_ONE) {
       const auto first = ctx->children.front();
       if (logLangTrace) {
         std::cout << "<enterBosonogaint32>" << std::endl;
       }
       try {
         const int newValue = std::stoi(first->getText());
-        const int newSumValue = global.sum.to_int() + newValue;
-        const auto prevName = global.name;
-        global.~BosonogaGlobal();
-        new(&global) BosonogaGlobal(prevName, BosonogaSum(newSumValue));
+        if (const bosonoga_string key = currentImmutableVariableName.name; !key.empty()) {
+          auto kv = global.nameSum;
+          const auto it = kv.find(BosonogaName(key));
+          bosonoga_int cur = BOSONOGA_ZERO;
+          if (it != kv.end()) {
+            cur = it->second.to_int();
+            kv.erase(it);
+          }
+          const bosonoga_int newSumValue = cur + newValue;
+          kv.emplace(BosonogaName(key), BosonogaSum(newSumValue));
+          global.~BosonogaGlobal();
+          new(&global) BosonogaGlobal(std::move(kv));
+        }
       } catch (const std::exception &ex) {
         std::cerr << first->getText() << " parsing-err-e1efafdf" << std::endl;
       }
@@ -133,16 +143,25 @@ public:
 
   void enterBosonogastring(
     igorofflinebosonogageneratedantlr::BosonogaParser::BosonogastringContext *ctx) override {
-    if (ctx && ctx->children.size() == 1) {
+    if (ctx && ctx->children.size() == BOSONOGA_ONE) {
       const auto first = ctx->children.front();
       if (logLangTrace) {
         std::cout << "<enterBosonogastring>" << std::endl;
       }
       try {
-        const std::string name = first->getText();
-        const auto prevSum = global.sum;
-        global.~BosonogaGlobal();
-        new(&global) BosonogaGlobal(BosonogaName{name}, prevSum);
+        const bosonoga_string name = first->getText();
+        if (!name.empty()) {
+          auto kv = global.nameSum;
+          if (!kv.contains(BosonogaName{name})) {
+            kv.emplace(BosonogaName{name}, BosonogaSum(BOSONOGA_ZERO));
+          }
+          global.~BosonogaGlobal();
+          new(&global) BosonogaGlobal(std::move(kv));
+        }
+        if (!name.empty() && currentImmutableVariableName.name != name) {
+          currentImmutableVariableName.~BosonogaName();
+          new(&currentImmutableVariableName) BosonogaName{name};
+        }
       } catch (const std::exception &ex) {
         std::cerr << first->getText() << " parsing-err-b99c79ee" << std::endl;
       }
