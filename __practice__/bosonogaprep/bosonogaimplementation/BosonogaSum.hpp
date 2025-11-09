@@ -2,14 +2,15 @@
 #define BOSONOGAIMPLEMENTATION_BOSONOGASUM_HPP
 
 #include <functional>
+#include "BosonogaPrimitives.hpp"
 
 struct BosonogaSum {
-  const int sum;
+  const bosonoga_int sum;
 
-  explicit BosonogaSum(const int v) : sum(v) {
+  explicit BosonogaSum(const bosonoga_int v) : sum(v) {
   }
 
-  [[nodiscard]] int to_int() const { return sum; }
+  [[nodiscard]] bosonoga_int to_int() const { return sum; }
 
   friend bool operator==(const BosonogaSum &a, const BosonogaSum &b) {
     return a.sum == b.sum;
@@ -28,7 +29,7 @@ struct BosonogaSum {
 template<>
 struct std::hash<BosonogaSum> {
   size_t operator()(const BosonogaSum &s) const noexcept {
-    return std::hash<int>{}(s.sum);
+    return std::hash<bosonoga_int>{}(s.sum);
   }
 };
 
