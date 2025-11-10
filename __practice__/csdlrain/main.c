@@ -1,7 +1,7 @@
 #ifdef _MSC_VER
 #define _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
-#endif
+#endif // _MSC_VER
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,16 +18,37 @@ typedef struct {
   SDL_Window *window;
   SDL_Renderer *renderer;
   RainContext rain_context;
-  Uint64 last_step;
+  Uint64 last_step_ms;
 } AppState;
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
-  printf("Null? [%d]\n", appstate == NULL);
+  printf("1\n");
+
+  AppState *as = appstate;
+  if (!as) {
+    return SDL_APP_FAILURE;
+  }
+
+  Uint64 now_ms = SDL_GetTicks();
+  Uint64 delta_ms = now_ms - as->last_step_ms;
+
+  const Uint64 target_step_ms = 250;
+  if (delta_ms < target_step_ms) {
+    SDL_Delay((Uint32) (target_step_ms - delta_ms));
+    now_ms = SDL_GetTicks();
+    delta_ms = now_ms - as->last_step_ms;
+  }
+
+  as->last_step_ms = now_ms;
 
   return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
+  printf("2\n");
+  (void) argc;
+  (void) argv;
+
 #ifdef __clang__
   printf("Successfully compiled with Clang %s (%d.%d.%d)\n", __clang_version__, __clang_major__, __clang_minor__,
          __clang_patchlevel__);
@@ -51,25 +72,29 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
 #endif
 
+  AppState *as = SDL_calloc(1, sizeof(AppState));
+  if (!as) {
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate AppState\n");
+    return SDL_APP_FAILURE;
+  }
+  as->last_step_ms = SDL_GetTicks();
 
-#ifdef _MSC_VER
-  _CrtDumpMemoryLeaks();
-#endif
-
-  printf("Null? [%d] [%d] [%d]\n", appstate == NULL, argc == 0, argv == NULL);
-
+  *appstate = as;
   return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
-  printf("Null? [%d] [%d]\n", appstate == NULL, event == NULL);
+  printf("3\n");
 
+  (void) appstate;
+  (void) event;
   return SDL_APP_CONTINUE;
 }
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
-  printf("Null? [%d]\n", result);
+  printf("4\n");
 
+  (void) result;
   if (appstate != NULL) {
     AppState *as = appstate;
     SDL_DestroyRenderer(as->renderer);
