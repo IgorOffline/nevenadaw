@@ -19,27 +19,33 @@ typedef struct {
   SDL_Renderer *renderer;
   RainContext rain_context;
   Uint64 last_step_ms;
+  bool button_message_pressed;
+  bool should_quit;
 } AppState;
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
-  printf("1\n");
-
   AppState *as = appstate;
   if (!as) {
     return SDL_APP_FAILURE;
   }
 
-  Uint64 now_ms = SDL_GetTicks();
-  Uint64 delta_ms = now_ms - as->last_step_ms;
-
-  const Uint64 target_step_ms = 250;
-  if (delta_ms < target_step_ms) {
-    SDL_Delay((Uint32) (target_step_ms - delta_ms));
-    now_ms = SDL_GetTicks();
-    delta_ms = now_ms - as->last_step_ms;
+  if (as->button_message_pressed) {
+    printf("[F]\n");
+    fflush(stdout);
+    as->button_message_pressed = false;
   }
 
-  as->last_step_ms = now_ms;
+  if (as->should_quit) {
+    return SDL_APP_SUCCESS;
+  }
+
+  const SDL_Color grey_secondary_text = {.r = 117, .g = 117, .b = 117, .a = 255};
+  if (as->renderer) {
+    SDL_SetRenderDrawColor(as->renderer, grey_secondary_text.r, grey_secondary_text.g, grey_secondary_text.b,
+                           grey_secondary_text.a);
+    SDL_RenderClear(as->renderer);
+    SDL_RenderPresent(as->renderer);
+  }
 
   return SDL_APP_CONTINUE;
 }
@@ -79,15 +85,49 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   }
   as->last_step_ms = SDL_GetTicks();
 
+  as->window = SDL_CreateWindow("SDL Rain", 1280, 720, 0);
+  if (!as->window) {
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create window: %s\n", SDL_GetError());
+    SDL_free(as);
+    return SDL_APP_FAILURE;
+  }
+
+  as->renderer = SDL_CreateRenderer(as->window, NULL);
+  if (!as->renderer) {
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create renderer: %s\n", SDL_GetError());
+    SDL_DestroyWindow(as->window);
+    SDL_free(as);
+    return SDL_APP_FAILURE;
+  }
+
   *appstate = as;
   return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
-  printf("3\n");
+  AppState *as = appstate;
 
-  (void) appstate;
-  (void) event;
+  if (event) {
+    switch (event->type) {
+      case SDL_EVENT_QUIT:
+      case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+        if (as) as->should_quit = true;
+        return SDL_APP_CONTINUE;
+      case SDL_EVENT_KEY_DOWN:
+        if (event->key.scancode == SDL_SCANCODE_F) {
+          as->button_message_pressed = true;
+          return SDL_APP_CONTINUE;
+        }
+        if (event->key.scancode == SDL_SCANCODE_ESCAPE) {
+          as->should_quit = true;
+          return SDL_APP_CONTINUE;
+        }
+        return SDL_APP_CONTINUE;
+      default:
+        return SDL_APP_CONTINUE;
+    }
+  }
+
   return SDL_APP_CONTINUE;
 }
 
