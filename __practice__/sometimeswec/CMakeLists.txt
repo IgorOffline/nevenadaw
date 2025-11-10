@@ -66,10 +66,22 @@ else ()
     add_compile_options($<$<CONFIG:Debug>:-g>)
 endif ()
 
-add_executable(sometimeswec main.c)
+if (WIN32)
+    message(STATUS "ASan disabled on Windows to use MSVC Debug CRT leak detector")
+else ()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+endif ()
+
+add_executable(sometimeswec main.c src/uuid4.c)
+
+target_include_directories(sometimeswec PRIVATE include)
 
 find_package(json-c REQUIRED)
 target_link_libraries(sometimeswec PRIVATE json-c::json-c)
+
+if (WIN32)
+    target_link_libraries(sometimeswec PRIVATE Crypt32)
+endif ()
 
 if (CMAKE_TOOLCHAIN_FILE AND EXISTS "${CMAKE_TOOLCHAIN_FILE}")
     if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg.json")

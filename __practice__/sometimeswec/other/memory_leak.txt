@@ -1,0 +1,9 @@
+
+void memory_leak_test() {
+  char *leak = malloc(100);
+  if (leak) {
+    leak[0] = 't';
+  }
+}
+
+memory_leak_test();

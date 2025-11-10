@@ -1,11 +1,18 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "json.h"
 #include "json_inttypes.h"
+#include "uuid4.h"
 
 #define sometimeswec_memcmp_ok 0
+
+#ifdef _MSC_VER
+#define _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+#endif
 
 int main(void) {
 #ifdef __clang__
@@ -21,11 +28,22 @@ int main(void) {
 #else
   printf("No Clang or MSVC detected - using another compiler\n");
 #endif
+#ifdef _MSC_VER
+  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+  _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+  _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+  _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+  _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+  _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+  _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+#endif
   json_object *maybe_json = json_tokener_parse("{ \"maybe\": -1 }");
   json_object *maybe_field = NULL;
   if (!json_object_object_get_ex(maybe_json, "maybe", &maybe_field)) {
     fprintf(stderr, "err-ab4fa52b\n");
-    return true;
+    json_object_put(maybe_json);
+
+    return EXIT_FAILURE;
   }
   const int32_t maybe = json_object_get_int(maybe_field);
   printf("%s ; %d\n", json_object_to_json_string(maybe_json), maybe);
@@ -40,5 +58,14 @@ int main(void) {
     printf("+memcmp\n");
   }
 
-  return false;
+  char buf[UUID4_LEN];
+  uuid4_init();
+  uuid4_generate(buf);
+  printf("%s\n", buf);
+
+#ifdef _MSC_VER
+  _CrtDumpMemoryLeaks();
+#endif
+
+  return EXIT_SUCCESS;
 }
