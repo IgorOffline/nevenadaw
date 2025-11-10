@@ -1,0 +1,12 @@
+{
+  "name": "csdlrain",
+  "version": "0.1.0",
+  "description": "csdlrain",
+  "builtin-baseline": "74e6536215718009aae747d86d84b78376bf9e09",
+  "dependencies": [
+    {
+      "name": "sdl3",
+      "version>=": "3.2.24#1"
+    }
+  ]
+}
