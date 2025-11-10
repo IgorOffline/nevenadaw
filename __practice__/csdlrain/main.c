@@ -51,7 +51,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 }
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
-  printf("2\n");
+  printf("SDL_AppInit\n");
   (void) argc;
   (void) argv;
 
@@ -132,7 +132,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 }
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
-  printf("4\n");
+  printf("SDL_AppQuit\n");
 
   (void) result;
   if (appstate != NULL) {
