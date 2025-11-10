@@ -1,0 +1,1 @@
+clang -std=c17 -pedantic-errors -Wall -Wextra -Werror -Wpedantic -o main.exe main.c && .\main.exe
