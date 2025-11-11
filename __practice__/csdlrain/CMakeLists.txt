@@ -73,12 +73,15 @@ else ()
 endif ()
 
 find_package(SDL3 CONFIG REQUIRED)
+find_package(SDL3_ttf CONFIG REQUIRED)
+find_package(bgfx CONFIG REQUIRED)
 
 add_executable(csdlrain main.c)
 
 target_include_directories(csdlrain PRIVATE include)
+target_include_directories(csdlrain PRIVATE $<TARGET_PROPERTY:bgfx::bgfx,INTERFACE_INCLUDE_DIRECTORIES>)
 
-target_link_libraries(csdlrain PRIVATE SDL3::SDL3)
+target_link_libraries(csdlrain PRIVATE SDL3::SDL3 SDL3_ttf::SDL3_ttf bgfx::bgfx)
 
 if (TARGET SDL3::SDL3main)
     target_link_libraries(csdlrain PRIVATE SDL3::SDL3main)

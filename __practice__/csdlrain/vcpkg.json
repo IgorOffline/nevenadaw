@@ -5,8 +5,16 @@
   "builtin-baseline": "74e6536215718009aae747d86d84b78376bf9e09",
   "dependencies": [
     {
+      "name": "bgfx",
+      "version>=": "1.129.8940-496"
+    },
+    {
       "name": "sdl3",
       "version>=": "3.2.24#1"
+    },
+    {
+      "name": "sdl3-ttf",
+      "version>=": "3.2.2#1"
     }
   ]
 }
