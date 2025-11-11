@@ -1,240 +1,57 @@
-#ifdef _MSC_VER
-#define _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif // _MSC_VER
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#define SDL_MAIN_USE_CALLBACKS 1
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <stdbool.h>
 
-typedef struct {
-  int32_t rain_context_number;
-} RainContext;
+int main() {
+  SDL_Init(SDL_INIT_VIDEO);
+  TTF_Init();
 
-typedef struct {
-  SDL_Window *window;
-  SDL_Renderer *renderer;
-  RainContext rain_context;
-  Uint64 last_step_ms;
-  bool button_message_pressed;
-  bool should_quit;
-  TTF_Font *fps_font;
-  SDL_Texture *fps_texture;
-  int fps_tex_w;
-  int fps_tex_h;
-  char fps_text[64];
-  Uint64 last_fps_update_ms;
-  float fps_smooth;
-} AppState;
+  SDL_Window *window = SDL_CreateWindow("SDL Rain", 1280, 720, 0);
+  SDL_Renderer *renderer = SDL_CreateRenderer(window, NULL);
+  const float font_size = 52;
+  TTF_Font *font_latin = TTF_OpenFont("C:\\igoroffline\\fonts\\IosevkaTerm-Regular.ttf", font_size);
+  TTF_Font *font_hangul = TTF_OpenFont("C:\\igoroffline\\fonts\\NotoSansKR.ttf", font_size);
+  TTF_AddFallbackFont(font_latin, font_hangul);
 
-void fps_pont_prepare_draw(AppState *as, const Uint64 now_ms) {
-  as->last_fps_update_ms = now_ms;
-  char buf[64];
-  SDL_snprintf(buf, sizeof(buf), "FPS: %.1f", as->fps_smooth);
-  if (SDL_strcmp(buf, as->fps_text) != 0) {
-    SDL_strlcpy(as->fps_text, buf, sizeof(as->fps_text));
-    if (as->fps_texture) {
-      SDL_DestroyTexture(as->fps_texture);
-      as->fps_texture = NULL;
-    }
-    const SDL_Color white = {255, 255, 255, 255};
-    SDL_Surface *surf = TTF_RenderText_Blended(as->fps_font, as->fps_text, SDL_strlen(as->fps_text), white);
-    if (surf) {
-      SDL_Texture *tex = SDL_CreateTextureFromSurface(as->renderer, surf);
-      if (tex) {
-        as->fps_texture = tex;
-        as->fps_tex_w = surf->w;
-        as->fps_tex_h = surf->h;
-      } else {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "CreateTextureFromSurface failed: %s", SDL_GetError());
-      }
-      SDL_DestroySurface(surf);
-    } else {
-      SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "TTF_RenderUTF8_Blended failed: %s", SDL_GetError());
-    }
-  }
-}
-
-SDL_AppResult SDL_AppIterate(void *appstate) {
-  AppState *as = appstate;
-  if (!as) {
-    return SDL_APP_FAILURE;
-  }
-
-  if (as->button_message_pressed) {
-    printf("[F]\n");
-    fflush(stdout);
-    as->button_message_pressed = false;
-  }
-
-  if (as->should_quit) {
-    return SDL_APP_SUCCESS;
-  }
-
-  const SDL_Color grey_secondary_text = {.r = 117, .g = 117, .b = 117, .a = 255};
-  if (as->renderer) {
-    SDL_SetRenderDrawColor(as->renderer, grey_secondary_text.r, grey_secondary_text.g, grey_secondary_text.b,
-                           grey_secondary_text.a);
-    SDL_RenderClear(as->renderer);
-    SDL_RenderPresent(as->renderer);
-  }
-
-  return SDL_APP_CONTINUE;
-}
-
-SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
-  printf("SDL_AppInit\n");
-  (void) argc;
-  (void) argv;
-
-#ifdef __clang__
-  printf("Successfully compiled with Clang %s (%d.%d.%d)\n", __clang_version__, __clang_major__, __clang_minor__,
-         __clang_patchlevel__);
-#elif defined(_MSC_VER)
-  printf("Successfully compiled with MSVC version %d (%d.%d.%d.%d)\n",
-         _MSC_VER,
-         _MSC_VER / 100,
-         _MSC_VER % 100,
-         _MSC_FULL_VER % 100000,
-         _MSC_BUILD);
-#else
-  printf("No Clang or MSVC detected - using another compiler\n");
-#endif
-#ifdef _MSC_VER
-  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-  _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
-  _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
-  _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
-  _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
-  _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
-  _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
-#endif
-
-  AppState *as = SDL_calloc(1, sizeof(AppState));
-  if (!as) {
-    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to allocate AppState\n");
-    return SDL_APP_FAILURE;
-  }
-  as->last_step_ms = SDL_GetTicks();
-
-  as->window = SDL_CreateWindow("SDL Rain", 1280, 720, 0);
-  if (!as->window) {
-    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create window: %s\n", SDL_GetError());
-    SDL_free(as);
-    return SDL_APP_FAILURE;
-  }
-
-  const bool ttf_init = TTF_Init();
-  if (ttf_init) {
-    const char *sdl_ttf_font_path = SDL_getenv("SDL_TTF_FONT_PATH");
-    if (!sdl_ttf_font_path) {
-      printf("Failed to load the TTF font\n");
-    } else {
-      printf("sdl_ttf_font_path: %s\n", sdl_ttf_font_path);
-      const float font_pt_size = 18;
-      as->fps_font = TTF_OpenFont(sdl_ttf_font_path, font_pt_size);
-      if (!as->fps_font) {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "TTF_OpenFont('%s') failed: %s", sdl_ttf_font_path, SDL_GetError());
+  SDL_Event e;
+  bool quit = false;
+  while (!quit) {
+    if (SDL_PollEvent(&e)) {
+      switch (e.type) {
+        case SDL_EVENT_QUIT:
+          quit = true;
+          break;
+        default: break ;
       }
     }
-  } else {
-    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to init TTF: %s\n", SDL_GetError());
+    const SDL_Color light_green = {139, 195, 74, 255};
+    const SDL_Color primary_text_dark = {33, 33, 33, 255};
+    SDL_Surface *text_surf = TTF_RenderText_Solid(font_latin, "Hello반말Ipsum나LoremČćŠđŽRain", 0, light_green);
+    SDL_Texture *text = SDL_CreateTextureFromSurface(renderer, text_surf);
+
+    SDL_FRect dest = (SDL_FRect){
+      .x = 200,
+      .y = 200,
+      .w = (float) text_surf->w,
+      .h = (float) text_surf->h
+    };
+    SDL_RenderTexture(renderer, text, NULL, &dest);
+
+    SDL_DestroyTexture(text);
+    SDL_DestroySurface(text_surf);
+    SDL_RenderPresent(renderer);
+
+    SDL_SetRenderDrawColor(renderer, primary_text_dark.r, primary_text_dark.g, primary_text_dark.b,
+                           primary_text_dark.a);
+    SDL_RenderClear(renderer);
   }
 
-  as->renderer = SDL_CreateRenderer(as->window, NULL);
-  if (!as->renderer) {
-    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create renderer: %s\n", SDL_GetError());
-    SDL_DestroyWindow(as->window);
-    SDL_free(as);
-    return SDL_APP_FAILURE;
-  }
+  TTF_CloseFont(font_latin);
+  TTF_CloseFont(font_hangul);
+  SDL_DestroyRenderer(renderer);
+  SDL_DestroyWindow(window);
+  TTF_Quit();
+  SDL_Quit();
 
-  *appstate = as;
-
-  return SDL_APP_CONTINUE;
-}
-
-SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
-  AppState *as = appstate;
-  if (!as) {
-    return SDL_APP_FAILURE;
-  }
-
-  if (event) {
-    switch (event->type) {
-      case SDL_EVENT_QUIT:
-      case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
-        as->should_quit = true;
-        return SDL_APP_CONTINUE;
-      case SDL_EVENT_KEY_DOWN:
-        if (event->key.scancode == SDL_SCANCODE_F) {
-          as->button_message_pressed = true;
-          return SDL_APP_CONTINUE;
-        }
-        if (event->key.scancode == SDL_SCANCODE_ESCAPE) {
-          as->should_quit = true;
-          return SDL_APP_CONTINUE;
-        }
-        return SDL_APP_CONTINUE;
-      default:
-        return SDL_APP_CONTINUE;
-    }
-  }
-
-  const Uint64 now_ms = SDL_GetTicks();
-  float dt_ms = (float) (now_ms - as->last_step_ms);
-  if (dt_ms < 0.0f) dt_ms = 0.0f;
-  as->last_step_ms = now_ms;
-  const float inst_fps = (dt_ms > 0.0f) ? (1000.0f / dt_ms) : 0.0f;
-  if (as->fps_smooth <= 0.0f) {
-    as->fps_smooth = inst_fps;
-  } else {
-    const float alpha = 0.1f;
-    as->fps_smooth = alpha * inst_fps + (1.0f - alpha) * as->fps_smooth;
-  }
-
-  if (as->fps_font) {
-    if ((now_ms - as->last_fps_update_ms) >= 250) {
-      fps_pont_prepare_draw(as, now_ms);
-    } else {
-      // now_ms ELSE
-      if (as->fps_texture) {
-        int rw = 0, rh = 0;
-        SDL_GetRenderOutputSize(as->renderer, &rw, &rh);
-        const int pad = 8;
-        const SDL_FRect dst = {
-          .x = (float) (rw - as->fps_tex_w - pad),
-          .y = (float) pad,
-          .w = (float) as->fps_tex_w,
-          .h = (float) as->fps_tex_h
-        };
-        SDL_RenderTexture(as->renderer, as->fps_texture, NULL, &dst);
-      }
-    }
-  }
-
-  return SDL_APP_CONTINUE;
-}
-
-void SDL_AppQuit(void *appstate, SDL_AppResult result) {
-  printf("SDL_AppQuit\n");
-
-  (void) result;
-  if (appstate != NULL) {
-    AppState *as = appstate;
-    if (TTF_WasInit()) {
-      if (as->fps_font) {
-        TTF_CloseFont(as->fps_font);
-        as->fps_font = NULL;
-      }
-      TTF_Quit();
-    }
-    SDL_DestroyRenderer(as->renderer);
-    SDL_DestroyWindow(as->window);
-    SDL_free(as);
-  }
+  return 0;
 }
