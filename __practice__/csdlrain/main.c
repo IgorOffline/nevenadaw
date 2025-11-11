@@ -1,75 +1,111 @@
+#define SDL_MAIN_HANDLED
+
 #include <SDL3/SDL.h>
-#include <SDL3_ttf/SDL_ttf.h>
 #include <bgfx/c99/bgfx.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "platform.h"
 
-#if BX_PLATFORM_WINDOWS == 0
-#error "Windows expected"
-#endif
+const int window_width = 1280;
+const int window_height = 720;
 
-int main() {
-  SDL_Init(SDL_INIT_VIDEO);
-  TTF_Init();
+bool init_window(SDL_Window *window) {
+    bgfx_init_t init;
+    bgfx_init_ctor(&init);
 
-  const int window_width = 1280;
-  const int window_height = 720;
-  SDL_Window *window = SDL_CreateWindow("SDL/BGFX Rain", window_width, window_height, 0);
+    bgfx_platform_data_t pd = {0};
 
-  const float font_size = 52.F;
-  TTF_Font *font_latin = TTF_OpenFont("C:\\igoroffline\\fonts\\IosevkaTerm-Regular.ttf", font_size);
-  TTF_Font *font_hangul = TTF_OpenFont("C:\\igoroffline\\fonts\\NotoSansKR.ttf", font_size);
-  TTF_AddFallbackFont(font_latin, font_hangul);
-
-  bgfx_init_t init;
-  bgfx_init_ctor(&init);
-  init.type = BGFX_RENDERER_TYPE_COUNT;
-
-  bgfx_platform_data_t pd = {0};
 #ifdef SDL_PLATFORM_WIN32
-  void *hwnd = SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
-  pd.nwh = hwnd;
-#else
-  pd.nwh = NULL;
+    void *hwnd = SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+    pd.nwh = hwnd;
 #endif
-  bgfx_set_platform_data(&pd);
 
-  init.resolution.width = (uint32_t) window_width;
-  init.resolution.height = (uint32_t) window_height;
-  init.resolution.reset = BGFX_RESET_VSYNC;
+    pd.ndt = NULL;
+    pd.context = NULL;
+    pd.backBuffer = NULL;
+    pd.backBufferDS = NULL;
 
-  const uint32_t view_width_32 = window_width;
-  const uint32_t view_height_32 = window_height;
+    bgfx_set_platform_data(&pd);
 
-  bgfx_set_view_clear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0xFF212121, 1.0f, 0);
-  bgfx_set_view_rect(0, 0, 0, (uint16_t) view_width_32, (uint16_t) view_height_32);
+    init.resolution.width = (uint32_t) window_width;
+    init.resolution.height = (uint32_t) window_height;
+    init.resolution.reset = BGFX_RESET_VSYNC;
+    init.platformData = pd;
 
-  SDL_Event e;
-  bool quit = false;
-  while (!quit) {
-    while (SDL_PollEvent(&e)) {
-      switch (e.type) {
-        case SDL_EVENT_QUIT:
-          quit = true;
-          break;
-        default:
-          break;
-      }
+    const bgfx_renderer_type_t renderers[] = {
+        BGFX_RENDERER_TYPE_DIRECT3D12,
+        BGFX_RENDERER_TYPE_DIRECT3D11,
+        BGFX_RENDERER_TYPE_VULKAN,
+        BGFX_RENDERER_TYPE_OPENGL,
+    };
+
+    for (int i = 0; i < sizeof(renderers) / sizeof(renderers[0]); i++) {
+        init.type = renderers[i];
+        if (bgfx_init(&init)) {
+            bgfx_set_view_rect(0, 0, 0, (uint16_t) window_width, (uint16_t) window_height);
+
+            return true;
+        }
     }
 
-    bgfx_touch(0);
-    bgfx_frame(false);
-  }
+    fprintf(stderr, "ERROR: Failed to initialize BGFX with any renderer!\n");
 
-  bgfx_shutdown();
-  if (font_latin) TTF_CloseFont(font_latin);
-  if (font_hangul) TTF_CloseFont(font_hangul);
-  SDL_DestroyWindow(window);
-  TTF_Quit();
-  SDL_Quit();
+    return false;
+}
 
-  return EXIT_SUCCESS;
+int main(int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        fprintf(stderr, "SDL initialization failed: %s\n", SDL_GetError());
+        return EXIT_FAILURE;
+    }
+
+    SDL_Window *window = SDL_CreateWindow(
+        "SDL/BGFX Rain",
+        window_width,
+        window_height,
+        SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE
+    );
+
+    if (window == NULL) {
+        fprintf(stderr, "Window creation failed: %s\n", SDL_GetError());
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
+
+    if (!init_window(window)) {
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
+
+    SDL_ShowWindow(window);
+    bool quit = false;
+    SDL_Event event;
+
+    printf("Renderer backend: %s\n", bgfx_get_renderer_name(bgfx_get_renderer_type()));
+
+    while (!quit) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_EVENT_QUIT) {
+                quit = true;
+            }
+        }
+
+        bgfx_touch(0);
+        const SDL_Color primary_text_dark_raw = {33, 33, 33, 255};
+        const uint32_t primary_text_dark = primary_text_dark_raw.r << 24 | primary_text_dark_raw.g << 16 |
+                                           primary_text_dark_raw.b << 8 | primary_text_dark_raw.a;
+        bgfx_set_view_clear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, primary_text_dark, 1.0f, 0);
+        bgfx_frame(false);
+    }
+
+    bgfx_shutdown();
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+
+    return EXIT_SUCCESS;
 }
