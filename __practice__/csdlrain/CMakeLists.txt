@@ -49,21 +49,6 @@ if (WIN32)
             message(WARNING "lld-link not found but was requested")
         endif ()
     endif ()
-else ()
-    if (NOT CMAKE_C_COMPILER)
-        set(CMAKE_C_COMPILER clang)
-    endif ()
-    if (NOT CMAKE_CXX_COMPILER)
-        set(CMAKE_CXX_COMPILER clang++)
-    endif ()
-
-    set(CMAKE_C_STANDARD 17)
-    set(CMAKE_CXX_STANDARD 17)
-    set(CMAKE_C_STANDARD_REQUIRED ON)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-    add_compile_options(-pedantic-errors -Wall -Wextra -Werror -Wpedantic)
-    add_compile_options($<$<CONFIG:Debug>:-g>)
 endif ()
 
 if (WIN32)
@@ -76,7 +61,19 @@ find_package(SDL3 CONFIG REQUIRED)
 find_package(SDL3_ttf CONFIG REQUIRED)
 find_package(bgfx CONFIG REQUIRED)
 
-add_executable(csdlrain main.c)
+add_executable(
+        csdlrain
+        main.c
+        student.h
+        student.c
+        uuid4_windows.h
+        uuid4_windows.c
+)
+
+target_compile_definitions(csdlrain PRIVATE
+        WIN32_LEAN_AND_MEAN
+        $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0A00>
+)
 
 target_include_directories(csdlrain PRIVATE include)
 target_include_directories(csdlrain PRIVATE $<TARGET_PROPERTY:bgfx::bgfx,INTERFACE_INCLUDE_DIRECTORIES>)
@@ -88,7 +85,7 @@ if (TARGET SDL3::SDL3main)
 endif ()
 
 if (WIN32)
-    target_link_libraries(csdlrain PRIVATE Crypt32)
+    target_link_libraries(csdlrain PRIVATE Advapi32 Rpcrt4)
 endif ()
 
 if (CMAKE_TOOLCHAIN_FILE AND EXISTS "${CMAKE_TOOLCHAIN_FILE}")
