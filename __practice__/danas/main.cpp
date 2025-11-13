@@ -57,7 +57,7 @@ void setupBGFXTextData(TTF_Font* font) {
   g_textHeight = static_cast<uint16_t>(surface->h);
 
   g_textTexture = bgfx::createTexture2D(
-      g_textWidth, g_textHeight, false, 1, bgfx::TextureFormat::RGBA8,
+      g_textWidth, g_textHeight, false, 1, bgfx::TextureFormat::BGRA8,
       BGFX_TEXTURE_NONE | BGFX_SAMPLER_POINT,
       bgfx::copy(surface->pixels, g_textWidth * g_textHeight * 4));
 
@@ -243,6 +243,11 @@ int main(const int argc, char* argv[]) {
     bgfx::touch(0);
     bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x212121ff, 1.0f,
                        0);
+
+    if (g_textTexture.idx != UINT16_MAX) {
+      renderTextQuad(200.0f, 150.0f, g_textWidth, g_textHeight);
+    }
+
     bgfx::frame(false);
   }
 
