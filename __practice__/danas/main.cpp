@@ -40,7 +40,7 @@ static const uint16_t s_screenQuadIndices[] = {
 };
 
 void setupBGFXTextData(TTF_Font* font) {
-  if (g_textTexture.idx == UINT16_MAX) {
+  if (g_textTexture.idx != UINT16_MAX) {
     bgfx::destroy(g_textTexture);
   }
 
@@ -153,8 +153,8 @@ int main(const int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  SDL_Window* window = SDL_CreateWindow("SDL/BGFX Example", kWindowWidth,
-                                        kWindowHeight, SDL_WINDOW_RESIZABLE);
+  SDL_Window* window =
+      SDL_CreateWindow("SDL/BGFX Example", kWindowWidth, kWindowHeight, 0);
 
   if (window == nullptr) {
     std::cerr << "Window creation failed: " << SDL_GetError() << std::endl;
@@ -217,8 +217,6 @@ int main(const int argc, char* argv[]) {
 
   bool quit = false;
   SDL_Event event;
-  int current_width = kWindowWidth;
-  int current_height = kWindowHeight;
 
   while (!quit) {
     while (SDL_PollEvent(&event)) {
@@ -228,15 +226,6 @@ int main(const int argc, char* argv[]) {
         if (event.key.scancode == SDL_SCANCODE_F) {
           std::cout << "[F]" << std::endl;
         }
-      } else if (event.type == SDL_EVENT_WINDOW_RESIZED) {
-        current_width = event.window.data1;
-        current_height = event.window.data2;
-
-        bgfx::reset(static_cast<uint32_t>(current_width),
-                    static_cast<uint32_t>(current_height), BGFX_RESET_VSYNC);
-
-        bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(current_width),
-                          static_cast<uint16_t>(current_height));
       }
     }
 
@@ -251,6 +240,15 @@ int main(const int argc, char* argv[]) {
     bgfx::frame(false);
   }
 
+  if (g_textTexture.idx != UINT16_MAX) {
+    bgfx::destroy(g_textTexture);
+  }
+  if (g_textureProgram.idx != UINT16_MAX) {
+    bgfx::destroy(g_textureProgram);
+  }
+  if (g_s_texColor.idx != UINT16_MAX) {
+    bgfx::destroy(g_s_texColor);
+  }
   TTF_CloseFont(latin_font);
   TTF_CloseFont(hangul_font);
   if (TTF_WasInit()) {
