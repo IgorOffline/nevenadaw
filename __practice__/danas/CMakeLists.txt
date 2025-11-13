@@ -73,6 +73,12 @@ if (TARGET SDL3::SDL3main)
     target_link_libraries(danas PRIVATE SDL3::SDL3main)
 endif ()
 
+if (MSVC)
+    target_compile_options(danas PRIVATE
+            $<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus /Zc:preprocessor /permissive->
+    )
+endif ()
+
 if (WIN32)
     target_link_libraries(danas PRIVATE Advapi32 Rpcrt4)
 endif ()

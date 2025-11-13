@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <bgfx/bgfx.h>
+#include <bx/math.h>
 
 #include <iostream>
 #include <string>
@@ -11,6 +12,90 @@ const std::string kLatinFontPath =
     "C:/igoroffline/fonts/IosevkaTerm-Regular.ttf";
 const std::string kHangulFontPath = "C:/igoroffline/fonts/NotoSansKR.ttf";
 constexpr int kFontSize = 24;
+
+bgfx::TextureHandle g_textTexture = BGFX_INVALID_HANDLE;
+bgfx::ProgramHandle g_textureProgram = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle g_s_texColor = BGFX_INVALID_HANDLE;
+bgfx::VertexLayout g_layout;
+uint16_t g_textWidth = 0;
+uint16_t g_textHeight = 0;
+
+struct PosTexCoord0Vertex {
+  float x;
+  float y;
+  float z;
+  float u;
+  float v;
+};
+
+static constexpr PosTexCoord0Vertex s_screenQuadVertices[] = {
+    {-1.0f, -1.0f, 0.0f, 0.0f, 1.0f},
+    {1.0f, -1.0f, 0.0f, 1.0f, 1.0f},
+    {-1.0f, 1.0f, 0.0f, 0.0f, 0.0f},
+    {1.0f, 1.0f, 0.0f, 1.0f, 0.0f},
+};
+
+static const uint16_t s_screenQuadIndices[] = {
+    0, 1, 2, 2, 1, 3,
+};
+
+void setupBGFXTextData(TTF_Font* font) {
+  if (g_textTexture.idx == UINT16_MAX) {
+    bgfx::destroy(g_textTexture);
+  }
+
+  constexpr SDL_Color white = {255, 255, 255, 255};
+  SDL_Surface* surface = TTF_RenderText_Blended(font, "LoremIpsum", 0, white);
+
+  if (!surface) {
+    std::cerr << "TTF_RenderText_Blended failed: " << SDL_GetError()
+              << std::endl;
+    return;
+  }
+
+  g_textWidth = static_cast<uint16_t>(surface->w);
+  g_textHeight = static_cast<uint16_t>(surface->h);
+
+  g_textTexture = bgfx::createTexture2D(
+      g_textWidth, g_textHeight, false, 1, bgfx::TextureFormat::RGBA8,
+      BGFX_TEXTURE_NONE | BGFX_SAMPLER_POINT,
+      bgfx::copy(surface->pixels, g_textWidth * g_textHeight * 4));
+
+  SDL_DestroySurface(surface);
+}
+
+void renderTextQuad(const float x, const float y, const float w,
+                    const float h) {
+  if (g_textTexture.idx == UINT16_MAX || g_textureProgram.idx == UINT16_MAX) {
+    return;
+  }
+
+  float proj[16];
+  bx::mtxOrtho(proj, 0.0f, 1280.0f, 720.0f, 0.0f, 0.0f, 100.0f, 0.0f, false);
+  bgfx::setViewTransform(0, nullptr, proj);
+
+  float textMtx[16];
+  bx::mtxIdentity(textMtx);
+  bx::mtxScale(textMtx, w, h, 1.0f);
+  bx::mtxTranslate(textMtx, x, y, 0.0f);
+  bgfx::setTransform(textMtx);
+  bgfx::setTexture(0, g_s_texColor, g_textTexture);
+
+  bgfx::TransientVertexBuffer tvb{};
+  bgfx::TransientIndexBuffer tib{};
+
+  bgfx::allocTransientBuffers(&tvb, g_layout, 4, &tib, 6);
+
+  std::memcpy(tvb.data, s_screenQuadVertices, 4 * sizeof(PosTexCoord0Vertex));
+  std::memcpy(tib.data, s_screenQuadIndices, 6 * sizeof(uint16_t));
+
+  bgfx::setVertexBuffer(0, &tvb);
+  bgfx::setIndexBuffer(&tib);
+  bgfx::setState(BGFX_STATE_DEFAULT | BGFX_STATE_PT_TRISTRIP |
+                 BGFX_STATE_BLEND_ALPHA);
+
+  bgfx::submit(0, g_textureProgram);
+}
 
 bool initialize_bgfx(SDL_Window* window, const int width, const int height) {
   bgfx::PlatformData pd{};
@@ -68,7 +153,7 @@ int main(const int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  SDL_Window* window = SDL_CreateWindow("SDL/BGFX/TTF Example", kWindowWidth,
+  SDL_Window* window = SDL_CreateWindow("SDL/BGFX Example", kWindowWidth,
                                         kWindowHeight, SDL_WINDOW_RESIZABLE);
 
   if (window == nullptr) {
@@ -141,7 +226,7 @@ int main(const int argc, char* argv[]) {
         quit = true;
       } else if (event.type == SDL_EVENT_KEY_DOWN) {
         if (event.key.scancode == SDL_SCANCODE_F) {
-          std::cout << "[F] Key Pressed" << std::endl;
+          std::cout << "[F]" << std::endl;
         }
       } else if (event.type == SDL_EVENT_WINDOW_RESIZED) {
         current_width = event.window.data1;
