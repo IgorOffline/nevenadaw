@@ -15,6 +15,8 @@ endif ()
 
 project(danas C CXX)
 
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/danas.toml" "${CMAKE_CURRENT_BINARY_DIR}/danas.toml" COPYONLY)
+
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type" FORCE)
 endif ()
@@ -67,6 +69,10 @@ if (NOT WIN32)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
 endif ()
 
+find_package(tomlplusplus CONFIG REQUIRED)
+
 add_executable(danas main.cpp)
 
 target_include_directories(danas PRIVATE include)
+
+target_link_libraries(danas PRIVATE tomlplusplus::tomlplusplus)
