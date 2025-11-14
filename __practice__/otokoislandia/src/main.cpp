@@ -1,5 +1,3 @@
-#include <GLFW/glfw3.h>
-
 #include <iostream>
 #include <toml++/toml.hpp>
 
@@ -17,33 +15,6 @@ int main() {
 
     return EXIT_FAILURE;
   }
-
-  const auto graphics_status = graphics();
-
-  std::cout << "<END>" << graphics_status << std::endl;
-
-  return EXIT_SUCCESS;
-}
-
-int graphics() {
-  if (!glfwInit()) return EXIT_FAILURE;
-
-  GLFWwindow* window = glfwCreateWindow(1280, 720, "otokoislandia", NULL, NULL);
-
-  if (!window) {
-    glfwTerminate();
-    return EXIT_FAILURE;
-  }
-
-  glfwMakeContextCurrent(window);
-
-  while (!glfwWindowShouldClose(window)) {
-    glClear(GL_COLOR_BUFFER_BIT);
-    glfwSwapBuffers(window);
-    glfwPollEvents();
-  }
-
-  glfwTerminate();
 
   return EXIT_SUCCESS;
 }
