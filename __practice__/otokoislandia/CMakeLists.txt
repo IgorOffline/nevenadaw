@@ -18,7 +18,19 @@ add_compile_options(/W4 /WX)
 
 add_executable(otokoislandia_app ${SOURCE_FILES})
 
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glfw)
+
 target_include_directories(
         otokoislandia_app
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/tomlplusplus/include
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/glfw/include
+)
+
+target_link_libraries(otokoislandia_app
+        glfw
+        opengl32
 )

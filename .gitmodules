@@ -1,3 +1,12 @@
 [submodule "__practice__/otokoislandia/external/tomlplusplus"]
 	path = __practice__/otokoislandia/external/tomlplusplus
 	url = https://github.com/marzer/tomlplusplus.git
+[submodule "__practice__/otokoislandia/external/glfw"]
+	path = __practice__/otokoislandia/external/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "__practice__/otokoislandia/external/glm"]
+	path = __practice__/otokoislandia/external/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "__practice__/otokoislandia/external/glew-cmake"]
+	path = __practice__/otokoislandia/external/glew-cmake
+	url = https://github.com/Perlmint/glew-cmake.git
