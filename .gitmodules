@@ -1,0 +1,3 @@
+[submodule "__practice__/otokoislandia/external/tomlplusplus"]
+	path = __practice__/otokoislandia/external/tomlplusplus
+	url = https://github.com/marzer/tomlplusplus.git
