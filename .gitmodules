@@ -1,12 +1,12 @@
 [submodule "external/tomlplusplus"]
 	path = external/tomlplusplus
-	url = https://github.com/marzer/tomlplusplus.git
+	url = https://github.com/IgorOffline/marzer-tomlplusplus.git
 [submodule "external/glfw"]
 	path = external/glfw
-	url = https://github.com/glfw/glfw.git
+	url = https://github.com/IgorOffline/glfw.git
 [submodule "external/glm"]
 	path = external/glm
-	url = https://github.com/g-truc/glm.git
+	url = https://github.com/IgorOffline/g-truc-glm.git
 [submodule "external/glew-cmake"]
 	path = external/glew-cmake
-	url = https://github.com/Perlmint/glew-cmake.git
+	url = https://github.com/IgorOffline/Perlmint-glew-cmake.git
