@@ -1,8 +1,8 @@
 #include <bgfx/bgfx.h>
 #include <bx/bx.h>
-// LATER #include <stb/stb_truetype.h>
 
 #include "../common.h"
+#include "stb_truetype.h"
 
 BX_PRAGMA_DIAGNOSTIC_PUSH()
 BX_PRAGMA_DIAGNOSTIC_IGNORED_MSVC(
