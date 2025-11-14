@@ -54,6 +54,10 @@ find_package(bgfx CONFIG REQUIRED)
 add_executable(
         danas
         main.cpp
+        common/font/font_manager.hpp
+        common/font/font_manager.cpp
+        common/common.h
+        common/cube_atlas.h
 )
 
 target_compile_definitions(danas PRIVATE
@@ -62,6 +66,10 @@ target_compile_definitions(danas PRIVATE
 )
 
 target_include_directories(danas PRIVATE include)
+
+target_include_directories(danas PRIVATE tiny)
+
+target_include_directories(danas PRIVATE stb)
 
 target_link_libraries(danas PRIVATE
         SDL3::SDL3
