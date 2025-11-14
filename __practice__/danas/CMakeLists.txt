@@ -45,15 +45,17 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-
 find_package(SDL3 CONFIG REQUIRED)
 find_package(SDL3_ttf CONFIG REQUIRED)
 find_package(bgfx CONFIG REQUIRED)
 
-
 add_executable(
         danas
         main.cpp
+        lib/common/font/font_manager.hpp
+        lib/common/font/font_manager.cpp
+        lib/common/common.h
+        lib/common/cube_atlas.h
 )
 
 target_compile_definitions(danas PRIVATE
@@ -63,6 +65,10 @@ target_compile_definitions(danas PRIVATE
 
 target_include_directories(danas PRIVATE include)
 
+target_include_directories(danas PRIVATE lib/tiny)
+
+target_include_directories(danas PRIVATE lib/stb)
+
 target_link_libraries(danas PRIVATE
         SDL3::SDL3
         SDL3_ttf::SDL3_ttf
@@ -71,6 +77,12 @@ target_link_libraries(danas PRIVATE
 
 if (TARGET SDL3::SDL3main)
     target_link_libraries(danas PRIVATE SDL3::SDL3main)
+endif ()
+
+if (MSVC)
+    target_compile_options(danas PRIVATE
+            $<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus /Zc:preprocessor /permissive->
+    )
 endif ()
 
 if (WIN32)
