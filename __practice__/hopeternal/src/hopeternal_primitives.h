@@ -23,14 +23,13 @@ inline constexpr hopeternal_int HOPETERNAL_GRAPHICS_WINDOW_HEIGHT = 720;
 inline constexpr hopeternal_float HOPETERNAL_GRAPHICS_COLOR_ALPHA = 1.0F;
 inline constexpr hopeternal_float HOPETERNAL_GRAPHICS_CLEAR_COLOR = 0.1294F;
 
-inline constexpr const char* hopeternal_window_title = "hopeternal 0.1.0";
-inline constexpr const char* hopeternal_start_message = "<START>";
-inline constexpr const char* hopeternal_main_toml_location =
+inline constexpr auto hopeternal_window_title = "hopeternal 0.1.0";
+inline constexpr auto hopeternal_start_message = "<START>";
+inline constexpr auto hopeternal_main_toml_location =
     R"(C:\igoroffline\nevenadaw\__practice__\hopeternal\config\main.toml)";
-inline constexpr const char* hopeternal_parsing_error_message =
-    "Parsing failed:";
-inline constexpr const char* hopeternal_graphics_end_message = "graphics: ";
-inline constexpr const char* hopeternal_post_graphics_end_message = " <END>";
-inline constexpr const char* hopeternal_key_f_message = "[F]";
+inline constexpr auto hopeternal_parsing_error_message = "Parsing failed:";
+inline constexpr auto hopeternal_graphics_end_message = "graphics: ";
+inline constexpr auto hopeternal_post_graphics_end_message = " <END>";
+inline constexpr auto hopeternal_key_f_message = "[F]";
 
 #endif  // HOPETERNAL_HOPETERNAL_PRIMITIVES_H
