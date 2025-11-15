@@ -28,5 +28,6 @@ inline constexpr const char* hopeternal_parsing_error_message =
     "Parsing failed:";
 inline constexpr const char* hopeternal_graphics_end_message = "graphics: ";
 inline constexpr const char* hopeternal_post_graphics_end_message = " <END>";
+inline constexpr const char* hopeternal_key_f_message = "[F]";
 
 #endif  // HOPETERNAL_HOPETERNAL_PRIMITIVES_H
