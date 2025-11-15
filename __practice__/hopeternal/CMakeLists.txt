@@ -14,7 +14,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS False)
 
 set(SOURCE_FILES
-        src/main.cpp
+        src/hopeternal_primitives.h
+        src/hopeternal_main.cpp
 )
 
 add_executable(hopeternal_app ${SOURCE_FILES})
