@@ -1,10 +1,13 @@
 #ifndef HOPETERNAL_HOPETERNAL_PRIMITIVES_H
 #define HOPETERNAL_HOPETERNAL_PRIMITIVES_H
 
+#include <iostream>
+
 using hopeternal_int = std::int32_t;
 using hopeternal_float = float;
 using hopeternal_double = double;
 inline std::ostream& hopeternal_cout = std::cout;
+inline std::ostream& hopeternal_cerr = std::cerr;
 using hopeternal_endl_manipulator = std::ostream& (*)(std::ostream&);
 constexpr hopeternal_endl_manipulator hopeternal_endl = std::endl;
 

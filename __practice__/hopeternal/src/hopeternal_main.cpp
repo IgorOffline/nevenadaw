@@ -1,11 +1,10 @@
 #include <GLFW/glfw3.h>
 
-#include <iostream>
 #include <toml++/toml.hpp>
 
 #include "hopeternal_primitives.h"
 
-hopeternal_int glfw_graphics();
+static hopeternal_int glfw_graphics();
 
 static void key_callback([[maybe_unused]] GLFWwindow* window,
                          hopeternal_int key,
@@ -13,17 +12,10 @@ static void key_callback([[maybe_unused]] GLFWwindow* window,
                          hopeternal_int action,
                          [[maybe_unused]] hopeternal_int mods);
 
+static hopeternal_int process_config();
+
 hopeternal_int main() {
   hopeternal_cout << hopeternal_start_message << hopeternal_endl;
-
-  try {
-    const toml::table tbl = toml::parse_file(hopeternal_main_toml_location);
-    hopeternal_cout << tbl << hopeternal_endl;
-  } catch (const toml::parse_error& err) {
-    std::cerr << hopeternal_parsing_error_message << hopeternal_endl << err
-              << hopeternal_endl;
-    return HOPETERNAL_EXIT_FAILURE;
-  }
 
   const hopeternal_int graphics = glfw_graphics();
 
@@ -33,7 +25,7 @@ hopeternal_int main() {
   return HOPETERNAL_EXIT_SUCCESS;
 }
 
-hopeternal_int glfw_graphics() {
+static hopeternal_int glfw_graphics() {
   if (!glfwInit()) return HOPETERNAL_EXIT_FAILURE;
 
   glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -99,7 +91,21 @@ static void key_callback([[maybe_unused]] GLFWwindow* window,
                          [[maybe_unused]] hopeternal_int mods) {
   if (action == GLFW_PRESS) {
     if (key == GLFW_KEY_F) {
+      process_config();
+
       hopeternal_cout << hopeternal_key_f_message << hopeternal_endl;
     }
   }
+}
+
+static hopeternal_int process_config() {
+  try {
+    const toml::table tbl = toml::parse_file(hopeternal_main_toml_location);
+    hopeternal_cout << tbl << hopeternal_endl;
+  } catch (const toml::parse_error& err) {
+    hopeternal_cerr << hopeternal_parsing_error_message << hopeternal_endl
+                    << err << hopeternal_endl;
+    return HOPETERNAL_EXIT_FAILURE;
+  }
+  return HOPETERNAL_EXIT_SUCCESS;
 }
