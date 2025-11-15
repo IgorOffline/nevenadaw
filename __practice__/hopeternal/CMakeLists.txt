@@ -17,9 +17,13 @@ set(SOURCE_FILES
         src/main.cpp
 )
 
-add_compile_options(/W4 /WX)
-
 add_executable(hopeternal_app ${SOURCE_FILES})
+
+if (MSVC)
+    target_compile_options(hopeternal_app PRIVATE /W4)
+else ()
+    target_compile_options(hopeternal_app PRIVATE -Wall -Wextra)
+endif ()
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)

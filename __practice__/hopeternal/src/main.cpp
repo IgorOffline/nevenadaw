@@ -5,6 +5,9 @@
 
 int glfw_graphics();
 
+static void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/,
+                         int action, int /*mods*/);
+
 int main() {
   std::cout << "<START>" << std::endl;
 
@@ -39,6 +42,8 @@ int glfw_graphics() {
 
   glfwMakeContextCurrent(window);
 
+  glfwSetKeyCallback(window, key_callback);
+
   glClearColor(0.1294f, 0.1294f, 0.1294f, 1.0f);
 
   while (!glfwWindowShouldClose(window)) {
@@ -50,4 +55,13 @@ int glfw_graphics() {
   glfwTerminate();
 
   return EXIT_SUCCESS;
+}
+
+static void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/,
+                         int action, int /*mods*/) {
+  if (action == GLFW_PRESS) {
+    if (key == GLFW_KEY_F) {
+      std::cout << "[F]" << std::endl;
+    }
+  }
 }
