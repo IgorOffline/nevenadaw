@@ -1,10 +1,13 @@
 #ifndef HOPETERNAL_HOPETERNAL_PRIMITIVES_H
 #define HOPETERNAL_HOPETERNAL_PRIMITIVES_H
 
+#include <iostream>
+
 using hopeternal_int = std::int32_t;
 using hopeternal_float = float;
 using hopeternal_double = double;
 inline std::ostream& hopeternal_cout = std::cout;
+inline std::ostream& hopeternal_cerr = std::cerr;
 using hopeternal_endl_manipulator = std::ostream& (*)(std::ostream&);
 constexpr hopeternal_endl_manipulator hopeternal_endl = std::endl;
 
@@ -20,14 +23,26 @@ inline constexpr hopeternal_int HOPETERNAL_GRAPHICS_WINDOW_HEIGHT = 720;
 inline constexpr hopeternal_float HOPETERNAL_GRAPHICS_COLOR_ALPHA = 1.0F;
 inline constexpr hopeternal_float HOPETERNAL_GRAPHICS_CLEAR_COLOR = 0.1294F;
 
-inline constexpr const char* hopeternal_window_title = "hopeternal 0.1.0";
-inline constexpr const char* hopeternal_start_message = "<START>";
-inline constexpr const char* hopeternal_main_toml_location =
+inline constexpr auto hopeternal_window_title = "hopeternal 0.1.0";
+inline constexpr auto hopeternal_start_message = "<START>";
+inline constexpr auto hopeternal_main_toml_location =
     R"(C:\igoroffline\nevenadaw\__practice__\hopeternal\config\main.toml)";
-inline constexpr const char* hopeternal_parsing_error_message =
-    "Parsing failed:";
-inline constexpr const char* hopeternal_graphics_end_message = "graphics: ";
-inline constexpr const char* hopeternal_post_graphics_end_message = " <END>";
-inline constexpr const char* hopeternal_key_f_message = "[F]";
+inline constexpr auto hopeternal_parsing_error_message = "Parsing failed:";
+inline constexpr auto hopeternal_graphics_end_message = "graphics: ";
+inline constexpr auto hopeternal_post_graphics_end_message = " <END>";
+inline constexpr auto hopeternal_key_f_message = "[F]";
+
+struct hopeternal_rectangle {
+  hopeternal_int x;
+  hopeternal_int y;
+  hopeternal_int width;
+  hopeternal_int height;
+
+  constexpr hopeternal_rectangle(const hopeternal_int x_val,
+                                 const hopeternal_int y_val,
+                                 const hopeternal_int w_val,
+                                 const hopeternal_int h_val) noexcept
+      : x(x_val), y(y_val), width(w_val), height(h_val) {}
+};
 
 #endif  // HOPETERNAL_HOPETERNAL_PRIMITIVES_H

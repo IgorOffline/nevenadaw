@@ -1,3 +1,7 @@
 [root]
-Lorem1 = "Ipsum1"
-Lorem2 = "Ipsum2"
+id = "f0925e1a-04e4-4aec-b6ac-e9563f01049b"
+[root.rectangle]
+x = "200"
+y = "150"
+w = "50"
+h = "50"
