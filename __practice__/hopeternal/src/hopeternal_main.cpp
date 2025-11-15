@@ -99,7 +99,7 @@ static void key_callback([[maybe_unused]] GLFWwindow* window,
                          [[maybe_unused]] hopeternal_int mods) {
   if (action == GLFW_PRESS) {
     if (key == GLFW_KEY_F) {
-      hopeternal_cout << "[F]" << hopeternal_endl;
+      hopeternal_cout << hopeternal_key_f_message << hopeternal_endl;
     }
   }
 }
