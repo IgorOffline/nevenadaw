@@ -10,15 +10,14 @@ int main() {
 
   try {
     const toml::table tbl = toml::parse_file(
-        R"(C:\igoroffline\nevenadaw\__archive__\otokoislandia\config\main.toml)");
+        R"(C:\igoroffline\nevenadaw\__practice__\hopeternal\config\main.toml)");
     std::cout << tbl << std::endl;
   } catch (const toml::parse_error& err) {
     std::cerr << "Parsing failed:" << std::endl << err << std::endl;
-
     return EXIT_FAILURE;
   }
 
-  int graphics = glfw_graphics();
+  const int graphics = glfw_graphics();
 
   std::cout << "graphics: " << graphics << " <END>" << std::endl;
 
@@ -28,7 +27,10 @@ int main() {
 int glfw_graphics() {
   if (!glfwInit()) return EXIT_FAILURE;
 
-  GLFWwindow* window = glfwCreateWindow(1280, 720, "hopeternal", NULL, NULL);
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+  GLFWwindow* window =
+      glfwCreateWindow(1280, 720, "hopeternal 0.1.0", NULL, NULL);
 
   if (!window) {
     glfwTerminate();
@@ -36,6 +38,8 @@ int glfw_graphics() {
   }
 
   glfwMakeContextCurrent(window);
+
+  glClearColor(0.1294f, 0.1294f, 0.1294f, 1.0f);
 
   while (!glfwWindowShouldClose(window)) {
     glClear(GL_COLOR_BUFFER_BIT);
