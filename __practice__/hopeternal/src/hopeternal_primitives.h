@@ -32,4 +32,17 @@ inline constexpr auto hopeternal_graphics_end_message = "graphics: ";
 inline constexpr auto hopeternal_post_graphics_end_message = " <END>";
 inline constexpr auto hopeternal_key_f_message = "[F]";
 
+struct hopeternal_rectangle {
+  hopeternal_int x;
+  hopeternal_int y;
+  hopeternal_int width;
+  hopeternal_int height;
+
+  constexpr hopeternal_rectangle(const hopeternal_int x_val,
+                                 const hopeternal_int y_val,
+                                 const hopeternal_int w_val,
+                                 const hopeternal_int h_val) noexcept
+      : x(x_val), y(y_val), width(w_val), height(h_val) {}
+};
+
 #endif  // HOPETERNAL_HOPETERNAL_PRIMITIVES_H
