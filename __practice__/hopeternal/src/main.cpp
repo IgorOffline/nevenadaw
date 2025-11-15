@@ -5,8 +5,8 @@
 
 int glfw_graphics();
 
-static void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/,
-                         int action, int /*mods*/);
+static void key_callback(GLFWwindow* window, int key, int scancode, int action,
+                         int mods);
 
 int main() {
   std::cout << "<START>" << std::endl;
@@ -57,8 +57,9 @@ int glfw_graphics() {
   return EXIT_SUCCESS;
 }
 
-static void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/,
-                         int action, int /*mods*/) {
+static void key_callback([[maybe_unused]] GLFWwindow* window, int key,
+                         [[maybe_unused]] int scancode, int action,
+                         [[maybe_unused]] int mods) {
   if (action == GLFW_PRESS) {
     if (key == GLFW_KEY_F) {
       std::cout << "[F]" << std::endl;
