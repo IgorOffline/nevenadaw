@@ -14,58 +14,65 @@ static void key_callback([[maybe_unused]] GLFWwindow* window,
                          [[maybe_unused]] hopeternal_int mods);
 
 hopeternal_int main() {
-  hopeternal_cout << "<START>" << hopeternal_endl;
+  hopeternal_cout << hopeternal_start_message << hopeternal_endl;
 
   try {
-    const toml::table tbl = toml::parse_file(
-        R"(C:\igoroffline\nevenadaw\__practice__\hopeternal\config\main.toml)");
+    const toml::table tbl = toml::parse_file(hopeternal_main_toml_location);
     hopeternal_cout << tbl << hopeternal_endl;
   } catch (const toml::parse_error& err) {
-    std::cerr << "Parsing failed:" << hopeternal_endl << err << hopeternal_endl;
-    return EXIT_FAILURE;
+    std::cerr << hopeternal_parsing_error_message << hopeternal_endl << err
+              << hopeternal_endl;
+    return HOPETERNAL_EXIT_FAILURE;
   }
 
   const hopeternal_int graphics = glfw_graphics();
 
-  hopeternal_cout << "graphics: " << graphics << " <END>" << hopeternal_endl;
+  hopeternal_cout << hopeternal_graphics_end_message << graphics
+                  << hopeternal_post_graphics_end_message << hopeternal_endl;
 
-  return EXIT_SUCCESS;
+  return HOPETERNAL_EXIT_SUCCESS;
 }
 
 hopeternal_int glfw_graphics() {
-  if (!glfwInit()) return EXIT_FAILURE;
+  if (!glfwInit()) return HOPETERNAL_EXIT_FAILURE;
 
   glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-  constexpr hopeternal_int WINDOW_WIDTH = 1280;
-  constexpr hopeternal_int WINDOW_HEIGHT = 720;
+  constexpr hopeternal_int WINDOW_WIDTH = HOPETERNAL_GRAPHICS_WINDOW_WIDTH;
+  constexpr hopeternal_int WINDOW_HEIGHT = HOPETERNAL_GRAPHICS_WINDOW_HEIGHT;
 
-  GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT,
-                                        "hopeternal 0.1.0", NULL, NULL);
+  GLFWwindow* window = glfwCreateWindow(
+      WINDOW_WIDTH, WINDOW_HEIGHT, hopeternal_window_title, nullptr, nullptr);
 
   if (!window) {
     glfwTerminate();
-    return EXIT_FAILURE;
+    return HOPETERNAL_EXIT_FAILURE;
   }
 
   glfwMakeContextCurrent(window);
 
   glfwSetKeyCallback(window, key_callback);
 
-  glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+  glViewport(HOPETERNAL_GRAPHICS_ZERO, HOPETERNAL_GRAPHICS_ZERO, WINDOW_WIDTH,
+             WINDOW_HEIGHT);
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
 
-  glOrtho(0.0, WINDOW_WIDTH, WINDOW_HEIGHT, 0.0, -1.0, 1.0);
+  glOrtho(HOPETERNAL_GRAPHICS_ZERO_D, WINDOW_WIDTH, WINDOW_HEIGHT,
+          HOPETERNAL_GRAPHICS_ZERO_D, HOPETERNAL_GRAPHICS_Z_NEAR,
+          HOPETERNAL_GRAPHICS_Z_FAR);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
-  glClearColor(0.1294f, 0.1294f, 0.1294f, 1.0f);
+  glClearColor(HOPETERNAL_GRAPHICS_CLEAR_COLOR, HOPETERNAL_GRAPHICS_CLEAR_COLOR,
+               HOPETERNAL_GRAPHICS_CLEAR_COLOR,
+               HOPETERNAL_GRAPHICS_COLOR_ALPHA);
 
   while (!glfwWindowShouldClose(window)) {
     glClear(GL_COLOR_BUFFER_BIT);
-    glColor3f(0.0f, 0.0f, 1.0f);
+    glColor3f(HOPETERNAL_GRAPHICS_ZERO_F, HOPETERNAL_GRAPHICS_ZERO_F,
+              HOPETERNAL_GRAPHICS_COLOR_ALPHA);
     constexpr hopeternal_int x = 200;
     constexpr hopeternal_int y = 150;
     constexpr hopeternal_int w = 50;
@@ -82,7 +89,7 @@ hopeternal_int glfw_graphics() {
 
   glfwTerminate();
 
-  return EXIT_SUCCESS;
+  return HOPETERNAL_EXIT_SUCCESS;
 }
 
 static void key_callback([[maybe_unused]] GLFWwindow* window,
