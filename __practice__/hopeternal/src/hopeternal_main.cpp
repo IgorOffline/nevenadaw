@@ -16,7 +16,12 @@ static hopeternal_int process_config();
 
 static hopeternal_int parse_toml_str_to_int(const std::string& input);
 
-hopeternal_rectangle rect{0, 0, 50, 50};
+hopeternal_float lastFrameTime = 0.F;
+hopeternal_float deltaTime = 0.F;
+
+hopeternal_rectangle rect{0, 0, 1, 1};
+hopeternal_float rect_x_pos_f = 0.0F;
+hopeternal_float rect_y_pos_f = 0.0F;
 
 hopeternal_int main() {
   hopeternal_cout << hopeternal_start_message << hopeternal_endl;
@@ -65,7 +70,26 @@ static hopeternal_int glfw_graphics() {
                HOPETERNAL_GRAPHICS_CLEAR_COLOR,
                HOPETERNAL_GRAPHICS_COLOR_ALPHA);
 
+  rect_x_pos_f = static_cast<hopeternal_float>(rect.x);
+  rect_y_pos_f = static_cast<hopeternal_float>(rect.y);
+
+  lastFrameTime = static_cast<float>(glfwGetTime());
   while (!glfwWindowShouldClose(window)) {
+    const auto currentFrameTime = static_cast<float>(glfwGetTime());
+    deltaTime = currentFrameTime - lastFrameTime;
+    lastFrameTime = currentFrameTime;
+
+    //
+    // INPUT, UPDATE
+    //
+    constexpr hopeternal_float RECT_SPEED = 420.F;
+    rect_x_pos_f += deltaTime * RECT_SPEED;
+    rect.x = static_cast<hopeternal_int>(rect_x_pos_f);
+    rect.y = static_cast<hopeternal_int>(rect_y_pos_f);
+
+    //
+    // RENDER
+    //
     glClear(GL_COLOR_BUFFER_BIT);
     glColor3f(HOPETERNAL_GRAPHICS_ZERO_F, HOPETERNAL_GRAPHICS_ZERO_F,
               HOPETERNAL_GRAPHICS_COLOR_ALPHA);
@@ -112,6 +136,10 @@ static hopeternal_int process_config() {
         tbl["root"]["rectangle"]["h"].as_string()->get();
     const auto new_height = parse_toml_str_to_int(new_height_raw);
     rect = hopeternal_rectangle{new_x, new_y, new_width, new_height};
+
+    rect_x_pos_f = static_cast<hopeternal_float>(rect.x);
+    rect_y_pos_f = static_cast<hopeternal_float>(rect.y);
+
   } catch (const toml::parse_error& err) {
     hopeternal_cerr << hopeternal_parsing_error_message << hopeternal_endl
                     << err << hopeternal_endl;
@@ -123,10 +151,10 @@ static hopeternal_int process_config() {
 static hopeternal_int parse_toml_str_to_int(const std::string& input) {
   try {
     return std::stoi(input);
-  } catch (const std::invalid_argument& e) {
+  } catch ([[maybe_unused]] const std::invalid_argument& e) {
     hopeternal_cerr << "Error: Invalid argument (not a number)."
                     << hopeternal_endl;
-  } catch (const std::out_of_range& e) {
+  } catch ([[maybe_unused]] const std::out_of_range& e) {
     hopeternal_cerr << "Error: Value out of range for int32."
                     << hopeternal_endl;
   }
