@@ -63,12 +63,14 @@ fn chu_update(
     let delta = 12.0 * time.delta_secs();
 
     for (mut transform, speed) in &mut query {
-        let distance_to_move = speed.0 * delta;
+        if transform.translation.y > 9999.9 {
+            let distance_to_move = speed.0 * delta;
 
-        transform.translation.x += distance_to_move;
+            transform.translation.x += distance_to_move;
 
-        if transform.translation.x > 920.0 {
-            transform.translation.x = -920.0;
+            if transform.translation.x > 920.0 {
+                transform.translation.x = -920.0;
+            }
         }
     }
 }
