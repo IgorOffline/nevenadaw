@@ -32,18 +32,27 @@ fn main() {
 
 fn setup(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    asset_server: Res<AssetServer>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     commands.spawn(Camera2d);
 
-    commands.spawn((
-        Mesh2d(meshes.add(Rectangle::default())),
-        MeshMaterial2d(materials.add(GREEN_COLOR)),
-        Transform::default().with_scale(Vec3::splat(128.)),
-        MovingObject,
-        Speed(100.0),
-    ));
+    let texture: Handle<Image> = asset_server.load("chess.png");
+    let layout = TextureAtlasLayout::from_grid(UVec2::splat(480), 6, 2, None, None);
+    let texture_atlas_layout = texture_atlas_layouts.add(layout);
+
+    let sprite_raw = Sprite::from_atlas_image(
+        texture,
+        TextureAtlas {
+            layout: texture_atlas_layout,
+            index: 4,
+        },
+    );
+    let sprite = Sprite {
+        custom_size: Some(Vec2::new(240.0, 240.0)),
+        ..sprite_raw
+    };
+    commands.spawn(sprite);
 }
 
 fn chu_update(
