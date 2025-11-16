@@ -52,7 +52,8 @@ fn setup(
         custom_size: Some(Vec2::new(240.0, 240.0)),
         ..sprite_raw
     };
-    commands.spawn(sprite);
+
+    commands.spawn((sprite, MovingObject, Speed(100.0)));
 }
 
 fn chu_update(
