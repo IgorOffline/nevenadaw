@@ -1,0 +1,8 @@
+.idea
+.vscode
+cmake-build-debug
+target
+build
+old
+*.dll
+*.obj
