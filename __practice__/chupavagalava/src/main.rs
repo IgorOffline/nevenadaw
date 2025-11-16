@@ -3,6 +3,7 @@ use bevy::prelude::*;
 
 pub const DARK_COLOR: Color = Color::srgb_u8(33, 33, 33);
 pub const GREEN_COLOR: Color = Color::srgb_u8(139, 195, 74);
+pub const INDIGO_COLOR: Color = Color::srgb_u8(83, 109, 254);
 
 #[derive(Component)]
 struct MovingObject;
@@ -54,6 +55,25 @@ fn setup(
     };
 
     commands.spawn((sprite, MovingObject, Speed(100.0)));
+
+    commands
+        .spawn((Node {
+            position_type: PositionType::Absolute,
+            top: px(20.0),
+            left: px(80.0),
+            justify_content: JustifyContent::Center,
+            overflow: Overflow::visible(),
+            max_width: Val::Px(0.0),
+            ..default()
+        },))
+        .with_children(|builder| {
+            builder.spawn((
+                Text::new("Lorem\nIpsum"),
+                TextFont::from_font_size(16.0),
+                TextLayout::new_with_justify(Justify::Center).with_no_wrap(),
+                TextColor::from(INDIGO_COLOR),
+            ));
+        });
 }
 
 fn chu_update(
