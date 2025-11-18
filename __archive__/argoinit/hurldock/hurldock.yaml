@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  name: hurl-dock-a142d5e8
+spec:
+  entrypoint: hurl-test
+  templates:
+  - name: hurl-test
+    inputs:
+      artifacts:
+      - name: hurl-test-file
+        path: /hurly.hurl
+        raw:
+          data: |
+            GET https://jsonplaceholder.typicode.com/todos/1
+            HTTP/2 200
+            [Asserts]
+            jsonpath "$.userId" == 1
+            jsonpath "$.id" == 1
+            jsonpath "$.title" == "delectus aut autem"
+            jsonpath "$.completed" == false
+    container:
+      image: your-registry/hurl-runner:latest
+      command: [sh, -c]
+      args:
+      - |
+        set -e
+        tar -xzf /tmp/hurl-7.0.0-x86_64-unknown-linux-gnu.tar.gz -C /usr/local/ --strip-components=1
+        hurl --version
+        hurl --verbose --test /hurly.hurl
+        echo "(+) Hurl test completed successfully"

@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  name: prebuilt-hope-1257f83f
+spec:
+  serviceAccountName: argo-workflow
+  entrypoint: prebuilt-hope
+  templates:
+  - name: prebuilt-hope
+    inputs:
+      artifacts:
+      - name: prebuilt-hope-file
+        path: /hurly.hurl
+        raw:
+          data: |
+            GET https://jsonplaceholder.typicode.com/todos/1
+            HTTP/2 200
+            [Asserts]
+            jsonpath "$.userId" == 1
+            jsonpath "$.id" == 1
+            jsonpath "$.title" == "delectus aut autem"
+            jsonpath "$.completed" == false
+    container:
+      image: ghcr.io/orange-opensource/hurl:7.0.0
+      command: [sh, -c]
+      args:
+      - |
+        hurl --version
+        hurl --test /hurly.hurl
