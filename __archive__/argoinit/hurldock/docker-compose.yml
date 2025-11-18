@@ -1,0 +1,10 @@
+services:
+  hurl-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hurl-test-1d8099e5
+    network_mode: bridge
+    dns:
+      - 9.9.9.9
+    restart: no
