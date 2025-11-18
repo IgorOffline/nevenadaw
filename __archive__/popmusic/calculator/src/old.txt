@@ -1,0 +1,48 @@
+
+ž
+
+fn main() {
+    let result = calculator1::TermParser::new().parse("(((42)))");
+    println!("Parse result: {:?}", result);
+}
+
+#[test]
+fn test_calculator1_pt1() {
+    assert!(calculator1::TermParser::new().parse("22").is_ok());
+}
+
+#[test]
+fn test_calculator1_pt2() {
+    assert!(calculator1::TermParser::new().parse("(22)").is_ok());
+}
+
+#[test]
+fn test_calculator1_pt3() {
+    assert!(calculator1::TermParser::new().parse("((((22))))").is_ok());
+}
+
+#[test]
+fn test_calculator1_pt4() {
+    assert!(calculator1::TermParser::new().parse("((22)").is_err());
+}
+
+
+ž
+
+mod calculator2;
+
+fn main() {
+    let result = calculator2::TermParser::new().parse("(((42)))");
+    println!("Parse result: {:?}", result);
+}
+
+#[test]
+fn calculator2() {
+    assert!(calculator2::TermParser::new().parse("22").is_ok());
+    assert!(calculator2::TermParser::new().parse("(22)").is_ok());
+    assert!(calculator2::TermParser::new().parse("((((22))))").is_ok());
+    assert!(calculator2::TermParser::new().parse("((22)").is_err());
+}
+
+
+ž
