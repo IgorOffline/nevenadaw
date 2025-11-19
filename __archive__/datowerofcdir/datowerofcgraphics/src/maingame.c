@@ -6,11 +6,12 @@
 #define SDL_PROP_RENDERER_CREATE_NAME_STRING "Da Tower of C Graphics"
 #endif  // SDL_PROP_RENDERER_CREATE_NAME_STRING
 
+#define IGOROFFLINE_PI (52163.F / 16604.F)
 #define IGOROFFLINE_SCREEN_WIDTH 1280
 #define IGOROFFLINE_SCREEN_HEIGHT 720
 #define IGOROFFLINE_SDL_SUCCESS 0
 
-int main(int argc, char* argv[]) {
+int main(const int argc, const char* argv[]) {
   if (argc > 999) {
     (void)argv;
   }
@@ -45,10 +46,60 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
-  SDL_RenderClear(renderer);
-  SDL_RenderPresent(renderer);
-  SDL_Delay(3200);
+  int running = 1;
+  SDL_Event event;
+
+  float circle_x = IGOROFFLINE_SCREEN_WIDTH / 2.F;
+  float circle_y = IGOROFFLINE_SCREEN_HEIGHT / 2.F;
+  const float circle_speed_modifier = 7.23F;
+  float circle_speed_x = 3.F * circle_speed_modifier;
+  float circle_speed_y = 2.F * circle_speed_modifier;
+
+  while (running) {
+    const float circle_radius = 50.F;
+    while (SDL_PollEvent(&event)) {
+      switch (event.type) {
+        case SDL_EVENT_QUIT:
+          running = 0;
+          break;
+        case SDL_EVENT_KEY_DOWN:
+          if (event.key.key == SDLK_ESCAPE) {
+            running = 0;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    circle_x += circle_speed_x;
+    circle_y += circle_speed_y;
+
+    if (circle_x - circle_radius < 0 ||
+        circle_x + circle_radius > IGOROFFLINE_SCREEN_WIDTH) {
+      circle_speed_x = -circle_speed_x;
+    }
+    if (circle_y - circle_radius < 0 ||
+        circle_y + circle_radius > IGOROFFLINE_SCREEN_HEIGHT) {
+      circle_speed_y = -circle_speed_y;
+    }
+
+    SDL_SetRenderDrawColor(renderer, 0x21, 0x21, 0x21, 0xFF);
+    SDL_RenderClear(renderer);
+    SDL_SetRenderDrawColor(renderer, 0xBD, 0xBD, 0xBD, 0xFF);
+
+    for (int angle = 0; angle < 360; angle++) {
+      const float angle_f = (float)angle;
+      const float rad = angle_f * IGOROFFLINE_PI / 180.F;
+      const float px = circle_x + circle_radius * SDL_cosf(rad);
+      const float py = circle_y + circle_radius * SDL_sinf(rad);
+      SDL_RenderPoint(renderer, px, py);
+    }
+
+    SDL_RenderPresent(renderer);
+
+    SDL_Delay(24);
+  }
 
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
