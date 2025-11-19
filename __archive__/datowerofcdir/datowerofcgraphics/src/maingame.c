@@ -34,6 +34,9 @@ int main(int argc, char* argv[]) {
   }
 
   const SDL_PropertiesID props = SDL_CreateProperties();
+  SDL_SetPointerProperty(props, SDL_PROP_RENDERER_CREATE_WINDOW_POINTER,
+                         window);
+
   renderer = SDL_CreateRendererWithProperties(props);
   if (renderer == NULL) {
     SDL_Log("ERR::100102 %s\n", SDL_GetError());
@@ -45,7 +48,7 @@ int main(int argc, char* argv[]) {
   SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
   SDL_RenderClear(renderer);
   SDL_RenderPresent(renderer);
-  SDL_Delay(5000);
+  SDL_Delay(3200);
 
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
