@@ -10,3 +10,15 @@
 [submodule "external/glew-cmake"]
 	path = external/glew-cmake
 	url = https://github.com/IgorOffline/Perlmint-glew-cmake.git
+[submodule "external/libsdl-org-SDL"]
+	path = external/libsdl-org-SDL
+	url = https://github.com/IgorOffline/libsdl-org-SDL.git
+[submodule "external/libsdl-org-SDL_mixer"]
+	path = external/libsdl-org-SDL_mixer
+	url = https://github.com/IgorOffline/libsdl-org-SDL_mixer.git
+[submodule "external/libsdl-org-SDL_ttf"]
+	path = external/libsdl-org-SDL_ttf
+	url = https://github.com/IgorOffline/libsdl-org-SDL_ttf.git
+[submodule "external/libsdl-org-SDL_image"]
+	path = external/libsdl-org-SDL_image
+	url = https://github.com/IgorOffline/libsdl-org-SDL_image.git
