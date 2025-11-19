@@ -10,7 +10,7 @@
 #define IGOROFFLINE_SCREEN_HEIGHT 720
 #define IGOROFFLINE_SDL_SUCCESS 0
 
-int main(int argc, char* argv[]) {
+int main(const int argc, const char* argv[]) {
   if (argc > 999) {
     (void)argv;
   }
@@ -50,8 +50,9 @@ int main(int argc, char* argv[]) {
 
   float circle_x = IGOROFFLINE_SCREEN_WIDTH / 2.0f;
   float circle_y = IGOROFFLINE_SCREEN_HEIGHT / 2.0f;
-  float circle_speed_x = 3.0f;
-  float circle_speed_y = 2.0f;
+  const float circle_speed_modifier = 6.45f;
+  float circle_speed_x = 3.0f * circle_speed_modifier;
+  float circle_speed_y = 2.0f * circle_speed_modifier;
 
   while (running) {
     const float circle_radius = 50.0f;
