@@ -6,10 +6,30 @@
 #define SDL_PROP_RENDERER_CREATE_NAME_STRING "Da Tower of C Graphics"
 #endif  // SDL_PROP_RENDERER_CREATE_NAME_STRING
 
-#define IGOROFFLINE_PI (52163.F / 16604.F)
+#define IGOROFFLINE_INT int32_t
+#ifdef _Float32
+#define IGOROFFLINE_FLOAT _Float32
+#else  // _Float32
+#define IGOROFFLINE_FLOAT float
+#endif  // _Float32
+#ifdef _Float64
+#define IGOROFFLINE_DOUBLE _Float64
+#else  // _Float64
+#define IGOROFFLINE_DOUBLE double
+#endif  // _Float64
 #define IGOROFFLINE_SCREEN_WIDTH 1280
 #define IGOROFFLINE_SCREEN_HEIGHT 720
 #define IGOROFFLINE_SDL_SUCCESS 0
+#define IGOROFFLINE_SDL_NOT_RUNNING 0
+#define IGOROFFLINE_SDL_RUNNING 1
+#define IGOROFFLINE_SDL_DELAY 24
+#define IGOROFFLINE_PI__HEAD__ 245850922.F
+#define IGOROFFLINE_PI__TAIL__ 78256779.F
+// clang-format off
+#define IGOROFFLINE_PI ((IGOROFFLINE_FLOAT)(IGOROFFLINE_PI__HEAD__) / (IGOROFFLINE_FLOAT)(IGOROFFLINE_PI__TAIL__))
+// clang-format on
+#define IGOROFFLINE_HALF_CIRCLE 180.F
+#define IGOROFFLINE_FULL_CIRCLE 360.F
 
 int main(const int argc, const char* argv[]) {
   if (argc > 999) {
@@ -46,7 +66,7 @@ int main(const int argc, const char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  int running = 1;
+  int running = IGOROFFLINE_SDL_RUNNING;
   SDL_Event event;
 
   float circle_x = IGOROFFLINE_SCREEN_WIDTH / 2.F;
@@ -60,11 +80,11 @@ int main(const int argc, const char* argv[]) {
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
         case SDL_EVENT_QUIT:
-          running = 0;
+          running = IGOROFFLINE_SDL_NOT_RUNNING;
           break;
         case SDL_EVENT_KEY_DOWN:
           if (event.key.key == SDLK_ESCAPE) {
-            running = 0;
+            running = IGOROFFLINE_SDL_NOT_RUNNING;
           }
           break;
         default:
@@ -88,17 +108,19 @@ int main(const int argc, const char* argv[]) {
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, 0xBD, 0xBD, 0xBD, 0xFF);
 
-    for (int angle = 0; angle < 360; angle++) {
-      const float angle_f = (float)angle;
-      const float rad = angle_f * IGOROFFLINE_PI / 180.F;
-      const float px = circle_x + circle_radius * SDL_cosf(rad);
-      const float py = circle_y + circle_radius * SDL_sinf(rad);
+    for (IGOROFFLINE_INT angle = 0;
+         angle < (IGOROFFLINE_INT)IGOROFFLINE_FULL_CIRCLE; angle++) {
+      const IGOROFFLINE_FLOAT angle_f = (IGOROFFLINE_FLOAT)angle;
+      const IGOROFFLINE_FLOAT rad =
+          angle_f * IGOROFFLINE_PI / IGOROFFLINE_HALF_CIRCLE;
+      const IGOROFFLINE_FLOAT px = circle_x + circle_radius * SDL_cosf(rad);
+      const IGOROFFLINE_FLOAT py = circle_y + circle_radius * SDL_sinf(rad);
       SDL_RenderPoint(renderer, px, py);
     }
 
     SDL_RenderPresent(renderer);
 
-    SDL_Delay(24);
+    SDL_Delay(IGOROFFLINE_SDL_DELAY);
   }
 
   SDL_DestroyRenderer(renderer);
