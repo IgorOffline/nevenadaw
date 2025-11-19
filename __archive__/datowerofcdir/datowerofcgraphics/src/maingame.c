@@ -6,6 +6,7 @@
 #define SDL_PROP_RENDERER_CREATE_NAME_STRING "Da Tower of C Graphics"
 #endif  // SDL_PROP_RENDERER_CREATE_NAME_STRING
 
+#define IGOROFFLINE_PI (52163.F / 16604.F)
 #define IGOROFFLINE_SCREEN_WIDTH 1280
 #define IGOROFFLINE_SCREEN_HEIGHT 720
 #define IGOROFFLINE_SDL_SUCCESS 0
@@ -48,14 +49,14 @@ int main(const int argc, const char* argv[]) {
   int running = 1;
   SDL_Event event;
 
-  float circle_x = IGOROFFLINE_SCREEN_WIDTH / 2.0f;
-  float circle_y = IGOROFFLINE_SCREEN_HEIGHT / 2.0f;
-  const float circle_speed_modifier = 6.45f;
-  float circle_speed_x = 3.0f * circle_speed_modifier;
-  float circle_speed_y = 2.0f * circle_speed_modifier;
+  float circle_x = IGOROFFLINE_SCREEN_WIDTH / 2.F;
+  float circle_y = IGOROFFLINE_SCREEN_HEIGHT / 2.F;
+  const float circle_speed_modifier = 7.23F;
+  float circle_speed_x = 3.F * circle_speed_modifier;
+  float circle_speed_y = 2.F * circle_speed_modifier;
 
   while (running) {
-    const float circle_radius = 50.0f;
+    const float circle_radius = 50.F;
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
         case SDL_EVENT_QUIT:
@@ -83,14 +84,13 @@ int main(const int argc, const char* argv[]) {
       circle_speed_y = -circle_speed_y;
     }
 
-    SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
+    SDL_SetRenderDrawColor(renderer, 0x21, 0x21, 0x21, 0xFF);
     SDL_RenderClear(renderer);
-
-    SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
+    SDL_SetRenderDrawColor(renderer, 0xBD, 0xBD, 0xBD, 0xFF);
 
     for (int angle = 0; angle < 360; angle++) {
       const float angle_f = (float)angle;
-      const float rad = angle_f * 3.14159f / 180.0f;
+      const float rad = angle_f * IGOROFFLINE_PI / 180.F;
       const float px = circle_x + circle_radius * SDL_cosf(rad);
       const float py = circle_y + circle_radius * SDL_sinf(rad);
       SDL_RenderPoint(renderer, px, py);
