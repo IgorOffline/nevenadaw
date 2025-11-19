@@ -1,0 +1,15 @@
+{
+  "name": "datowerofcgraphics",
+  "version-string": "0.1.0",
+  "builtin-baseline": "2d6a6cf3ac9a7cc93942c3d289a2f9c661a6f4a7",
+  "dependencies": [
+    {
+      "name": "sdl3",
+      "version>=": "3.2.26"
+    },
+    {
+      "name": "sdl3-ttf",
+      "version>=": "3.2.2#1"
+    }
+  ]
+}
