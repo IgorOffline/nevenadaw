@@ -15,6 +15,8 @@ const SDL_DELAY: u32 = 32;
 #[derive(Clone, Copy, Debug, Deserialize)]
 struct Regina {
     size: u32,
+    emperor: u32,
+    general: u32,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize)]
@@ -23,7 +25,11 @@ struct Config {
 }
 
 fn main() -> Result<(), String> {
-    let regina = Cell::new(Regina { size: 25 });
+    let regina = Cell::new(Regina {
+        size: 25,
+        emperor: 1,
+        general: 2,
+    });
 
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
@@ -88,9 +94,8 @@ fn gold_silver_running_inner_loop(
             } => {
                 println!("Loading toml...");
                 match gold_silver_load_toml() {
-                    Ok(size) => {
-                        println!("Loaded size: {}", size);
-                        regina.set(Regina { size });
+                    Ok(regina_loaded_from_toml) => {
+                        regina.set(regina_loaded_from_toml.clone());
                     }
                     Err(e) => println!("Error loading config: {}", e),
                 }
@@ -102,7 +107,7 @@ fn gold_silver_running_inner_loop(
     Ok(false)
 }
 
-fn gold_silver_load_toml() -> Result<u32, String> {
+fn gold_silver_load_toml() -> Result<Regina, String> {
     let mut content_raw = String::new();
     File::open("sdl2.toml")
         .map_err(|e| format!("Failed to open config file: {}", e))?
@@ -112,5 +117,10 @@ fn gold_silver_load_toml() -> Result<u32, String> {
     let config: Config =
         toml::from_str(&content_raw).map_err(|e| format!("Failed to parse TOML: {}", e))?;
 
-    Ok(config.regina.size)
+    let return_value = Regina {
+        size: config.regina.size,
+        emperor: config.regina.emperor,
+        general: config.regina.general,
+    };
+    Ok(return_value)
 }
