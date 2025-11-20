@@ -28,11 +28,12 @@ struct Config {
 }
 
 fn main() -> Result<(), String> {
-    let regina = Cell::new(Regina {
+    let regina_default = Regina {
         size: 25,
-        emperor: 1,
-        general: 2,
-    });
+        emperor: 2,
+        general: 1,
+    };
+    let regina = Cell::new(regina_default.clone());
 
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
@@ -51,10 +52,10 @@ fn main() -> Result<(), String> {
             .join("assets")
             .join("fonts")
             .join("IosevkaTerm-Regular.ttf"),
-        24,
+        8,
     )?;
 
-    gold_silver_running_loop(&sdl_context, &mut canvas, &font, &regina)?;
+    gold_silver_running_loop(&sdl_context, &mut canvas, &font, &regina_default, &regina)?;
 
     Ok(())
 }
@@ -63,10 +64,11 @@ fn gold_silver_running_loop(
     sdl_context: &Sdl,
     canvas: &mut WindowCanvas,
     font: &Font,
+    regina_default: &Regina,
     regina: &Cell<Regina>,
 ) -> Result<(), String> {
     'running: loop {
-        if gold_silver_running_inner_loop(sdl_context, regina)? {
+        if gold_silver_running_inner_loop(sdl_context, regina_default, regina)? {
             break 'running;
         }
 
@@ -79,9 +81,9 @@ fn gold_silver_running_loop(
             .fill_rect(Rect::new(50, 50, current_size, current_size))
             .map_err(|e| e.to_string())?;
 
-        let text_to_render = "Lorem Ipsum";
+        let text_to_render = get_text_to_render(regina);
         let surface = font
-            .render(text_to_render)
+            .render(&text_to_render)
             .blended(Color::RGB(69, 90, 100))
             .map_err(|e| e.to_string())?;
         let texture_creator = canvas.texture_creator();
@@ -101,6 +103,7 @@ fn gold_silver_running_loop(
 
 fn gold_silver_running_inner_loop(
     sdl_context: &Sdl,
+    regina_default: &Regina,
     regina: &Cell<Regina>,
 ) -> Result<bool, String> {
     let mut event_pump = sdl_context.event_pump()?;
@@ -126,6 +129,13 @@ fn gold_silver_running_inner_loop(
                     Err(e) => println!("Error loading config: {}", e),
                 }
             }
+            Event::KeyDown {
+                keycode: Some(Keycode::R),
+                ..
+            } => {
+                println!("Resetting Regina...");
+                regina.set(regina_default.clone());
+            }
             _ => { /* ignore other events */ }
         }
     }
@@ -148,5 +158,14 @@ fn gold_silver_load_toml() -> Result<Regina, String> {
         emperor: config.regina.emperor,
         general: config.regina.general,
     };
+
     Ok(return_value)
+}
+
+fn get_text_to_render(regina: &Cell<Regina>) -> String {
+    let regina_clone = regina.clone().get();
+    format!(
+        "Regina[size={}, emperor={}, general={}]",
+        regina_clone.size, regina_clone.emperor, regina_clone.general
+    )
 }
