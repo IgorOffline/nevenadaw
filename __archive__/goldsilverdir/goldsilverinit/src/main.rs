@@ -33,25 +33,14 @@ fn main() -> Result<(), String> {
 
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
 
-    let running_loop = gold_silver_running_loop(&sdl_context, &mut canvas).unwrap_or_else(|_| {
-        println!("ERR::100100");
-        false
-    });
-    println!("{}", running_loop);
+    gold_silver_running_loop(&sdl_context, &mut canvas)?;
 
     Ok(())
 }
 
-fn gold_silver_running_loop(sdl_context: &Sdl, canvas: &mut WindowCanvas) -> Result<bool, String> {
-    let mut running = true;
-
+fn gold_silver_running_loop(sdl_context: &Sdl, canvas: &mut WindowCanvas) -> Result<(), String> {
     'running: loop {
-        gold_silver_running_inner_loop(&sdl_context).unwrap_or_else(|_| {
-            running = false;
-            running
-        });
-
-        if !running {
+        if gold_silver_running_inner_loop(sdl_context)? {
             break 'running;
         }
 
@@ -59,15 +48,20 @@ fn gold_silver_running_loop(sdl_context: &Sdl, canvas: &mut WindowCanvas) -> Res
         canvas.clear();
         canvas.set_draw_color(Color::RGB(0xBD, 0xBD, 0xBD));
 
+        canvas
+            .fill_rect(sdl2::rect::Rect::new(50, 50, 25, 25))
+            .map_err(|e| e.to_string())?;
+
         canvas.present();
         std::thread::sleep(std::time::Duration::from_millis(SDL_DELAY as u64));
     }
 
-    Ok(true)
+    Ok(())
 }
 
 fn gold_silver_running_inner_loop(sdl_context: &Sdl) -> Result<bool, String> {
     let mut event_pump = sdl_context.event_pump()?;
+
     for event in event_pump.poll_iter() {
         match event {
             Event::Quit { .. }
@@ -82,13 +76,12 @@ fn gold_silver_running_inner_loop(sdl_context: &Sdl) -> Result<bool, String> {
                 ..
             } => {
                 println!("Loading toml...");
-                let new_speed = gold_silver_load_toml().unwrap_or_else(|_| {
-                    println!("ERR::100200");
-                    0.0
-                });
-                println!("{}", new_speed);
+                match gold_silver_load_toml() {
+                    Ok(speed) => println!("Loaded speed: {}", speed),
+                    Err(e) => println!("Error loading config: {}", e),
+                }
             }
-            _ => { /* empty */ }
+            _ => { /* ignore other events */ }
         }
     }
 
@@ -98,11 +91,12 @@ fn gold_silver_running_inner_loop(sdl_context: &Sdl) -> Result<bool, String> {
 fn gold_silver_load_toml() -> Result<f32, String> {
     let mut content_raw = String::new();
     File::open("sdl2.toml")
-        .unwrap()
+        .map_err(|e| format!("Failed to open config file: {}", e))?
         .read_to_string(&mut content_raw)
-        .expect("I'm learning, give me a break!");
-    let content = content_raw.clone();
+        .map_err(|e| format!("Failed to read config file: {}", e))?;
 
-    let config: Config = toml::from_str(&content).unwrap();
+    let config: Config =
+        toml::from_str(&content_raw).map_err(|e| format!("Failed to parse TOML: {}", e))?;
+
     Ok(config.root.speed)
 }
