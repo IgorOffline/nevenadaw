@@ -1,7 +1,9 @@
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
-use sdl2::render::WindowCanvas;
+use sdl2::rect::Rect;
+use sdl2::render::{TextureQuery, WindowCanvas};
+use sdl2::ttf::Font;
 use sdl2::Sdl;
 use serde::Deserialize;
 use std::cell::Cell;
@@ -44,15 +46,15 @@ fn main() -> Result<(), String> {
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
 
     let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
-    ttf_context.load_font(
+    let font = ttf_context.load_font(
         Path::new(".")
             .join("assets")
             .join("fonts")
             .join("IosevkaTerm-Regular.ttf"),
-        8,
-    )?; // TODO note: LINK : fatal error LNK1181: cannot open input file 'SDL2_ttf.lib'
+        24,
+    )?;
 
-    gold_silver_running_loop(&sdl_context, &mut canvas, &regina)?;
+    gold_silver_running_loop(&sdl_context, &mut canvas, &font, &regina)?;
 
     Ok(())
 }
@@ -60,6 +62,7 @@ fn main() -> Result<(), String> {
 fn gold_silver_running_loop(
     sdl_context: &Sdl,
     canvas: &mut WindowCanvas,
+    font: &Font,
     regina: &Cell<Regina>,
 ) -> Result<(), String> {
     'running: loop {
@@ -69,12 +72,25 @@ fn gold_silver_running_loop(
 
         canvas.set_draw_color(Color::RGB(0x21, 0x21, 0x21));
         canvas.clear();
-        canvas.set_draw_color(Color::RGB(0xBD, 0xBD, 0xBD));
+        canvas.set_draw_color(Color::RGB(0x75, 0x75, 0x75));
 
         let current_size = regina.clone().get().size;
         canvas
-            .fill_rect(sdl2::rect::Rect::new(50, 50, current_size, current_size))
+            .fill_rect(Rect::new(50, 50, current_size, current_size))
             .map_err(|e| e.to_string())?;
+
+        let text_to_render = "Lorem Ipsum";
+        let surface = font
+            .render(text_to_render)
+            .blended(Color::RGB(69, 90, 100))
+            .map_err(|e| e.to_string())?;
+        let texture_creator = canvas.texture_creator();
+        let texture = texture_creator
+            .create_texture_from_surface(&surface)
+            .map_err(|e| e.to_string())?;
+        let TextureQuery { width, height, .. } = texture.query();
+        let target = Rect::new(15, 15, width, height);
+        canvas.copy(&texture, None, Some(target))?;
 
         canvas.present();
         std::thread::sleep(std::time::Duration::from_millis(SDL_DELAY as u64));
