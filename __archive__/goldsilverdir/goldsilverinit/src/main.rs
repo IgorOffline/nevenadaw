@@ -59,7 +59,8 @@ fn main() -> Result<(), String> {
                     keycode: Some(Keycode::F),
                     ..
                 } => {
-                    println!("F");
+                    println!("Loading toml...");
+                    gold_silver_load_toml().expect("Nope!");
                 }
                 _ => { /* empty */ }
             }
@@ -93,8 +94,6 @@ fn main() -> Result<(), String> {
         canvas.present();
         std::thread::sleep(std::time::Duration::from_millis(SDL_DELAY as u64));
     }
-
-    gold_silver_load_toml().expect("Nope!");
 
     Ok(())
 }
