@@ -7,3 +7,18 @@ edition = "2024"
 sdl2 = { version = "0.38.0", features = ["bundled"] }
 serde = { version = "1.0.228", features = ["derive"] }
 toml = "0.9.8"
+
+[profile.dev]
+panic = "abort"
+lto = false
+debug = true
+opt-level = 0
+overflow-checks = true
+debug-assertions = true
+codegen-units = 1
+incremental = false
+
+[profile.dev.package."*"]
+overflow-checks = true
+
+# release ???
