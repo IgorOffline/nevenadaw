@@ -1,2 +1,8 @@
 [build]
 rustflags = ["-D", "warnings", "-D", "unused-variables", "-D", "dead-code"]
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-L", "native=./libs"]
+
+[target.x86_64-pc-windows-gnu]
+rustflags = ["-L", "native=./libs"]

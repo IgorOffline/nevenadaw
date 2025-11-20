@@ -7,6 +7,7 @@ use serde::Deserialize;
 use std::cell::Cell;
 use std::fs::File;
 use std::io::Read;
+use std::path::Path;
 
 const SCREEN_WIDTH: u32 = 426;
 const SCREEN_HEIGHT: u32 = 240;
@@ -41,6 +42,15 @@ fn main() -> Result<(), String> {
         .map_err(|e| e.to_string())?;
 
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
+
+    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
+    ttf_context.load_font(
+        Path::new(".")
+            .join("assets")
+            .join("fonts")
+            .join("IosevkaTerm-Regular.ttf"),
+        8,
+    )?; // TODO note: LINK : fatal error LNK1181: cannot open input file 'SDL2_ttf.lib'
 
     gold_silver_running_loop(&sdl_context, &mut canvas, &regina)?;
 
