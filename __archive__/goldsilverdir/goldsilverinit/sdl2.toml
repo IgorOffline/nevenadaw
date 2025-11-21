@@ -1,4 +1,8 @@
 [regina]
 size = 75
-emperor = 200
-general = 100
+input_mode = false
+currently_selected_id = 1
+emperor_id = 1
+general_id = 2
+emperor = 2
+general = 1

@@ -11,13 +11,17 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
-const SCREEN_WIDTH: u32 = 426;
-const SCREEN_HEIGHT: u32 = 240;
+const SCREEN_WIDTH: u32 = 1152;
+const SCREEN_HEIGHT: u32 = 648;
 const SDL_DELAY: u32 = 32;
 
 #[derive(Clone, Copy, Debug, Deserialize)]
 struct Regina {
     size: u32,
+    input_mode: bool,
+    currently_selected_id: u32,
+    emperor_id: u32,
+    general_id: u32,
     emperor: u32,
     general: u32,
 }
@@ -28,10 +32,10 @@ struct Config {
 }
 
 fn main() -> Result<(), String> {
+    let regina_default_raw = gold_silver_load_toml().map_err(|e| e.to_string())?;
     let regina_default = Regina {
-        size: 25,
-        emperor: 2,
-        general: 1,
+        size: regina_default_raw.size - 50,
+        ..regina_default_raw
     };
     let regina = Cell::new(regina_default.clone());
 
@@ -52,7 +56,7 @@ fn main() -> Result<(), String> {
             .join("assets")
             .join("fonts")
             .join("IosevkaTerm-Regular.ttf"),
-        8,
+        24,
     )?;
 
     gold_silver_running_loop(&sdl_context, &mut canvas, &font, &regina_default, &regina)?;
@@ -81,7 +85,7 @@ fn gold_silver_running_loop(
             .fill_rect(Rect::new(50, 50, current_size, current_size))
             .map_err(|e| e.to_string())?;
 
-        let text_to_render = get_text_to_render(regina);
+        let text_to_render = get_text_to_render_regina_state(regina);
         let surface = font
             .render(&text_to_render)
             .blended(Color::RGB(69, 90, 100))
@@ -92,6 +96,36 @@ fn gold_silver_running_loop(
             .map_err(|e| e.to_string())?;
         let TextureQuery { width, height, .. } = texture.query();
         let target = Rect::new(15, 15, width, height);
+        canvas.copy(&texture, None, Some(target))?;
+
+        // Clean this up later
+
+        let text_to_render = get_text_to_render_currently_selected(regina);
+        let surface = font
+            .render(&text_to_render)
+            .blended(Color::RGB(69, 90, 100))
+            .map_err(|e| e.to_string())?;
+        let texture_creator = canvas.texture_creator();
+        let texture = texture_creator
+            .create_texture_from_surface(&surface)
+            .map_err(|e| e.to_string())?;
+        let TextureQuery { width, height, .. } = texture.query();
+        let target = Rect::new(15, 465, width, height);
+        canvas.copy(&texture, None, Some(target))?;
+
+        // Clean this up later pt. 2
+
+        let text_to_render = get_text_to_render_input_mode(regina);
+        let surface = font
+            .render(&text_to_render)
+            .blended(Color::RGB(69, 90, 100))
+            .map_err(|e| e.to_string())?;
+        let texture_creator = canvas.texture_creator();
+        let texture = texture_creator
+            .create_texture_from_surface(&surface)
+            .map_err(|e| e.to_string())?;
+        let TextureQuery { width, height, .. } = texture.query();
+        let target = Rect::new(15, 515, width, height);
         canvas.copy(&texture, None, Some(target))?;
 
         canvas.present();
@@ -118,23 +152,37 @@ fn gold_silver_running_inner_loop(
                 return Ok(true);
             }
             Event::KeyDown {
+                keycode: Some(Keycode::I),
+                ..
+            } => {
+                let new_regina = Regina {
+                    input_mode: !regina.get().input_mode,
+                    ..regina.get()
+                };
+                regina.set(new_regina);
+            }
+            Event::KeyDown {
                 keycode: Some(Keycode::F),
                 ..
             } => {
-                println!("Loading toml...");
-                match gold_silver_load_toml() {
-                    Ok(regina_loaded_from_toml) => {
-                        regina.set(regina_loaded_from_toml.clone());
+                if regina.get().input_mode {
+                    println!("Loading toml...");
+                    match gold_silver_load_toml() {
+                        Ok(regina_loaded_from_toml) => {
+                            regina.set(regina_loaded_from_toml.clone());
+                        }
+                        Err(e) => println!("Error loading config: {}", e),
                     }
-                    Err(e) => println!("Error loading config: {}", e),
                 }
             }
             Event::KeyDown {
                 keycode: Some(Keycode::R),
                 ..
             } => {
-                println!("Resetting Regina...");
-                regina.set(regina_default.clone());
+                if regina.get().input_mode {
+                    println!("Resetting Regina...");
+                    regina.set(regina_default.clone());
+                }
             }
             _ => { /* ignore other events */ }
         }
@@ -155,6 +203,10 @@ fn gold_silver_load_toml() -> Result<Regina, String> {
 
     let return_value = Regina {
         size: config.regina.size,
+        input_mode: config.regina.input_mode,
+        currently_selected_id: config.regina.currently_selected_id,
+        emperor_id: config.regina.emperor_id,
+        general_id: config.regina.general_id,
         emperor: config.regina.emperor,
         general: config.regina.general,
     };
@@ -162,10 +214,28 @@ fn gold_silver_load_toml() -> Result<Regina, String> {
     Ok(return_value)
 }
 
-fn get_text_to_render(regina: &Cell<Regina>) -> String {
+fn get_text_to_render_regina_state(regina: &Cell<Regina>) -> String {
     let regina_clone = regina.clone().get();
     format!(
-        "Regina[size={}, emperor={}, general={}]",
-        regina_clone.size, regina_clone.emperor, regina_clone.general
+        "Regina[size={}, emperor_id={}, general_id={}, emperor={}, general={}]",
+        regina_clone.size,
+        regina_clone.emperor_id,
+        regina_clone.general_id,
+        regina_clone.emperor,
+        regina_clone.general
     )
+}
+
+fn get_text_to_render_input_mode(regina: &Cell<Regina>) -> String {
+    let regina_clone = regina.clone().get();
+    if regina_clone.input_mode {
+        return "[I]".to_string();
+    }
+
+    "[]".to_string()
+}
+
+fn get_text_to_render_currently_selected(regina: &Cell<Regina>) -> String {
+    let regina_clone = regina.clone().get();
+    format!("id: {}", regina_clone.currently_selected_id)
 }
