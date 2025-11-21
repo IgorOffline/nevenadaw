@@ -85,7 +85,7 @@ fn gold_silver_running_loop(
             .fill_rect(Rect::new(50, 50, current_size, current_size))
             .map_err(|e| e.to_string())?;
 
-        let text_to_render = get_text_to_render_regina_state(regina);
+        let text_to_render = gold_silver_get_text_to_render_regina_state(regina);
         let surface = font
             .render(&text_to_render)
             .blended(Color::RGB(69, 90, 100))
@@ -100,7 +100,7 @@ fn gold_silver_running_loop(
 
         // Clean this up later
 
-        let text_to_render = get_text_to_render_currently_selected(regina);
+        let text_to_render = gold_silver_get_text_to_render_currently_selected(regina);
         let surface = font
             .render(&text_to_render)
             .blended(Color::RGB(69, 90, 100))
@@ -115,7 +115,7 @@ fn gold_silver_running_loop(
 
         // Clean this up later pt. 2
 
-        let text_to_render = get_text_to_render_input_mode(regina);
+        let text_to_render = gold_silver_get_text_to_render_input_mode(regina);
         let surface = font
             .render(&text_to_render)
             .blended(Color::RGB(69, 90, 100))
@@ -184,6 +184,14 @@ fn gold_silver_running_inner_loop(
                     regina.set(regina_default.clone());
                 }
             }
+            Event::KeyDown {
+                keycode: Some(Keycode::B),
+                ..
+            } => {
+                if regina.get().input_mode {
+                    gold_silver_next_id(regina).map_err(|e| e.to_string())?;
+                }
+            }
             _ => { /* ignore other events */ }
         }
     }
@@ -214,7 +222,7 @@ fn gold_silver_load_toml() -> Result<Regina, String> {
     Ok(return_value)
 }
 
-fn get_text_to_render_regina_state(regina: &Cell<Regina>) -> String {
+fn gold_silver_get_text_to_render_regina_state(regina: &Cell<Regina>) -> String {
     let regina_clone = regina.clone().get();
     format!(
         "Regina[size={}, emperor_id={}, general_id={}, emperor={}, general={}]",
@@ -226,7 +234,7 @@ fn get_text_to_render_regina_state(regina: &Cell<Regina>) -> String {
     )
 }
 
-fn get_text_to_render_input_mode(regina: &Cell<Regina>) -> String {
+fn gold_silver_get_text_to_render_input_mode(regina: &Cell<Regina>) -> String {
     let regina_clone = regina.clone().get();
     if regina_clone.input_mode {
         return "[I]".to_string();
@@ -235,7 +243,27 @@ fn get_text_to_render_input_mode(regina: &Cell<Regina>) -> String {
     "[]".to_string()
 }
 
-fn get_text_to_render_currently_selected(regina: &Cell<Regina>) -> String {
+fn gold_silver_get_text_to_render_currently_selected(regina: &Cell<Regina>) -> String {
     let regina_clone = regina.clone().get();
     format!("id: {}", regina_clone.currently_selected_id)
+}
+
+fn gold_silver_next_id(regina: &Cell<Regina>) -> Result<bool, String> {
+    if regina.get().currently_selected_id < 5 {
+        let regina_clone = Regina {
+            currently_selected_id: regina.get().currently_selected_id + 1,
+            ..regina.get()
+        };
+        regina.set(regina_clone);
+
+        return Ok(true);
+    }
+
+    let regina_clone = Regina {
+        currently_selected_id: 1,
+        ..regina.get()
+    };
+    regina.set(regina_clone);
+
+    Ok(false)
 }
