@@ -1,0 +1,8 @@
+[package]
+name = "da_december_core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+da_december_a = { path = "../da_december_a" }
+da_december_b = { path = "../da_december_b" }

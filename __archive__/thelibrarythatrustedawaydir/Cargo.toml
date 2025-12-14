@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "da_december_core",
+    "da_december_a",
+    "da_december_b",
+]
+resolver = "3"
