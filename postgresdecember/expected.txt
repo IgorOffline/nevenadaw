@@ -1,0 +1,14 @@
+PS C:\purple\postgresdecember> docker exec -it vector_postgres psql -U postgres -d dvdrental -c "SELECT count(*) FROM film;"
+ count
+-------
+  1000
+(1 row)
+
+PS C:\purple\postgresdecember\rustsync> docker exec -it vector_postgres psql -U postgres -d vectordb -c "SELECT count(*) FROM vector_store;"
+ count
+-------
+  1000
+(1 row)
+
+docker exec -it vector_ollama ollama pull llama3.2:3b
+

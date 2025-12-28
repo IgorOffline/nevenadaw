@@ -1,0 +1,71 @@
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    image: pgvector/pgvector:pg17
+    container_name: vector_postgres
+    environment:
+      POSTGRES_DB: vectordb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ai_network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d vectordb" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: vector_ollama
+    ports:
+      - "11435:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - ai_network
+    entrypoint: [ "/bin/sh", "-c" ]
+    command: 
+      - |
+        ollama serve & 
+        sleep 5; 
+        ollama pull all-minilm; 
+        wait
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:11434/api/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+
+volumes:
+  postgres_data:
+    name: vector_postgres_data
+  ollama_data:
+    name: vector_ollama_data
+
+networks:
+  ai_network:
+    driver: bridge
+    name: vector_ai_network
