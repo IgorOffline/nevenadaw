@@ -1,0 +1,11 @@
+[package]
+name = "rustinit"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "rustinit"
+path = "src/main.rs"
+
+[dependencies]
+# None

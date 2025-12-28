@@ -1,0 +1,16 @@
+FROM rust:1.80-slim AS builder
+
+WORKDIR /usr/src/app
+
+COPY ./rustinit/ .
+
+RUN cargo build --release
+
+FROM pgvector/pgvector:pg17
+
+COPY --from=builder /usr/src/app/target/release/rustinit /docker-entrypoint-initdb.d/02-restore-dvd.sh
+
+COPY ./init-scripts/01-init-vector.sql /docker-entrypoint-initdb.d/01-init-vector.sql
+COPY ./init-scripts/dvdrental.tar /docker-entrypoint-initdb.d/dvdrental.tar
+
+RUN chmod +x /docker-entrypoint-initdb.d/02-restore-dvd.sh
