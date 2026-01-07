@@ -1,0 +1,2 @@
+$env:WINTER_ELIXIR_START_SERVER="false"; elixir dice_test.exs
+$env:WINTER_ELIXIR_START_SERVER="true"; elixir app.exs

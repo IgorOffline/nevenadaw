@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+          name="viewport">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+    <link href="https://igordurbek.b-cdn.net/crofavicon.png" rel="icon" type="image/png">
+    <title>WinterElixir :: Index</title>
+    <link href="index.css" rel="stylesheet">
+</head>
+<body>
+<h1>WinterElixir :: Index - <span id="dice-roll"><%= @roll %></span></h1>
+<button onclick="rollDice()">Roll Dice</button>
+
+<script>
+  function rollDice() {
+    fetch('/roll')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('dice-roll').innerText = data.roll;
+      });
+  }
+</script>
+</body>
+</html>
