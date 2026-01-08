@@ -8,21 +8,47 @@
     <script crossorigin="anonymous"
             integrity="sha512-Vc8rcYyBPMQ7pssWc7HC5+1ekIOfqRJ4zd1wJFMXsX1crWVVsJOXLgqjaxAT7HJtkQl+biOPb4Bj7ZQTNy8pQQ=="
             referrerpolicy="no-referrer" src="https://igordurbek.b-cdn.net/pixi-8-13-2.min.js"></script>
-    <link href="https://igordurbek.b-cdn.net/crofavicon.png" rel="icon" type="image/png">
+    <link crossorigin="anonymous" href="https://igordurbek.b-cdn.net/crofavicon.png"
+          integrity="sha512-VgUamIKBz1izmoqTeUa/Fl6I6lECEuG+GJi9ZKIhkMqH4XkAg/EuPcghIxJM2UhNNLBvJeXgPLbmh7b20XzMyA=="
+          rel="icon"
+          type="image/png">
     <title>WinterElixir :: Index</title>
     <link href="index.css" rel="stylesheet">
 </head>
 <body>
 <h1>WinterElixir :: Index - <span id="dice-roll"><%= @roll %></span></h1>
 <button onclick="rollDice()">Roll Dice</button>
+<button onclick="playSound('https://igordurbek.b-cdn.net/saw_cs3.wav', 'sha512-2zA5ZxFbpnrBfZBWnFsMiBT2hco8E1B0zdFY0jBtAvn45JpRTS3FLLpvCVGh2fK3fhx4jr0bwi/IU/xTEahPDw==')">
+    Play Saw CS3
+</button>
+<button onclick="playSound('https://igordurbek.b-cdn.net/saw_d3.wav', 'sha512-eNULR6kLmOC/HzDABPgUDoUEXAHkV4Ojgp0Wnvv5vkJZ7LUMkX5uFgn3EXB3eJS6c++/hVOXIrmRRb0svCXn8g==')">
+    Play Saw D3
+</button>
 
 <script>
-  function rollDice() {
+  async function rollDice() {
     fetch('/roll')
       .then(response => response.json())
       .then(data => {
         document.getElementById('dice-roll').innerText = data.roll;
       });
+  }
+
+  async function playSound(url, integrity) {
+    try {
+      const response = await fetch(url, {
+        integrity: integrity,
+        referrerPolicy: 'no-referrer'
+      });
+
+      const blob = await response.blob();
+      const objectURL = URL.createObjectURL(blob);
+
+      const audio = new Audio(objectURL);
+      audio.play();
+    } catch (err) {
+      console.error("Integrity check failed or network error:", err);
+    }
   }
 </script>
 </body>
