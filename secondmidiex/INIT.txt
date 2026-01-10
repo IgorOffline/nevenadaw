@@ -1,0 +1,2 @@
+sudo apt install fluidsynth fluid-soundfont-gm
+fluidsynth --audio-driver=alsa --midi-driver=alsa_seq /usr/share/sounds/sf2/FluidR3_GM.sf2
