@@ -4,6 +4,7 @@ Mix.install([
   {:phoenix, "~> 1.8.0"},
   {:phoenix_html, "~> 4.1"},
   {:phoenix_live_view, "~> 1.1.0"},
+  {:midiex, "~> 0.6.3"}, # ?
 ])
 
 Application.put_env(:winter_elixir, WinterElixir.Endpoint,
