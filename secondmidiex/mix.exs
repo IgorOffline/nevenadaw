@@ -9,7 +9,8 @@ defmodule Secondmidiex.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       escript: [main_module: SecondMidiex],
-      default_task: "run"
+      default_task: "run",
+      aliases: aliases()
     ]
   end
 
@@ -17,6 +18,12 @@ defmodule Secondmidiex.MixProject do
     [
       extra_applications: [:logger],
       mod: {SecondMidiex, []}
+    ]
+  end
+
+  defp aliases do
+    [
+      run: "run --no-halt"
     ]
   end
 
