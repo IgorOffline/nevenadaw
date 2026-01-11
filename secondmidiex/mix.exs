@@ -9,13 +9,14 @@ defmodule Secondmidiex.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       escript: [main_module: SecondMidiex],
-      default_task: "secondmidiex"
+      default_task: "run"
     ]
   end
 
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      mod: {SecondMidiex, []}
     ]
   end
 

@@ -1,4 +1,11 @@
 defmodule SecondMidiex do
+  use Application
+
+  def start(_type, _args) do
+    run()
+    {:ok, self()}
+  end
+
   def main(_args \\ []) do
     case run() do
       :ok -> :ok
@@ -7,12 +14,12 @@ defmodule SecondMidiex do
   end
 
   def run do
-    IO.puts("Scanning for Virtual MIDI ports...")
-    ports = Midiex.ports(:output)
+    ports = Midiex.ports()
 
-    port = Enum.find(ports, fn p ->
-      String.contains?(p.name, "VirMIDI") || String.contains?(p.name, "2-0")
-    end)
+    port =
+      Enum.find(ports, fn p ->
+        String.contains?(p.name, "VirMIDI") || String.contains?(p.name, "2-0")
+      end)
 
     case port do
       nil ->
