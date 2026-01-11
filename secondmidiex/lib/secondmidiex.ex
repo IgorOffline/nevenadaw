@@ -2,45 +2,37 @@ defmodule SecondMidiex do
   use Application
 
   def start(_type, _args) do
-    IO.puts("Starting SecondMidiex application")
-    children = [
-      {Task, fn -> play_midi() end}
-    ]
-
-    opts = [strategy: :one_for_one, name: SecondMidiex.Supervisor]
-    Supervisor.start_link(children, opts)
-  end
-
-  def main(_args \\ []) do
-    play_midi()
-    :ok
+    IO.puts("Starting SecondMidiex application...")
+    Task.start(fn -> play_midi() end)
+    {:ok, self()}
   end
 
   def play_midi do
-    virmidi_ports =
-      Midiex.ports()
-      |> Enum.filter(fn p ->
-        p.direction == :output && String.contains?(p.name, "2-0")
-      end)
+    conn = Midiex.create_virtual_output("ElixirOut")
+    
+    IO.puts("Created virtual port: #{conn.name}")
+    
+    Process.sleep(200)
+    auto_connect()
 
-    IO.puts("Found #{Enum.count(virmidi_ports)} sub-ports for Virtual Raw MIDI 2-0.")
+    forever_loop(conn)
+  end
 
-    Enum.each(virmidi_ports, fn port ->
-      IO.puts("Testing sub-port: #{port.name}...")
+  defp auto_connect do
+    case System.cmd("aconnect", ["ElixirOut", "VirMIDI 2-0"]) do
+      {_, 0} -> IO.puts("ALSA Patch Successful: ElixirOut -> VirMIDI 2-0")
+      {_, _} -> IO.puts("Patch failed. Try: aconnect ElixirOut 'VirMIDI 2-0'")
+    end
+  end
 
-      conn = Midiex.open(port)
-
-      if conn do
-        Midiex.send_msg(conn, <<0x90, 60, 100>>)
-        Process.sleep(500)
-
-        Midiex.send_msg(conn, <<0x80, 60, 0>>)
-        Process.sleep(200)
-      else
-        IO.puts("Failed to connect to #{port.name}")
-      end
-    end)
-
-    IO.puts("Complete!")
+  defp forever_loop(conn) do
+    IO.puts("Sending C4 to Vital...")
+    Midiex.send_msg(conn, <<0x90, 60, 100>>)
+    Process.sleep(500)
+    
+    Midiex.send_msg(conn, <<0x80, 60, 0>>)
+    Process.sleep(1500)
+    
+    forever_loop(conn)
   end
 end
