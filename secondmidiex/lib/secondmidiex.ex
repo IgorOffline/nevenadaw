@@ -1,48 +1,38 @@
 defmodule SecondMidiex do
-  def main(_args \\ []) do
-    case run() do
-      :ok -> :ok
-      {:error, reason} -> IO.puts("Error: #{reason}")
+  use Application
+
+  def start(_type, _args) do
+    IO.puts("Starting SecondMidiex application...")
+    Task.start(fn -> play_midi() end)
+    {:ok, self()}
+  end
+
+  def play_midi do
+    conn = Midiex.create_virtual_output("ElixirOut")
+    
+    IO.puts("Created virtual port: #{conn.name}")
+    
+    Process.sleep(200)
+    auto_connect()
+
+    forever_loop(conn)
+  end
+
+  defp auto_connect do
+    case System.cmd("aconnect", ["ElixirOut", "VirMIDI 2-0"]) do
+      {_, 0} -> IO.puts("ALSA Patch Successful: ElixirOut -> VirMIDI 2-0")
+      {_, _} -> IO.puts("Patch failed. Try: aconnect ElixirOut 'VirMIDI 2-0'")
     end
   end
 
-  def run do
-    IO.puts("SecondMidiex")
-    ports = Midiex.ports(:output)
-
-    case length(ports) do
-      0 ->
-        {:error, "no output port found"}
-
-      1 ->
-        IO.puts("Choosing the only available output port: #{hd(ports).name}")
-        connect_and_play(ports)
-
-      _ ->
-        IO.puts("\nAvailable output ports:")
-        ports |> Enum.with_index() |> Enum.each(fn {p, i} -> IO.puts("#{i}: #{p.name}") end)
-        connect_and_play(ports)
-    end
-  end
-
-  defp connect_and_play(ports) do
-    port = Enum.find(ports, fn p -> String.contains?(p.name, "FLUID Synth") end) || hd(ports)
-    conn = Midiex.open(port)
-
-    IO.puts("Connected to: #{port.name}")
-
-    notes = [60, 62, 64, 65, 67, 69, 71, 72]
-
-    Enum.each(notes, fn note ->
-      Midiex.send_msg(conn, <<0x90, note, 127>>)
-      IO.puts("Playing note: #{note}")
-      :timer.sleep(500)
-      Midiex.send_msg(conn, <<0x80, note, 127>>)
-    end)
-
-    Midiex.close(conn)
-    IO.puts("Connection closed")
-
-    :ok
+  defp forever_loop(conn) do
+    IO.puts("Sending C4 to Vital...")
+    Midiex.send_msg(conn, <<0x90, 60, 100>>)
+    Process.sleep(500)
+    
+    Midiex.send_msg(conn, <<0x80, 60, 0>>)
+    Process.sleep(1500)
+    
+    forever_loop(conn)
   end
 end
