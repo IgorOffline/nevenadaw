@@ -18,63 +18,49 @@ async fn main() {
             "/",
             get(|| async {
                 Json(Message {
-                    message: format!("{} {}", "Third Midiex", random_range(1..=6)),
+                    message: format!("MidirBridge Controller Active: {}", random_range(1..=6)),
                 })
             }),
         )
-        .route("/play_one", get(play_midi_handler_one))
-        .route("/play_two", get(play_midi_handler_two));
+        .route("/play_one", get(|| play_midi_handler(0x90, "One")))
+        .route("/play_two", get(|| play_midi_handler(0x91, "Two")));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    println!("Listening on 0.0.0.0:3000");
+    println!("MidirBridge, http://localhost:3000");
+
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn play_midi_handler_one() -> Json<Message> {
-    match run_midi("ba954b8f").await {
+async fn play_midi_handler(status: u8, label: &'static str) -> Json<Message> {
+    match run_midi(status).await {
         Ok(_) => Json(Message {
-            message: format!("{} {}", "Play One", random_range(1..=6)),
+            message: format!("Play {} Success (Status: 0x{:X})", label, status),
         }),
-        Err(_) => Json(Message {
-            message: format!("{} {}", "Play One ERROR", random_range(1..=6)),
+        Err(e) => Json(Message {
+            message: format!("Play {} ERROR: {}", label, e),
         }),
     }
 }
 
-async fn play_midi_handler_two() -> Json<Message> {
-    match run_midi("e43c0181").await {
-        Ok(_) => Json(Message {
-            message: format!("{} {}", "Play Two", random_range(1..=6)),
-        }),
-        Err(_) => Json(Message {
-            message: format!("{} {}", "Play Two ERROR", random_range(1..=6)),
-        }),
-    }
-}
-
-async fn run_midi(mode: &str) -> Result<(), Box<dyn Error>> {
-    let midi_out = MidiOutput::new(&format!("{} {}", "My Test Output", mode))?;
+async fn run_midi(status: u8) -> Result<(), Box<dyn Error>> {
+    let midi_out = MidiOutput::new("Axum Midir Client")?;
 
     let out_ports = midi_out.ports();
     let midir_bridge_port = out_ports.iter().find(|p| {
         midi_out
             .port_name(p)
             .unwrap_or_default()
-            .contains(&format!("{}{}", "MidirBridge", mode))
+            .contains("MidirBridge")
     });
 
     match midir_bridge_port {
         Some(port) => {
-            let mut conn = midi_out.connect(port, &format!("{}{}", "midir-test-", mode))?;
-            let status = match mode {
-                "ba954b8f" => 0x90,
-                "e43c0181" => 0x91,
-                _ => return Err(format!("Invalid mode: {}", mode).into()),
-            };
+            let mut conn = midi_out.connect(port, "midir-connection")?;
+
             play_chord(&mut conn, status).await?;
         }
         None => {
-            return Err(format!("MidirBridge{} port not found", mode).into());
+            return Err("Port MidirBridge not found".into());
         }
     }
 
@@ -83,10 +69,10 @@ async fn run_midi(mode: &str) -> Result<(), Box<dyn Error>> {
 
 async fn play_chord(conn: &mut MidiOutputConnection, status: u8) -> Result<(), Box<dyn Error>> {
     let chord_notes = [60, 64, 67];
+    let velocity = 100;
 
     for &note in &chord_notes {
-        let note_on = [status, note, 100];
-        conn.send(&note_on)?;
+        conn.send(&[status, note, velocity])?;
     }
 
     sleep(Duration::from_millis(1000)).await;
@@ -94,8 +80,7 @@ async fn play_chord(conn: &mut MidiOutputConnection, status: u8) -> Result<(), B
     let off_status = status - 0x10;
 
     for &note in &chord_notes {
-        let note_off = [off_status, note, 0];
-        conn.send(&note_off)?;
+        conn.send(&[off_status, note, 0])?;
     }
 
     Ok(())
