@@ -1,0 +1,78 @@
+use midir::{MidiOutput, MidiOutputConnection};
+use std::error::Error;
+use std::thread;
+use std::time::Duration;
+
+fn main() {
+    match run() {
+        Ok(_) => (),
+        Err(err) => println!("Error: {}", err),
+    }
+}
+
+fn run() -> Result<(), Box<dyn Error>> {
+    let midi_out = MidiOutput::new("My Test Output")?;
+
+    let out_ports = midi_out.ports();
+    match out_ports.len() {
+        0 => return Err("no output port found".into()),
+        1 => {
+            println!(
+                "Choosing the only available output port: {}",
+                midi_out.port_name(&out_ports[0]).unwrap()
+            );
+        }
+        _ => {
+            println!("\nAvailable output ports:");
+            for (i, p) in out_ports.iter().enumerate() {
+                println!("{}: {}", i, midi_out.port_name(p).unwrap());
+            }
+        }
+    };
+
+    let midir_bridge_port = out_ports.iter().find(|p| {
+        midi_out
+          .port_name(p)
+          .unwrap_or_default()
+          .contains("MidirBridge")
+    });
+
+    match midir_bridge_port {
+        Some(port) => {
+            println!("Connecting to MidirBridge port...");
+            let mut conn = midi_out.connect(port, "midir-test")?;
+            play_chord(&mut conn)?;
+        }
+        None => {
+            if !out_ports.is_empty() {
+                println!("MidirBridge port not found. Available ports:");
+                for (i, p) in out_ports.iter().enumerate() {
+                    println!("{}: {}", i, midi_out.port_name(p).unwrap());
+                }
+            }
+            return Err("MidirBridge port not found".into());
+        }
+    }
+
+    Ok(())
+}
+
+fn play_chord(conn: &mut MidiOutputConnection) -> Result<(), Box<dyn Error>> {
+    let chord_notes = [60, 64, 67];
+
+    println!("Playing C Major chord...");
+
+    for &note in &chord_notes {
+        let note_on = [0x90, note, 100];
+        conn.send(&note_on)?;
+    }
+
+    thread::sleep(Duration::from_millis(1000));
+
+    for &note in &chord_notes {
+        let note_off = [0x80, note, 0];
+        conn.send(&note_off)?;
+    }
+
+    Ok(())
+}

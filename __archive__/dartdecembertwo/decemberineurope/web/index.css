@@ -1,0 +1,21 @@
+body {
+    font-family: system-ui, sans-serif, -apple-system;
+    font-size: 16px;
+    color: #FFFFFF;
+    background-color: #673AB7;
+    margin: 2em auto;
+    max-width: 800px;
+    line-height: 1.4;
+    -webkit-hyphens: auto;
+    -ms-hyphens: auto;
+    hyphens: auto;
+    padding: 64px 1em 1em;
+}
+
+#december-pixi {
+    width: 800px;
+    height: 600px;
+    margin: auto;
+    border: 1px solid black;
+    aspect-ratio: 4/3;
+}

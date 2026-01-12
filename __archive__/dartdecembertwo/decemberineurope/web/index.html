@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+          name="viewport">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+    <script src="pixi-8-13-2.js"></script>
+    <link href="crofavicon.png" rel="icon" type="image/png">
+    <title>December Pixi</title>
+    <style>
+        body {
+            background-color: #BDBDBD
+        }
+
+        #december-pixi {
+            width: 800px;
+            height: 600px;
+            margin: auto;
+            border: 1px solid black;
+            aspect-ratio: 4/3;
+        }
+    </style>
+</head>
+<body>
+<div id="december-pixi" role="main"></div>
+<script>
+  (async () => {
+    const div = document.getElementById('december-pixi');
+    const app = new PIXI.Application();
+    await app.init({
+      background: '#455A64',
+      resizeTo: div
+    });
+    g = new PIXI.Graphics();
+    app.stage.addChild(g);
+    div.appendChild(app.canvas);
+    const texture = await PIXI.Assets.load('crofavicon.png');
+    const sprite = new PIXI.Sprite(texture);
+    app.stage.addChild(sprite);
+    const initX = 25;
+    sprite.x = initX;
+    sprite.y = 225;
+    let finishLineReachedCount = 0;
+    app.ticker.add((time) => {
+      sprite.x += 4 * time.deltaTime;
+      if (sprite.x > 525) {
+        ++finishLineReachedCount;
+        sprite.x = initX;
+        console.log(finishLineReachedCount);
+      }
+    })
+  })();
+</script>
+</body>
+</html>
