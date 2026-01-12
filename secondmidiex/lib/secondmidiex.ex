@@ -1,52 +1,37 @@
 defmodule SecondMidiex do
   use Application
 
-  @impl true
   def start(_type, _args) do
-    IO.puts("Starting SecondMidiex application...")
+    IO.puts("SecondMidiex")
     Task.start(fn -> play_midi() end)
     {:ok, self()}
   end
 
   def play_midi do
     conn = Midiex.create_virtual_output("ElixirOut")
-    IO.puts("Created virtual port: ElixirOut")
 
     Process.sleep(500)
 
-    IO.puts("Manually bridging MIDIex to VirMIDI...")
-
-    System.cmd("aconnect", ["MIDIex:0", "24:0"])
-
-    System.cmd("aconnect", ["MIDIex:0", "14:0"])
-
-    forever_loop(conn)
-  end
-
-  defp find_virmidi_address do
-    Midiex.ports()
-    |> Enum.find(fn p ->
-      p.direction == :input && String.contains?(p.name, "2-0")
+    ["24:0", "14:0"] |> Enum.each(fn port ->
+      System.cmd("aconnect", ["MIDIex:0", port])
     end)
-    |> case do
-         nil -> nil
-         port ->
-           port.name |> String.split(" ") |> List.last()
-       end
+
+    sequence_loop(conn)
   end
 
-  defp forever_loop(conn) do
-    velocity = 35
-    note = 60
+  defp sequence_loop(conn) do
+    [60]
+    |> Enum.each(fn note ->
+      play_note(conn, note, 40, 200)
+    end)
 
-    IO.puts("Sending quiet C4 (Vel: #{velocity}) to Vital...")
+    Process.sleep(400)
+    sequence_loop(conn)
+  end
 
-    Midiex.send_msg(conn, <<0x90, note, velocity>>)
-    Process.sleep(500)
-
+  defp play_note(conn, note, vel, duration) do
+    Midiex.send_msg(conn, <<0x90, note, vel>>)
+    Process.sleep(duration)
     Midiex.send_msg(conn, <<0x80, note, 0>>)
-    Process.sleep(1000)
-
-    forever_loop(conn)
   end
 end
