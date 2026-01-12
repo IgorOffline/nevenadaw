@@ -31,7 +31,7 @@ async fn main() {
 }
 
 async fn play_midi_handler_one() -> Json<Message> {
-    match run_midi(1).await {
+    match run_midi("ba954b8f").await {
         Ok(_) => Json(Message {
             message: format!("{} {}", "Play One", random_range(1..=6)),
         }),
@@ -42,7 +42,7 @@ async fn play_midi_handler_one() -> Json<Message> {
 }
 
 async fn play_midi_handler_two() -> Json<Message> {
-    match run_midi(2).await {
+    match run_midi("e43c0181").await {
         Ok(_) => Json(Message {
             message: format!("{} {}", "Play Two", random_range(1..=6)),
         }),
@@ -52,7 +52,7 @@ async fn play_midi_handler_two() -> Json<Message> {
     }
 }
 
-async fn run_midi(mode: i32) -> Result<(), Box<dyn Error>> {
+async fn run_midi(mode: &str) -> Result<(), Box<dyn Error>> {
     let midi_out = MidiOutput::new(&format!("{} {}", "My Test Output", mode))?;
 
     let out_ports = midi_out.ports();
@@ -66,7 +66,11 @@ async fn run_midi(mode: i32) -> Result<(), Box<dyn Error>> {
     match midir_bridge_port {
         Some(port) => {
             let mut conn = midi_out.connect(port, &format!("{}{}", "midir-test-", mode))?;
-            let status = if mode == 1 { 0x90 } else { 0x91 };
+            let status = match mode {
+                "ba954b8f" => 0x90,
+                "e43c0181" => 0x91,
+                _ => return Err(format!("Invalid mode: {}", mode).into()),
+            };
             play_chord(&mut conn, status).await?;
         }
         None => {
