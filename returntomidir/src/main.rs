@@ -23,7 +23,8 @@ async fn main() {
             }),
         )
         .route("/play_one", get(|| play_midi_handler(0x90, "One")))
-        .route("/play_two", get(|| play_midi_handler(0x91, "Two")));
+        .route("/play_two", get(|| play_midi_handler(0x91, "Two")))
+        .route("/play_three", get(|| play_midi_handler(0x92, "Three")));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     println!("MidirBridge, http://localhost:3000");
