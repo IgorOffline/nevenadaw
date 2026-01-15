@@ -1,12 +1,16 @@
 [package]
 name = "audiojanuaryone"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [lib]
 name = "audiojanuaryone_lib"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib", "lib"]
+
+[[bin]]
+name = "audiojanuaryone"
+path = "src/main.rs"
 
 [dependencies]
-nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git" }
+nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = ["standalone"] }
 nih_plug_iced = { git = "https://github.com/robbert-vdh/nih-plug.git" }
