@@ -15,16 +15,16 @@ impl Default for MyParams {
     fn default() -> Self {
         Self {
             gain: FloatParam::new("Gain", 1.0, FloatRange::Linear { min: 0.0, max: 2.0 }),
-            editor_state: IcedState::from_size(200, 150),
+            editor_state: IcedState::from_size(640, 360),
         }
     }
 }
 
-pub struct MyPlugin {
+pub struct AudioJanuaryOnePlugin {
     params: Arc<MyParams>,
 }
 
-impl Default for MyPlugin {
+impl Default for AudioJanuaryOnePlugin {
     fn default() -> Self {
         Self {
             params: Arc::new(MyParams::default()),
@@ -36,7 +36,7 @@ pub fn library_output() {
     println!("<library_output>");
 }
 
-impl Plugin for MyPlugin {
+impl Plugin for AudioJanuaryOnePlugin {
     const NAME: &'static str = "Hello Rust Plugin";
     const VENDOR: &'static str = "My Name";
     const URL: &'static str = "https://example.com";
@@ -140,12 +140,12 @@ impl IcedEditor for MyEditor {
     }
 }
 
-impl Vst3Plugin for MyPlugin {
+impl Vst3Plugin for AudioJanuaryOnePlugin {
     const VST3_CLASS_ID: [u8; 16] = *b"HelloRustPlugin1";
     const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] = &[Vst3SubCategory::Fx];
 }
 
-nih_export_vst3!(MyPlugin);
+nih_export_vst3!(AudioJanuaryOnePlugin);
 
 #[cfg(test)]
 mod tests {
@@ -153,7 +153,7 @@ mod tests {
 
     #[test]
     fn test_gain_multiplication() {
-        let plugin = MyPlugin::default();
+        let plugin = AudioJanuaryOnePlugin::default();
 
         //assert_eq!(plugin.params.gain.value(), 0.999);
         assert_eq!(plugin.params.gain.value(), 1.0);
