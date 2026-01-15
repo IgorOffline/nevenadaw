@@ -1,5 +1,6 @@
-use audiojanuaryone_lib::library_output;
+use audiojanuaryone_lib::MyPlugin;
+use nih_plug::nih_export_standalone;
 
 fn main() {
-    library_output();
+    nih_export_standalone::<MyPlugin>();
 }

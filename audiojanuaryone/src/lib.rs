@@ -20,7 +20,7 @@ impl Default for MyParams {
     }
 }
 
-struct MyPlugin {
+pub struct MyPlugin {
     params: Arc<MyParams>,
 }
 
