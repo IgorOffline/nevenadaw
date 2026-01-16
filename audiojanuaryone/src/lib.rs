@@ -3,7 +3,7 @@ use nih_plug_iced::*;
 use std::sync::Arc;
 
 #[derive(Params)]
-struct MyParams {
+struct AudioJanuaryOneParams {
     #[id = "gain"]
     pub gain: FloatParam,
 
@@ -11,7 +11,7 @@ struct MyParams {
     pub editor_state: Arc<IcedState>,
 }
 
-impl Default for MyParams {
+impl Default for AudioJanuaryOneParams {
     fn default() -> Self {
         Self {
             gain: FloatParam::new("Gain", 1.0, FloatRange::Linear { min: 0.0, max: 2.0 }),
@@ -21,28 +21,24 @@ impl Default for MyParams {
 }
 
 pub struct AudioJanuaryOnePlugin {
-    params: Arc<MyParams>,
+    params: Arc<AudioJanuaryOneParams>,
 }
 
 impl Default for AudioJanuaryOnePlugin {
     fn default() -> Self {
         Self {
-            params: Arc::new(MyParams::default()),
+            params: Arc::new(AudioJanuaryOneParams::default()),
         }
     }
 }
 
-pub fn library_output() {
-    println!("<library_output>");
-}
-
 impl Plugin for AudioJanuaryOnePlugin {
-    const NAME: &'static str = "Hello Rust Plugin";
-    const VENDOR: &'static str = "My Name";
-    const URL: &'static str = "https://example.com";
-    const EMAIL: &'static str = "info@example.com";
+    const NAME: &'static str = "AudioJanuaryOneName";
+    const VENDOR: &'static str = "AudioJanuaryOneVendor";
+    const URL: &'static str = "https://url.example.com";
+    const EMAIL: &'static str = "email@example.com";
 
-    const VERSION: &'static str = "0.0.1";
+    const VERSION: &'static str = "0.1.0";
 
     const AUDIO_IO_LAYOUTS: &'static [AudioIOLayout] = &[AudioIOLayout {
         main_input_channels: NonZeroU32::new(2),
@@ -62,9 +58,9 @@ impl Plugin for AudioJanuaryOnePlugin {
     }
 
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
-        create_iced_editor::<MyEditor>(
+        create_iced_editor::<AudioJanuaryOneEditor>(
             self.params.editor_state.clone(),
-            MyEditorInitializationFlags {
+            AudioJanuaryOneEditorInitializationFlags {
                 params: self.params.clone(),
             },
         )
@@ -86,29 +82,29 @@ impl Plugin for AudioJanuaryOnePlugin {
     }
 }
 
-struct MyEditor {
-    params: Arc<MyParams>,
+struct AudioJanuaryOneEditor {
+    params: Arc<AudioJanuaryOneParams>,
     context: Arc<dyn GuiContext>,
 
     gain_slider_state: widgets::param_slider::State,
 }
 
 #[derive(Clone)]
-struct MyEditorInitializationFlags {
-    params: Arc<MyParams>,
+struct AudioJanuaryOneEditorInitializationFlags {
+    params: Arc<AudioJanuaryOneParams>,
 }
 
-impl IcedEditor for MyEditor {
+impl IcedEditor for AudioJanuaryOneEditor {
     type Executor = executor::Default;
     type Message = ();
-    type InitializationFlags = MyEditorInitializationFlags;
+    type InitializationFlags = AudioJanuaryOneEditorInitializationFlags;
 
     fn new(
         flags: Self::InitializationFlags,
         context: Arc<dyn GuiContext>,
     ) -> (Self, Command<Self::Message>) {
         (
-            MyEditor {
+            AudioJanuaryOneEditor {
                 params: flags.params,
                 context,
                 gain_slider_state: Default::default(),
@@ -131,7 +127,7 @@ impl IcedEditor for MyEditor {
 
     fn view(&mut self) -> Element<'_, Self::Message> {
         Column::new()
-            .push(Text::new("Hello from Rust!"))
+            .push(Text::new("[ AudioJanuaryOne ]"))
             .push(
                 widgets::ParamSlider::new(&mut self.gain_slider_state, &self.params.gain)
                     .map(|_| ()),
@@ -141,7 +137,7 @@ impl IcedEditor for MyEditor {
 }
 
 impl Vst3Plugin for AudioJanuaryOnePlugin {
-    const VST3_CLASS_ID: [u8; 16] = *b"HelloRustPlugin1";
+    const VST3_CLASS_ID: [u8; 16] = *b"IgorOffPlugin010";
     const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] = &[Vst3SubCategory::Fx];
 }
 
@@ -155,7 +151,6 @@ mod tests {
     fn test_gain_multiplication() {
         let plugin = AudioJanuaryOnePlugin::default();
 
-        //assert_eq!(plugin.params.gain.value(), 0.999);
         assert_eq!(plugin.params.gain.value(), 1.0);
     }
 }
