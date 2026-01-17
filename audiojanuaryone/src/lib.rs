@@ -9,6 +9,9 @@ struct AudioJanuaryOneParams {
     #[id = "gain"]
     pub gain: FloatParam,
 
+    #[id = "pan"]
+    pub pan: FloatParam,
+
     #[persist = "editor-state"]
     pub editor_state: Arc<IcedState>,
 }
@@ -17,6 +20,14 @@ impl Default for AudioJanuaryOneParams {
     fn default() -> Self {
         Self {
             gain: FloatParam::new("Gain", 1.0, FloatRange::Linear { min: 0.0, max: 2.0 }),
+            pan: FloatParam::new(
+                "Pan",
+                0.0,
+                FloatRange::Linear {
+                    min: -1.0,
+                    max: 1.0,
+                },
+            ),
             editor_state: IcedState::from_size(640, 360),
         }
     }
@@ -74,12 +85,22 @@ impl Plugin for AudioJanuaryOnePlugin {
         _aux: &mut AuxiliaryBuffers,
         _context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
-        for channel_samples in buffer.iter_samples() {
-            let gain = self.params.gain.value();
-            for sample in channel_samples {
-                *sample *= gain;
+        for mut channel_samples in buffer.iter_samples() {
+            let pan_value = self.params.pan.value();
+            let gain_value = self.params.gain.value();
+
+            let n_pan = (pan_value + 1.0) / 2.0;
+            let left_gain = (1.0 - n_pan).sqrt() * gain_value;
+            let right_gain = n_pan.sqrt() * gain_value;
+
+            if let Some(left_sample) = channel_samples.get_mut(0) {
+                *left_sample *= left_gain;
+            }
+            if let Some(right_sample) = channel_samples.get_mut(1) {
+                *right_sample *= right_gain;
             }
         }
+
         ProcessStatus::Normal
     }
 }
@@ -220,5 +241,12 @@ mod tests {
         let plugin = AudioJanuaryOnePlugin::default();
 
         assert_eq!(plugin.params.gain.value(), 1.0);
+    }
+
+    #[test]
+    fn test_default_pan() {
+        let plugin = AudioJanuaryOnePlugin::default();
+
+        assert_eq!(plugin.params.pan.value(), 0.0);
     }
 }
