@@ -1,6 +1,7 @@
 use nih_plug::prelude::*;
 use nih_plug_iced::widgets::ParamMessage;
 use nih_plug_iced::*;
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
 #[derive(Params)]
@@ -144,21 +145,41 @@ impl IcedEditor for AudioJanuaryOneEditor {
             Message::IncreaseGain => {
                 let current_gain = self.params.gain.value();
                 let new_gain = (current_gain + 0.1).min(2.0);
-                unsafe {
-                    self.context.raw_set_parameter_normalized(
-                        self.params.gain.as_ptr(),
-                        self.params.gain.preview_normalized(new_gain),
-                    );
+                let normalized_gain = self.params.gain.preview_normalized(new_gain);
+
+                let result = std::panic::catch_unwind(AssertUnwindSafe(|| unsafe {
+                    self.context
+                        .raw_begin_set_parameter(self.params.gain.as_ptr());
+
+                    self.context
+                        .raw_set_parameter_normalized(self.params.gain.as_ptr(), normalized_gain);
+
+                    self.context
+                        .raw_end_set_parameter(self.params.gain.as_ptr());
+                }));
+
+                if let Err(_) = result {
+                    println!("Error: Panic occurred during IncreaseGain parameter update.");
                 }
             }
             Message::DecreaseGain => {
                 let current_gain = self.params.gain.value();
                 let new_gain = (current_gain - 0.1).max(0.0);
-                unsafe {
-                    self.context.raw_set_parameter_normalized(
-                        self.params.gain.as_ptr(),
-                        self.params.gain.preview_normalized(new_gain),
-                    );
+                let normalized_gain = self.params.gain.preview_normalized(new_gain);
+
+                let result = std::panic::catch_unwind(AssertUnwindSafe(|| unsafe {
+                    self.context
+                        .raw_begin_set_parameter(self.params.gain.as_ptr());
+
+                    self.context
+                        .raw_set_parameter_normalized(self.params.gain.as_ptr(), normalized_gain);
+
+                    self.context
+                        .raw_end_set_parameter(self.params.gain.as_ptr());
+                }));
+
+                if let Err(_) = result {
+                    println!("Error: Panic occurred during DecreaseGain parameter update.");
                 }
             }
             Message::ParamUpdate(p) => self.handle_param_message(p),
