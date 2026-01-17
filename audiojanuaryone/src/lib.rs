@@ -111,6 +111,8 @@ struct AudioJanuaryOneEditor {
 
     minus_button_state: button::State,
     plus_button_state: button::State,
+    pan_minus_button_state: button::State,
+    pan_plus_button_state: button::State,
 }
 
 #[derive(Clone)]
@@ -122,6 +124,8 @@ struct AudioJanuaryOneEditorInitializationFlags {
 enum Message {
     IncreaseGain,
     DecreaseGain,
+    IncreasePan,
+    DecreasePan,
 }
 
 impl From<ParamMessage> for Message {
@@ -145,6 +149,8 @@ impl IcedEditor for AudioJanuaryOneEditor {
                 context,
                 minus_button_state: Default::default(),
                 plus_button_state: Default::default(),
+                pan_minus_button_state: Default::default(),
+                pan_plus_button_state: Default::default(),
             },
             Command::none(),
         )
@@ -200,6 +206,44 @@ impl IcedEditor for AudioJanuaryOneEditor {
                     println!("Error: Panic occurred during DecreaseGain parameter update.");
                 }
             }
+            Message::IncreasePan => {
+                let current_pan = self.params.pan.value();
+                let new_pan = (current_pan + 0.1).min(1.0);
+                let normalized_pan = self.params.pan.preview_normalized(new_pan);
+
+                let result = std::panic::catch_unwind(AssertUnwindSafe(|| unsafe {
+                    self.context
+                        .raw_begin_set_parameter(self.params.pan.as_ptr());
+
+                    self.context
+                        .raw_set_parameter_normalized(self.params.pan.as_ptr(), normalized_pan);
+
+                    self.context.raw_end_set_parameter(self.params.pan.as_ptr());
+                }));
+
+                if let Err(_) = result {
+                    println!("Error: Panic occurred during IncreasePan parameter update.");
+                }
+            }
+            Message::DecreasePan => {
+                let current_pan = self.params.pan.value();
+                let new_pan = (current_pan - 0.1).max(-1.0);
+                let normalized_pan = self.params.pan.preview_normalized(new_pan);
+
+                let result = std::panic::catch_unwind(AssertUnwindSafe(|| unsafe {
+                    self.context
+                        .raw_begin_set_parameter(self.params.pan.as_ptr());
+
+                    self.context
+                        .raw_set_parameter_normalized(self.params.pan.as_ptr(), normalized_pan);
+
+                    self.context.raw_end_set_parameter(self.params.pan.as_ptr());
+                }));
+
+                if let Err(_) = result {
+                    println!("Error: Panic occurred during DecreasePan parameter update.");
+                }
+            }
         }
 
         Command::none()
@@ -207,8 +251,9 @@ impl IcedEditor for AudioJanuaryOneEditor {
 
     fn view(&mut self) -> Element<'_, Self::Message> {
         let gain = self.params.gain.value();
+        let pan = self.params.pan.value();
         Column::new()
-            .push(Text::new(format!("[ {:.2} ]", gain)))
+            .push(Text::new(format!("Gain: {:.2}", gain)))
             .push(
                 Row::new()
                     .spacing(10)
@@ -219,6 +264,19 @@ impl IcedEditor for AudioJanuaryOneEditor {
                     .push(
                         Button::new(&mut self.plus_button_state, Text::new("+"))
                             .on_press(Message::IncreaseGain),
+                    ),
+            )
+            .push(Text::new(format!("Pan: {:.2}", pan)))
+            .push(
+                Row::new()
+                    .spacing(10)
+                    .push(
+                        Button::new(&mut self.pan_minus_button_state, Text::new("-"))
+                            .on_press(Message::DecreasePan),
+                    )
+                    .push(
+                        Button::new(&mut self.pan_plus_button_state, Text::new("+"))
+                            .on_press(Message::IncreasePan),
                     ),
             )
             .into()
