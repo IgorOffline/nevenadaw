@@ -1,4 +1,5 @@
 use nih_plug::prelude::*;
+use nih_plug_iced::widgets::ParamMessage;
 use nih_plug_iced::*;
 use std::sync::Arc;
 
@@ -87,6 +88,8 @@ struct AudioJanuaryOneEditor {
     context: Arc<dyn GuiContext>,
 
     gain_slider_state: widgets::param_slider::State,
+    minus_button_state: button::State,
+    plus_button_state: button::State,
 }
 
 #[derive(Clone)]
@@ -94,9 +97,22 @@ struct AudioJanuaryOneEditorInitializationFlags {
     params: Arc<AudioJanuaryOneParams>,
 }
 
+#[derive(Debug, Clone, Copy)]
+enum Message {
+    IncreaseGain,
+    DecreaseGain,
+    ParamUpdate(ParamMessage),
+}
+
+impl From<ParamMessage> for Message {
+    fn from(value: ParamMessage) -> Self {
+        Message::ParamUpdate(value)
+    }
+}
+
 impl IcedEditor for AudioJanuaryOneEditor {
     type Executor = executor::Default;
-    type Message = ();
+    type Message = Message;
     type InitializationFlags = AudioJanuaryOneEditorInitializationFlags;
 
     fn new(
@@ -108,6 +124,8 @@ impl IcedEditor for AudioJanuaryOneEditor {
                 params: flags.params,
                 context,
                 gain_slider_state: Default::default(),
+                minus_button_state: Default::default(),
+                plus_button_state: Default::default(),
             },
             Command::none(),
         )
@@ -120,8 +138,32 @@ impl IcedEditor for AudioJanuaryOneEditor {
     fn update(
         &mut self,
         _window: &mut WindowQueue,
-        _message: Self::Message,
+        message: Self::Message,
     ) -> Command<Self::Message> {
+        match message {
+            Message::IncreaseGain => {
+                let current_gain = self.params.gain.value();
+                let new_gain = (current_gain + 0.1).min(2.0);
+                unsafe {
+                    self.context.raw_set_parameter_normalized(
+                        self.params.gain.as_ptr(),
+                        self.params.gain.preview_normalized(new_gain),
+                    );
+                }
+            }
+            Message::DecreaseGain => {
+                let current_gain = self.params.gain.value();
+                let new_gain = (current_gain - 0.1).max(0.0);
+                unsafe {
+                    self.context.raw_set_parameter_normalized(
+                        self.params.gain.as_ptr(),
+                        self.params.gain.preview_normalized(new_gain),
+                    );
+                }
+            }
+            Message::ParamUpdate(p) => self.handle_param_message(p),
+        }
+
         Command::none()
     }
 
@@ -130,7 +172,19 @@ impl IcedEditor for AudioJanuaryOneEditor {
             .push(Text::new("[ AudioJanuaryOne ]"))
             .push(
                 widgets::ParamSlider::new(&mut self.gain_slider_state, &self.params.gain)
-                    .map(|_| ()),
+                    .map(Message::ParamUpdate),
+            )
+            .push(
+                Row::new()
+                    .spacing(10)
+                    .push(
+                        Button::new(&mut self.minus_button_state, Text::new("-"))
+                            .on_press(Message::DecreaseGain),
+                    )
+                    .push(
+                        Button::new(&mut self.plus_button_state, Text::new("+"))
+                            .on_press(Message::IncreaseGain),
+                    ),
             )
             .into()
     }
