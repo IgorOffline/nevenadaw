@@ -88,7 +88,6 @@ struct AudioJanuaryOneEditor {
     params: Arc<AudioJanuaryOneParams>,
     context: Arc<dyn GuiContext>,
 
-    gain_slider_state: widgets::param_slider::State,
     minus_button_state: button::State,
     plus_button_state: button::State,
 }
@@ -102,12 +101,11 @@ struct AudioJanuaryOneEditorInitializationFlags {
 enum Message {
     IncreaseGain,
     DecreaseGain,
-    ParamUpdate(ParamMessage),
 }
 
 impl From<ParamMessage> for Message {
-    fn from(value: ParamMessage) -> Self {
-        Message::ParamUpdate(value)
+    fn from(_value: ParamMessage) -> Self {
+        Message::IncreaseGain
     }
 }
 
@@ -124,7 +122,6 @@ impl IcedEditor for AudioJanuaryOneEditor {
             AudioJanuaryOneEditor {
                 params: flags.params,
                 context,
-                gain_slider_state: Default::default(),
                 minus_button_state: Default::default(),
                 plus_button_state: Default::default(),
             },
@@ -182,19 +179,15 @@ impl IcedEditor for AudioJanuaryOneEditor {
                     println!("Error: Panic occurred during DecreaseGain parameter update.");
                 }
             }
-            Message::ParamUpdate(p) => self.handle_param_message(p),
         }
 
         Command::none()
     }
 
     fn view(&mut self) -> Element<'_, Self::Message> {
+        let gain = self.params.gain.value();
         Column::new()
-            .push(Text::new("[ AudioJanuaryOne ]"))
-            .push(
-                widgets::ParamSlider::new(&mut self.gain_slider_state, &self.params.gain)
-                    .map(Message::ParamUpdate),
-            )
+            .push(Text::new(format!("[ {:.2} ]", gain)))
             .push(
                 Row::new()
                     .spacing(10)
