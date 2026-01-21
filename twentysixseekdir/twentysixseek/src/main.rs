@@ -77,7 +77,7 @@ fn prepare_filename() -> String {
     let day = now.day().to_string();
     let formatted_month = zero_leading_format(&month);
     let formatted_day = zero_leading_format(&day);
-    let uuid_substring = &Uuid::new_v4().to_string()[..7].to_uppercase();
+    let uuid_substring = &Uuid::new_v4().to_string()[..8].to_uppercase();
     let filename = format!(
         "{}-{}-{}_{}.txt",
         year, formatted_month, formatted_day, uuid_substring
