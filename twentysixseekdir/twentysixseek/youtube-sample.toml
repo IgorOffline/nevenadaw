@@ -1,0 +1,6 @@
+[youtube]
+winter_2021 = "LOREMIPSUMapikeyLOREMIPSUM"
+example_url = "l0r3mipSUM"
+general_json_example_url = "https://igordurbek.com"
+youtube_api_v3_base_url = "https://www.googleapis.com/youtube/v3/videos"
+youtube_api_v3_key_parts = "snippet,contentDetails,statistics"
