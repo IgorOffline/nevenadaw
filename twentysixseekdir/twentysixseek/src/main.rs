@@ -158,8 +158,10 @@ mod tests {
 
     #[test]
     fn test_encoded_payload_matches_decoded_payload() {
-        let encoded_payload = LOAD_ENCODED_PAYLOAD;
-        let decoded_payload = LOAD_DECODED_PAYLOAD;
-        assert_eq!(decoded_payload, encoded_payload);
+        let encoded_payload = include_str!("../example_encoded_payload.txt").trim();
+        let decoded_payload = include_str!("../example_decoded_payload.txt")
+            .trim()
+            .replace("\r\n", "\n");
+        assert_eq!(base64_url::encode(&decoded_payload), encoded_payload);
     }
 }
