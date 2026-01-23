@@ -10,10 +10,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "audiomolekula_audio"
+version = "0.1.0"
+
+[[package]]
 name = "audiomolekula_core"
 version = "0.1.0"
 dependencies = [
+ "audiomolekula_audio",
+ "audiomolekula_io",
  "rand",
+]
+
+[[package]]
+name = "audiomolekula_io"
+version = "0.1.0"
+dependencies = [
  "serde",
  "toml",
 ]
