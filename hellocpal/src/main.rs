@@ -58,7 +58,7 @@ unsafe extern "C" fn host_request_restart(_host: *const clap_host) {}
 unsafe extern "C" fn host_request_process(_host: *const clap_host) {}
 unsafe extern "C" fn host_request_callback(_host: *const clap_host) {}
 
-static MY_HOST: clap_host = clap_host {
+static HELLO_HOST: clap_host = clap_host {
     clap_version: CLAP_VERSION,
     host_data: std::ptr::null_mut(),
     name: b"HelloCPAL\0".as_ptr() as *const i8,
@@ -91,37 +91,57 @@ fn setup_camera_system(mut commands: Commands) {
 }
 
 fn setup_audio_system(mut commands: Commands) {
-    let path_to_vital = r"C:\Program Files\Common Files\CLAP\Vital.clap";
-    if !std::path::Path::new(path_to_vital).exists() {
-        println!("Vital.clap not found");
+    let coin_toss = rand::random_range(1..=2);
+    let (plugin_path, plugin_name) = if coin_toss == 1 {
+        (r"C:\Program Files\Common Files\CLAP\Vital.clap", "Vital")
+    } else {
+        (
+            r"C:\Program Files\Common Files\CLAP\Surge Synth Team\Surge XT.clap",
+            "Surge XT",
+        )
+    };
+    println!("Coin toss result: {}", plugin_name);
+
+    if !std::path::Path::new(plugin_path).exists() {
+        println!("{} not found at {}", plugin_name, plugin_path);
         return;
     }
 
-    let lib = unsafe { Library::new(path_to_vital).expect("Failed to load Vital") };
+    let lib = unsafe {
+        Library::new(plugin_path).unwrap_or_else(|_| panic!("Failed to load {}", plugin_name))
+    };
 
     let entry_symbol: Symbol<*const clap_plugin_entry> =
         unsafe { lib.get(b"clap_entry\0").expect("Failed to get clap_entry") };
     let entry = unsafe { &**entry_symbol };
 
-    let path_to_vital_cstring = CString::new(path_to_vital).unwrap();
-    unsafe { (entry.init.expect("Plugin init missing"))(path_to_vital_cstring.as_ptr()) };
+    let plugin_path_cstring = CString::new(plugin_path).unwrap();
+    unsafe { (entry.init.expect("Plugin init missing"))(plugin_path_cstring.as_ptr()) };
 
     let factory_ptr = unsafe {
         entry.get_factory.expect("get_factory missing")(CLAP_PLUGIN_FACTORY_ID.as_ptr() as *const i8)
     };
     let factory = unsafe { &*(factory_ptr as *const clap_plugin_factory) };
 
-    let vital_id = CString::new("audio.vital.synth").unwrap();
     let plugin_ptr = unsafe {
+        let count = (factory.get_plugin_count.expect("get_plugin_count missing"))(factory);
+        if count == 0 {
+            println!("No plugins found in {}", plugin_name);
+            return;
+        }
+        let descriptor = (factory
+            .get_plugin_descriptor
+            .expect("get_plugin_descriptor missing"))(factory, 0);
+
         (factory.create_plugin.expect("create_plugin missing"))(
             factory,
-            &MY_HOST,
-            vital_id.as_ptr(),
+            &HELLO_HOST,
+            (*descriptor).id,
         )
     };
 
     if plugin_ptr.is_null() {
-        println!("Vital failed to initialize");
+        println!("{} failed to initialize", plugin_name);
         return;
     }
 
