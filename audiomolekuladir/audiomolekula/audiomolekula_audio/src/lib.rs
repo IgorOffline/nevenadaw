@@ -1,10 +1,40 @@
+use clap_sys::audio_buffer::clap_audio_buffer;
 use clap_sys::entry::clap_plugin_entry;
+use clap_sys::events::{
+    clap_event_header, clap_event_note, clap_input_events, clap_output_events,
+    CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_NOTE_ON,
+};
 use clap_sys::factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID};
 use clap_sys::host::clap_host;
 use clap_sys::plugin::clap_plugin;
+use clap_sys::process::clap_process;
 use clap_sys::version::CLAP_VERSION;
+use cpal::traits::{DeviceTrait, HostTrait};
 use libloading::{Library, Symbol};
 use std::ffi::{c_void, CString};
+
+#[allow(dead_code)]
+struct MockNoteEvent {
+    note: clap_event_note,
+}
+
+unsafe extern "C" fn event_list_size(list: *const clap_input_events) -> u32 {
+    unsafe { if (*list).ctx.is_null() { 0 } else { 1 } }
+}
+
+unsafe extern "C" fn event_list_get(
+    list: *const clap_input_events,
+    _index: u32,
+) -> *const clap_event_header {
+    unsafe { (*list).ctx as *const clap_event_header }
+}
+
+unsafe extern "C" fn output_events_push(
+    _list: *const clap_output_events,
+    _event: *const clap_event_header,
+) -> bool {
+    true
+}
 
 unsafe extern "C" fn host_get_extension(
     _host: *const clap_host,
@@ -223,6 +253,148 @@ pub fn setup_audio_system() {
         activated = true;
     }
     cleanup.activated = activated;
+
+    let plugin_ptr_usize = plugin_ptr as usize;
+
+    let asio_host = cpal::host_from_id(cpal::HostId::Asio).unwrap_or_else(|_| cpal::default_host());
+    let device = asio_host
+        .output_devices()
+        .unwrap()
+        .find(|d| {
+            d.description()
+                .map(|desc| desc.name().contains("FlexASIO"))
+                .unwrap_or(false)
+        })
+        .or_else(|| asio_host.default_output_device())
+        .expect("No output device found.");
+
+    let config = device
+        .default_output_config()
+        .expect("Failed to get default output config");
+
+    let note_frames = config.sample_rate().0.saturating_mul(2);
+    let mut left_out = vec![0.0f32; 4096];
+    let mut right_out = vec![0.0f32; 4096];
+    let mut frames_remaining = 0u32;
+    let mut note_on_pending = true;
+
+    let stream = device
+        .build_output_stream(
+            &config.into(),
+            move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+                let plugin_ptr = plugin_ptr_usize as *const clap_plugin;
+                let plugin = unsafe { &*plugin_ptr };
+
+                let total_samples = data.len();
+                if total_samples % 2 != 0 {
+                    return;
+                }
+                let num_frames = (total_samples / 2) as u32;
+
+                if num_frames > 4096 {
+                    data.fill(0.0);
+                    return;
+                }
+
+                left_out.fill(0.0);
+                right_out.fill(0.0);
+
+                if note_on_pending {
+                    note_on_pending = false;
+                    frames_remaining = note_frames;
+                }
+
+                if frames_remaining == 0 {
+                    data.fill(0.0);
+                    return;
+                }
+
+                let mut my_note = if frames_remaining == note_frames {
+                    Some(MockNoteEvent {
+                        note: clap_event_note {
+                            header: clap_event_header {
+                                size: size_of::<clap_event_note>() as u32,
+                                time: 0,
+                                space_id: CLAP_CORE_EVENT_SPACE_ID,
+                                type_: CLAP_EVENT_NOTE_ON,
+                                flags: 0,
+                            },
+                            note_id: -1,
+                            port_index: 0,
+                            channel: 0,
+                            key: 60,
+                            velocity: 1.0,
+                        },
+                    })
+                } else {
+                    None
+                };
+
+                let input_events = clap_input_events {
+                    ctx: if let Some(ref mut note) = my_note {
+                        note as *mut _ as *mut c_void
+                    } else {
+                        std::ptr::null_mut()
+                    },
+                    size: Some(event_list_size),
+                    get: Some(event_list_get),
+                };
+
+                let mut out_events = clap_output_events {
+                    ctx: std::ptr::null_mut(),
+                    try_push: Some(output_events_push),
+                };
+
+                let mut channel_ptrs = [left_out.as_mut_ptr(), right_out.as_mut_ptr()];
+                let mut output_buffer = clap_audio_buffer {
+                    data32: channel_ptrs.as_mut_ptr(),
+                    data64: std::ptr::null_mut(),
+                    channel_count: 2,
+                    latency: 0,
+                    constant_mask: 0,
+                };
+
+                let process_data = clap_process {
+                    steady_time: -1,
+                    frames_count: num_frames,
+                    transport: std::ptr::null(),
+                    audio_inputs: std::ptr::null(),
+                    audio_outputs: &mut output_buffer,
+                    audio_inputs_count: 0,
+                    audio_outputs_count: 1,
+                    in_events: &input_events,
+                    out_events: &mut out_events,
+                };
+
+                unsafe {
+                    if let Some(process_fn) = plugin.process {
+                        (process_fn)(plugin, &process_data);
+                    }
+                }
+
+                let frames_to_copy = frames_remaining.min(num_frames) as usize;
+                for i in 0..frames_to_copy {
+                    data[i * 2] = left_out[i] * 0.2;
+                    data[i * 2 + 1] = right_out[i] * 0.2;
+                }
+                for i in frames_to_copy..num_frames as usize {
+                    data[i * 2] = 0.0;
+                    data[i * 2 + 1] = 0.0;
+                }
+                frames_remaining = frames_remaining.saturating_sub(num_frames);
+            },
+            |err| eprintln!("Stream error: {}", err),
+            None,
+        )
+        .expect("Failed to build output stream");
+
+    unsafe {
+        if let Some(start_proc) = plugin.start_processing {
+            (start_proc)(plugin);
+        }
+    }
+
+    //stream.play().expect("Failed to play stream");
 
     println!("(Audio system setup completed)");
 }
