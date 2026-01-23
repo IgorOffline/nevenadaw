@@ -1,7 +1,34 @@
 use clap_sys::entry::clap_plugin_entry;
-use clap_sys::factory::plugin_factory::CLAP_PLUGIN_FACTORY_ID;
+use clap_sys::factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID};
+use clap_sys::host::clap_host;
+use clap_sys::version::CLAP_VERSION;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use libloading::{Library, Symbol};
+use std::ffi::CString;
+
+unsafe extern "C" fn host_get_extension(
+    _host: *const clap_host,
+    _extension_id: *const i8,
+) -> *const std::ffi::c_void {
+    std::ptr::null()
+}
+
+unsafe extern "C" fn host_request_restart(_host: *const clap_host) {}
+unsafe extern "C" fn host_request_process(_host: *const clap_host) {}
+unsafe extern "C" fn host_request_callback(_host: *const clap_host) {}
+
+static MY_HOST: clap_host = clap_host {
+    clap_version: CLAP_VERSION,
+    host_data: std::ptr::null_mut(),
+    name: b"NanoDAW\0".as_ptr() as *const i8,
+    vendor: b"Independent\0".as_ptr() as *const i8,
+    url: b"https://example.com\0".as_ptr() as *const i8,
+    version: b"0.1.0\0".as_ptr() as *const i8,
+    get_extension: Some(host_get_extension),
+    request_restart: Some(host_request_restart),
+    request_process: Some(host_request_process),
+    request_callback: Some(host_request_callback),
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("<START>");
@@ -21,6 +48,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "Successfully initialized CLAP factory at: {:?}",
         factory_ptr
     );
+
+    let factory = unsafe { &*(factory_ptr as *const clap_plugin_factory) };
+
+    let vital_id = CString::new("audio.vital.vital").unwrap();
+
+    let plugin_ptr =
+        unsafe { (factory.create_plugin.unwrap())(factory, &MY_HOST, vital_id.as_ptr()) };
+
+    if plugin_ptr.is_null() {
+        panic!("Vital failed to initialize! Check if the ID is correct.");
+    }
+
+    let plugin = unsafe { &*plugin_ptr };
+    println!("Vital Instance Created! Ready to Activate.");
+
+    unsafe {
+        (plugin.init.unwrap())(plugin);
+        (plugin.activate.unwrap())(plugin, 44100.0, 1, 512);
+    }
 
     println!("<START ASIO ENGINE>");
 
