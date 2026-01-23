@@ -1,8 +1,10 @@
+use bevy::prelude::*;
+use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 use clap_sys::audio_buffer::clap_audio_buffer;
 use clap_sys::entry::clap_plugin_entry;
 use clap_sys::events::{
     clap_event_header, clap_event_note, clap_input_events, clap_output_events,
-    CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_NOTE_ON,
+    CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_NOTE_OFF, CLAP_EVENT_NOTE_ON,
 };
 use clap_sys::factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID};
 use clap_sys::host::clap_host;
@@ -12,14 +14,23 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use libloading::{Library, Symbol};
 use std::ffi::CString;
 use std::mem;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+
+#[derive(Resource)]
+struct AudioState {
+    _library: Library,
+    _stream: cpal::Stream,
+    is_pressed: Arc<AtomicBool>,
+}
 
 #[allow(dead_code)]
 struct MockNoteEvent {
     note: clap_event_note,
 }
 
-unsafe extern "C" fn event_list_size(_list: *const clap_input_events) -> u32 {
-    1
+unsafe extern "C" fn event_list_size(list: *const clap_input_events) -> u32 {
+    unsafe { if (*list).ctx.is_null() { 0 } else { 1 } }
 }
 
 unsafe extern "C" fn event_list_get(
@@ -60,100 +71,105 @@ static MY_HOST: clap_host = clap_host {
     request_callback: Some(host_request_callback),
 };
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("<START>");
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                resolution: (640, 360).into(),
+                ..default()
+            }),
+            ..default()
+        }))
+        .add_plugins(EguiPlugin::default())
+        .add_systems(Startup, (setup_camera_system, setup_audio_system))
+        .add_systems(EguiPrimaryContextPass, ui_example_system)
+        .run();
+}
 
+fn setup_camera_system(mut commands: Commands) {
+    commands.spawn(Camera2d);
+}
+
+fn setup_audio_system(mut commands: Commands) {
     let path_to_vital = r"C:\Program Files\Common Files\CLAP\Vital.clap";
     if !std::path::Path::new(path_to_vital).exists() {
-        println!("0a30ca11 Vital.clap not found");
-
-        return Ok(());
+        println!("Vital.clap not found");
+        return;
     }
-    let lib = unsafe { Library::new(path_to_vital)? };
 
-    let entry: Symbol<*const clap_plugin_entry> = unsafe { lib.get(b"clap_entry\0")? };
-    let entry = unsafe { &**entry };
+    let lib = unsafe { Library::new(path_to_vital).expect("Failed to load Vital") };
+
+    let entry_symbol: Symbol<*const clap_plugin_entry> =
+        unsafe { lib.get(b"clap_entry\0").expect("Failed to get clap_entry") };
+    let entry = unsafe { &**entry_symbol };
 
     let path_to_vital_cstring = CString::new(path_to_vital).unwrap();
-    unsafe { (entry.init.unwrap())(path_to_vital_cstring.as_ptr()) };
+    unsafe { (entry.init.expect("Plugin init missing"))(path_to_vital_cstring.as_ptr()) };
 
-    let factory_ptr =
-        unsafe { entry.get_factory.unwrap()(CLAP_PLUGIN_FACTORY_ID.as_ptr() as *const i8) };
-
-    println!(
-        "d6c37660 Successfully initialized CLAP factory at: {:?}",
-        factory_ptr
-    );
-
+    let factory_ptr = unsafe {
+        entry.get_factory.expect("get_factory missing")(CLAP_PLUGIN_FACTORY_ID.as_ptr() as *const i8)
+    };
     let factory = unsafe { &*(factory_ptr as *const clap_plugin_factory) };
 
     let vital_id = CString::new("audio.vital.synth").unwrap();
-
-    let plugin_ptr =
-        unsafe { (factory.create_plugin.unwrap())(factory, &MY_HOST, vital_id.as_ptr()) };
+    let plugin_ptr = unsafe {
+        (factory.create_plugin.expect("create_plugin missing"))(
+            factory,
+            &MY_HOST,
+            vital_id.as_ptr(),
+        )
+    };
 
     if plugin_ptr.is_null() {
-        println!("507516be Vital failed to initialize");
-
-        return Ok(());
+        println!("Vital failed to initialize");
+        return;
     }
 
     let plugin = unsafe { &*plugin_ptr };
-    println!("ea484186 Vital instance created");
-
     unsafe {
         if let Some(init) = plugin.init {
             if !(init)(plugin) {
                 println!("Error: Plugin init failed");
-                return Ok(());
+                return;
             }
         }
         if let Some(activate) = plugin.activate {
             if !(activate)(plugin, 44100.0, 1, 4096) {
                 println!("Error: Plugin activation failed");
-                return Ok(());
+                return;
             }
         }
     }
 
-    let plugin_ptr_to_share = plugin_ptr as usize;
+    let is_pressed = Arc::new(AtomicBool::new(false));
+    let is_pressed_clone = is_pressed.clone();
+    let plugin_ptr_usize = plugin_ptr as usize;
 
-    let asio_host = cpal::host_from_id(cpal::HostId::Asio).ok();
+    let asio_host = cpal::host_from_id(cpal::HostId::Asio).unwrap_or_else(|_| cpal::default_host());
+    let device = asio_host
+        .output_devices()
+        .unwrap()
+        .find(|d| {
+            d.description()
+                .map(|desc| desc.name().contains("FlexASIO"))
+                .unwrap_or(false)
+        })
+        .or_else(|| asio_host.default_output_device())
+        .expect("No output device found.");
 
-    if let Some(host) = asio_host {
-        println!("f092f58f ASIO host found.");
+    let config = device
+        .default_output_config()
+        .expect("Failed to get default output config");
 
-        let device = host
-            .output_devices()?
-            .find(|d| {
-                d.description()
-                    .map(|desc| desc.name().contains("FlexASIO"))
-                    .unwrap_or(false)
-            })
-            .or_else(|| host.default_output_device())
-            .expect("5d892dc5 No ASIO output device found.");
+    let mut left_out = vec![0.0f32; 4096];
+    let mut right_out = vec![0.0f32; 4096];
+    let mut last_pressed = false;
 
-        let device_name = device
-            .description()
-            .map(|d| d.name().to_string())
-            .unwrap_or_else(|_| "Unknown Device".to_string());
-        println!("31a0243a Using Device for playback: {}", device_name);
-
-        let config = device.default_output_config()?;
-        println!("5e561a96 Config: {:?}", config);
-
-        let mut left_out = vec![0.0f32; 4096];
-        let mut right_out = vec![0.0f32; 4096];
-
-        let mut out_events = clap_output_events {
-            ctx: std::ptr::null_mut(),
-            try_push: Some(output_events_push),
-        };
-
-        let stream = device.build_output_stream(
+    let stream = device
+        .build_output_stream(
             &config.into(),
             move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-                let plugin_ptr = plugin_ptr_to_share as *const clap_sys::plugin::clap_plugin;
+                let plugin_ptr = plugin_ptr_usize as *const clap_sys::plugin::clap_plugin;
                 let plugin = unsafe { &*plugin_ptr };
 
                 let total_samples = data.len();
@@ -170,34 +186,53 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 left_out.fill(0.0);
                 right_out.fill(0.0);
 
-                let mut my_note = MockNoteEvent {
-                    note: clap_event_note {
-                        header: clap_event_header {
-                            size: mem::size_of::<clap_event_note>() as u32,
-                            time: 0,
-                            space_id: CLAP_CORE_EVENT_SPACE_ID,
-                            type_: CLAP_EVENT_NOTE_ON,
-                            flags: 0,
+                let current_pressed = is_pressed_clone.load(Ordering::Relaxed);
+
+                let mut my_note = if current_pressed != last_pressed {
+                    let event_type = if current_pressed {
+                        CLAP_EVENT_NOTE_ON
+                    } else {
+                        CLAP_EVENT_NOTE_OFF
+                    };
+                    last_pressed = current_pressed;
+                    Some(MockNoteEvent {
+                        note: clap_event_note {
+                            header: clap_event_header {
+                                size: mem::size_of::<clap_event_note>() as u32,
+                                time: 0,
+                                space_id: CLAP_CORE_EVENT_SPACE_ID,
+                                type_: event_type,
+                                flags: 0,
+                            },
+                            note_id: -1,
+                            port_index: 0,
+                            channel: 0,
+                            key: 60,
+                            velocity: 1.0,
                         },
-                        note_id: -1,
-                        port_index: 0,
-                        channel: 0,
-                        key: 60,
-                        velocity: 1.0,
-                    },
+                    })
+                } else {
+                    None
                 };
 
                 let input_events = clap_input_events {
-                    ctx: &mut my_note as *mut _ as *mut std::ffi::c_void,
+                    ctx: if let Some(ref mut note) = my_note {
+                        note as *mut _ as *mut std::ffi::c_void
+                    } else {
+                        std::ptr::null_mut()
+                    },
                     size: Some(event_list_size),
                     get: Some(event_list_get),
                 };
 
-                let mut channel_ptrs = [left_out.as_mut_ptr(), right_out.as_mut_ptr()];
-                let channel_ptrs_ptr = channel_ptrs.as_mut_ptr();
+                let mut out_events = clap_output_events {
+                    ctx: std::ptr::null_mut(),
+                    try_push: Some(output_events_push),
+                };
 
+                let mut channel_ptrs = [left_out.as_mut_ptr(), right_out.as_mut_ptr()];
                 let mut output_buffer = clap_audio_buffer {
-                    data32: channel_ptrs_ptr,
+                    data32: channel_ptrs.as_mut_ptr(),
                     data64: std::ptr::null_mut(),
                     channel_count: 2,
                     latency: 0,
@@ -227,41 +262,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     data[i * 2 + 1] = right_out[i] * 0.2;
                 }
             },
-            |err| eprintln!("d5358cdc Stream error: {}", err),
+            |err| eprintln!("Stream error: {}", err),
             None,
-        )?;
-
-        unsafe {
-            if let Some(start_proc) = plugin.start_processing {
-                (start_proc)(plugin);
-                println!("75af0fc9 Plugin processing started");
-            }
-        }
-
-        stream.play()?;
-        println!("4c1dab84 (Stream playing)");
-
-        std::thread::sleep(std::time::Duration::from_secs(2));
-
-        unsafe {
-            if let Some(stop_proc) = plugin.stop_processing {
-                (stop_proc)(plugin);
-                println!("3bdf6187 Plugin processing stopped.");
-            }
-            if let Some(deactivate) = plugin.deactivate {
-                (deactivate)(plugin);
-            }
-        }
-    } else {
-        println!("7a273791 ASIO host not found.");
-    }
+        )
+        .expect("Failed to build output stream");
 
     unsafe {
-        if let Some(deinit) = entry.deinit {
-            (deinit)();
+        if let Some(start_proc) = plugin.start_processing {
+            (start_proc)(plugin);
         }
     }
-    println!("<END>");
+
+    stream.play().expect("Failed to play stream");
+
+    commands.insert_resource(AudioState {
+        _library: lib,
+        _stream: stream,
+        is_pressed,
+    });
+}
+
+fn ui_example_system(mut contexts: EguiContexts, audio_state: Option<Res<AudioState>>) -> Result {
+    egui::Window::new("Hello").show(contexts.ctx_mut()?, |ui| {
+        ui.label("(Soundhold)");
+        let button_response = ui.button("Play Sound");
+        if let Some(audio_state) = audio_state {
+            if button_response.is_pointer_button_down_on() {
+                audio_state.is_pressed.store(true, Ordering::Relaxed);
+            } else {
+                audio_state.is_pressed.store(false, Ordering::Relaxed);
+            }
+        }
+    });
 
     Ok(())
 }
