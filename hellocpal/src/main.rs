@@ -1,5 +1,6 @@
 use clap_sys::audio_buffer::clap_audio_buffer;
 use clap_sys::entry::clap_plugin_entry;
+use clap_sys::events::{clap_event_header, clap_input_events, clap_output_events};
 use clap_sys::factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID};
 use clap_sys::host::clap_host;
 use clap_sys::process::clap_process;
@@ -7,6 +8,24 @@ use clap_sys::version::CLAP_VERSION;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use libloading::{Library, Symbol};
 use std::ffi::CString;
+
+unsafe extern "C" fn input_events_size(_list: *const clap_input_events) -> u32 {
+    0
+}
+
+unsafe extern "C" fn input_events_get(
+    _list: *const clap_input_events,
+    _index: u32,
+) -> *const clap_event_header {
+    std::ptr::null()
+}
+
+unsafe extern "C" fn output_events_push(
+    _list: *const clap_output_events,
+    _event: *const clap_event_header,
+) -> bool {
+    true
+}
 
 unsafe extern "C" fn host_get_extension(
     _host: *const clap_host,
@@ -77,7 +96,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             (init)(plugin);
         }
         if let Some(activate) = plugin.activate {
-            (activate)(plugin, 44100.0, 1, 512);
+            (activate)(plugin, 44100.0, 1, 4096);
         }
     }
 
@@ -107,19 +126,41 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let config = device.default_output_config()?;
         println!("5e561a96 Config: {:?}", config);
 
+        let mut left_out = vec![0.0f32; 4096];
+        let mut right_out = vec![0.0f32; 4096];
+
+        let in_events = clap_input_events {
+            ctx: std::ptr::null_mut(),
+            size: Some(input_events_size),
+            get: Some(input_events_get),
+        };
+
+        let mut out_events = clap_output_events {
+            ctx: std::ptr::null_mut(),
+            try_push: Some(output_events_push),
+        };
+
         let stream = device.build_output_stream(
             &config.into(),
             move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
                 let plugin_ptr = plugin_ptr_to_share as *const clap_sys::plugin::clap_plugin;
                 let plugin = unsafe { &*plugin_ptr };
-                let num_frames = (data.len() / 2) as u32;
 
-                let mut left_out = vec![0.0f32; num_frames as usize];
-                let mut right_out = vec![0.0f32; num_frames as usize];
+                let total_samples = data.len();
+                if total_samples % 2 != 0 {
+                    return;
+                }
+                let num_frames = (total_samples / 2) as u32;
+
+                if num_frames > 4096 {
+                    return;
+                }
+
                 let mut channel_ptrs = [left_out.as_mut_ptr(), right_out.as_mut_ptr()];
+                let channel_ptrs_ptr = channel_ptrs.as_mut_ptr();
 
                 let mut output_buffer = clap_audio_buffer {
-                    data32: channel_ptrs.as_mut_ptr(),
+                    data32: channel_ptrs_ptr,
                     data64: std::ptr::null_mut(),
                     channel_count: 2,
                     latency: 0,
@@ -134,12 +175,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     audio_outputs: &mut output_buffer,
                     audio_inputs_count: 0,
                     audio_outputs_count: 1,
-                    in_events: std::ptr::null(),
-                    out_events: std::ptr::null(),
+                    in_events: &in_events,
+                    out_events: &mut out_events,
                 };
 
                 unsafe {
-                    (plugin.process.unwrap())(plugin, &process_data);
+                    if let Some(process_fn) = plugin.process {
+                        (process_fn)(plugin, &process_data);
+                    }
                 }
 
                 for i in 0..num_frames as usize {
