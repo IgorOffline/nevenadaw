@@ -10,6 +10,7 @@ audiomolekula_core = { path = "audiomolekula_core" }
 members = [
   "audiomolekula_audio",
   "audiomolekula_core",
+  "audiomolekula_frontend",
   "audiomolekula_io",
 ]
 resolver = "3"
