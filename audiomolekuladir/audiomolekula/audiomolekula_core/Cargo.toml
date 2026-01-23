@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+audiomolekula_audio = { path = "../audiomolekula_audio" }
+audiomolekula_io = { path = "../audiomolekula_io" }
 rand = "0.9.2"
-serde = { version = "1.0.228", features = ["derive"] }
-toml = "0.9.11"

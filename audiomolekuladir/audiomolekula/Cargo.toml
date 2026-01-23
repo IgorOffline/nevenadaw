@@ -8,6 +8,8 @@ audiomolekula_core = { path = "audiomolekula_core" }
 
 [workspace]
 members = [
+  "audiomolekula_audio",
   "audiomolekula_core",
+  "audiomolekula_io",
 ]
 resolver = "3"
