@@ -1,6 +1,8 @@
+use clap_sys::audio_buffer::clap_audio_buffer;
 use clap_sys::entry::clap_plugin_entry;
 use clap_sys::factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID};
 use clap_sys::host::clap_host;
+use clap_sys::process::clap_process;
 use clap_sys::version::CLAP_VERSION;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use libloading::{Library, Symbol};
@@ -68,7 +70,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         (plugin.activate.unwrap())(plugin, 44100.0, 1, 512);
     }
 
-    println!("<START ASIO ENGINE>");
+    let plugin_ptr_to_share = plugin_ptr as usize;
 
     let asio_host = cpal::host_from_id(cpal::HostId::Asio).ok();
 
@@ -97,8 +99,36 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let stream = device.build_output_stream(
             &config.into(),
             move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-                for sample in data.iter_mut() {
-                    *sample = 0.0;
+                let plugin_ptr = plugin_ptr_to_share as *const clap_sys::plugin::clap_plugin;
+                let plugin = unsafe { &*plugin_ptr };
+                let num_samples = (data.len() / 2) as u32;
+
+                let left_ptr = data.as_mut_ptr();
+                let right_ptr = unsafe { data.as_mut_ptr().add(num_samples as usize) };
+                let mut channel_ptrs = [left_ptr, right_ptr];
+
+                let mut output_buffer = clap_audio_buffer {
+                    data32: channel_ptrs.as_mut_ptr(),
+                    data64: std::ptr::null_mut(),
+                    channel_count: 2,
+                    latency: 0,
+                    constant_mask: 0,
+                };
+
+                let process_data = clap_process {
+                    steady_time: -1,
+                    frames_count: num_samples,
+                    transport: std::ptr::null(),
+                    audio_inputs: std::ptr::null(),
+                    audio_outputs: &mut output_buffer,
+                    audio_inputs_count: 0,
+                    audio_outputs_count: 1,
+                    in_events: std::ptr::null(),
+                    out_events: std::ptr::null(),
+                };
+
+                unsafe {
+                    (plugin.process.unwrap())(plugin, &process_data);
                 }
             },
             |err| eprintln!("Stream error: {}", err),
