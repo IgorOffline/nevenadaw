@@ -22,9 +22,9 @@ unsafe extern "C" fn host_request_callback(_host: *const clap_host) {}
 static MY_HOST: clap_host = clap_host {
     clap_version: CLAP_VERSION,
     host_data: std::ptr::null_mut(),
-    name: b"NanoDAW\0".as_ptr() as *const i8,
+    name: b"HelloCPAL\0".as_ptr() as *const i8,
     vendor: b"Independent\0".as_ptr() as *const i8,
-    url: b"https://example.com\0".as_ptr() as *const i8,
+    url: b"https://igordurbek.com\0".as_ptr() as *const i8,
     version: b"0.1.0\0".as_ptr() as *const i8,
     get_extension: Some(host_get_extension),
     request_restart: Some(host_request_restart),
@@ -36,6 +36,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("<START>");
 
     let path_to_vital = r"C:\Program Files\Common Files\CLAP\Vital.clap";
+    if !std::path::Path::new(path_to_vital).exists() {
+        println!("0a30ca11 Vital.clap not found");
+
+        return Ok(());
+    }
     let lib = unsafe { Library::new(path_to_vital)? };
 
     let entry: Symbol<*const clap_plugin_entry> = unsafe { lib.get(b"clap_entry\0")? };
@@ -47,7 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         unsafe { entry.get_factory.unwrap()(CLAP_PLUGIN_FACTORY_ID.as_ptr() as *const i8) };
 
     println!(
-        "Successfully initialized CLAP factory at: {:?}",
+        "d6c37660 Successfully initialized CLAP factory at: {:?}",
         factory_ptr
     );
 
@@ -59,15 +64,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         unsafe { (factory.create_plugin.unwrap())(factory, &MY_HOST, vital_id.as_ptr()) };
 
     if plugin_ptr.is_null() {
-        panic!("Vital failed to initialize! Check if the ID is correct.");
+        println!("507516be Vital failed to initialize");
+
+        return Ok(());
     }
 
     let plugin = unsafe { &*plugin_ptr };
-    println!("Vital Instance Created! Ready to Activate.");
+    println!("ea484186 Vital instance created");
 
     unsafe {
-        (plugin.init.unwrap())(plugin);
-        (plugin.activate.unwrap())(plugin, 44100.0, 1, 512);
+        if let Some(init) = plugin.init {
+            (init)(plugin);
+        }
+        if let Some(activate) = plugin.activate {
+            (activate)(plugin, 44100.0, 1, 512);
+        }
     }
 
     let plugin_ptr_to_share = plugin_ptr as usize;
@@ -94,18 +105,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("31a0243a Using Device for playback: {}", device_name);
 
         let config = device.default_output_config()?;
-        println!("Config: {:?}", config);
+        println!("5e561a96 Config: {:?}", config);
 
         let stream = device.build_output_stream(
             &config.into(),
             move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
                 let plugin_ptr = plugin_ptr_to_share as *const clap_sys::plugin::clap_plugin;
                 let plugin = unsafe { &*plugin_ptr };
-                let num_samples = (data.len() / 2) as u32;
+                let num_frames = (data.len() / 2) as u32;
 
-                let left_ptr = data.as_mut_ptr();
-                let right_ptr = unsafe { data.as_mut_ptr().add(num_samples as usize) };
-                let mut channel_ptrs = [left_ptr, right_ptr];
+                let mut left_out = vec![0.0f32; num_frames as usize];
+                let mut right_out = vec![0.0f32; num_frames as usize];
+                let mut channel_ptrs = [left_out.as_mut_ptr(), right_out.as_mut_ptr()];
 
                 let mut output_buffer = clap_audio_buffer {
                     data32: channel_ptrs.as_mut_ptr(),
@@ -117,7 +128,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 let process_data = clap_process {
                     steady_time: -1,
-                    frames_count: num_samples,
+                    frames_count: num_frames,
                     transport: std::ptr::null(),
                     audio_inputs: std::ptr::null(),
                     audio_outputs: &mut output_buffer,
@@ -130,15 +141,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 unsafe {
                     (plugin.process.unwrap())(plugin, &process_data);
                 }
+
+                for i in 0..num_frames as usize {
+                    data[i * 2] = left_out[i];
+                    data[i * 2 + 1] = right_out[i];
+                }
             },
-            |err| eprintln!("Stream error: {}", err),
+            |err| eprintln!("d5358cdc Stream error: {}", err),
             None,
         )?;
 
+        unsafe {
+            if let Some(start_proc) = plugin.start_processing {
+                (start_proc)(plugin);
+                println!("75af0fc9 Plugin processing started");
+            }
+        }
+
         stream.play()?;
-        println!("(Stream playing)");
+        println!("4c1dab84 (Stream playing)");
 
         std::thread::sleep(std::time::Duration::from_secs(2));
+
+        unsafe {
+            if let Some(stop_proc) = plugin.stop_processing {
+                (stop_proc)(plugin);
+                println!("3bdf6187 Plugin processing stopped.");
+            }
+            (plugin.deactivate.unwrap())(plugin);
+        }
     } else {
         println!("7a273791 ASIO host not found.");
     }
