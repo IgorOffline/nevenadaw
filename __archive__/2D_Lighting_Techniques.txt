@@ -1,3 +1,6 @@
 2D Lighting Techniques
 Lighting in 2D Games Series
 https://www.slembcke.net/blog/2DLightingTechniques/
+
+My technique for the shader-based dynamic 2D shadows
+https://web.archive.org/web/20200305042232/https://www.catalinzima.com/2010/07/my-technique-for-the-shader-based-dynamic-2d-shadows/
