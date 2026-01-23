@@ -72,7 +72,7 @@ impl Drop for PluginCleanup<'_> {
     }
 }
 
-unsafe fn load_entry<'a>(lib: &'a Library) -> Result<&'a clap_plugin_entry, String> {
+unsafe fn load_entry(lib: &Library) -> Result<&clap_plugin_entry, String> {
     let entry_symbol: Symbol<*const clap_plugin_entry> = lib
         .get(b"clap_entry\0")
         .map_err(|err| format!("Failed to get clap_entry: {}", err))?;
@@ -80,10 +80,11 @@ unsafe fn load_entry<'a>(lib: &'a Library) -> Result<&'a clap_plugin_entry, Stri
     if entry_ptr.is_null() {
         return Err("clap_entry symbol is null".to_string());
     }
+
     Ok(&*entry_ptr)
 }
 
-unsafe fn get_factory<'a>(entry: &'a clap_plugin_entry) -> Result<&'a clap_plugin_factory, String> {
+unsafe fn get_factory(entry: &clap_plugin_entry) -> Result<&clap_plugin_factory, String> {
     let get_factory = entry
         .get_factory
         .ok_or_else(|| "get_factory missing".to_string())?;
@@ -91,6 +92,7 @@ unsafe fn get_factory<'a>(entry: &'a clap_plugin_entry) -> Result<&'a clap_plugi
     if factory_ptr.is_null() {
         return Err("Plugin factory is null".to_string());
     }
+
     Ok(&*(factory_ptr as *const clap_plugin_factory))
 }
 
@@ -126,6 +128,7 @@ pub fn setup_audio_system() {
             return;
         }
     };
+
     let entry_init = match entry.init {
         Some(init) => init,
         None => {
@@ -133,6 +136,7 @@ pub fn setup_audio_system() {
             return;
         }
     };
+
     if unsafe { !(entry_init)(plugin_path_cstring.as_ptr()) } {
         println!("Plugin entry init failed for {}", plugin_name);
         return;
@@ -155,6 +159,7 @@ pub fn setup_audio_system() {
             return;
         }
     };
+
     let count = unsafe { get_plugin_count(factory) };
     if count == 0 {
         println!("No plugins found in {}", plugin_name);
@@ -173,6 +178,7 @@ pub fn setup_audio_system() {
         println!("Plugin descriptor is null for {}", plugin_name);
         return;
     }
+
     let plugin_id = unsafe { (*descriptor).id };
     if plugin_id.is_null() {
         println!("Plugin descriptor id is null for {}", plugin_name);
