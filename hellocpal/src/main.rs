@@ -51,7 +51,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let factory = unsafe { &*(factory_ptr as *const clap_plugin_factory) };
 
-    let vital_id = CString::new("audio.vital.vital").unwrap();
+    let vital_id = CString::new("audio.vital.synth").unwrap();
 
     let plugin_ptr =
         unsafe { (factory.create_plugin.unwrap())(factory, &MY_HOST, vital_id.as_ptr()) };
