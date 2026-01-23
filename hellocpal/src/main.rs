@@ -1,6 +1,9 @@
 use clap_sys::audio_buffer::clap_audio_buffer;
 use clap_sys::entry::clap_plugin_entry;
-use clap_sys::events::{clap_event_header, clap_input_events, clap_output_events};
+use clap_sys::events::{
+    clap_event_header, clap_event_note, clap_input_events, clap_output_events,
+    CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_NOTE_ON,
+};
 use clap_sys::factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID};
 use clap_sys::host::clap_host;
 use clap_sys::process::clap_process;
@@ -8,16 +11,22 @@ use clap_sys::version::CLAP_VERSION;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use libloading::{Library, Symbol};
 use std::ffi::CString;
+use std::mem;
 
-unsafe extern "C" fn input_events_size(_list: *const clap_input_events) -> u32 {
-    0
+#[allow(dead_code)]
+struct MockNoteEvent {
+    note: clap_event_note,
 }
 
-unsafe extern "C" fn input_events_get(
-    _list: *const clap_input_events,
+unsafe extern "C" fn event_list_size(_list: *const clap_input_events) -> u32 {
+    1
+}
+
+unsafe extern "C" fn event_list_get(
+    list: *const clap_input_events,
     _index: u32,
 ) -> *const clap_event_header {
-    std::ptr::null()
+    unsafe { (*list).ctx as *const clap_event_header }
 }
 
 unsafe extern "C" fn output_events_push(
@@ -65,7 +74,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let entry: Symbol<*const clap_plugin_entry> = unsafe { lib.get(b"clap_entry\0")? };
     let entry = unsafe { &**entry };
 
-    unsafe { (entry.init.unwrap())(path_to_vital.as_ptr() as *const i8) };
+    let path_to_vital_cstring = CString::new(path_to_vital).unwrap();
+    unsafe { (entry.init.unwrap())(path_to_vital_cstring.as_ptr()) };
 
     let factory_ptr =
         unsafe { entry.get_factory.unwrap()(CLAP_PLUGIN_FACTORY_ID.as_ptr() as *const i8) };
@@ -93,10 +103,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     unsafe {
         if let Some(init) = plugin.init {
-            (init)(plugin);
+            if !(init)(plugin) {
+                println!("Error: Plugin init failed");
+                return Ok(());
+            }
         }
         if let Some(activate) = plugin.activate {
-            (activate)(plugin, 44100.0, 1, 4096);
+            if !(activate)(plugin, 44100.0, 1, 4096) {
+                println!("Error: Plugin activation failed");
+                return Ok(());
+            }
         }
     }
 
@@ -129,12 +145,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut left_out = vec![0.0f32; 4096];
         let mut right_out = vec![0.0f32; 4096];
 
-        let in_events = clap_input_events {
-            ctx: std::ptr::null_mut(),
-            size: Some(input_events_size),
-            get: Some(input_events_get),
-        };
-
         let mut out_events = clap_output_events {
             ctx: std::ptr::null_mut(),
             try_push: Some(output_events_push),
@@ -153,8 +163,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let num_frames = (total_samples / 2) as u32;
 
                 if num_frames > 4096 {
+                    data.fill(0.0);
                     return;
                 }
+
+                left_out.fill(0.0);
+                right_out.fill(0.0);
+
+                let mut my_note = MockNoteEvent {
+                    note: clap_event_note {
+                        header: clap_event_header {
+                            size: mem::size_of::<clap_event_note>() as u32,
+                            time: 0,
+                            space_id: CLAP_CORE_EVENT_SPACE_ID,
+                            type_: CLAP_EVENT_NOTE_ON,
+                            flags: 0,
+                        },
+                        note_id: -1,
+                        port_index: 0,
+                        channel: 0,
+                        key: 60,
+                        velocity: 1.0,
+                    },
+                };
+
+                let input_events = clap_input_events {
+                    ctx: &mut my_note as *mut _ as *mut std::ffi::c_void,
+                    size: Some(event_list_size),
+                    get: Some(event_list_get),
+                };
 
                 let mut channel_ptrs = [left_out.as_mut_ptr(), right_out.as_mut_ptr()];
                 let channel_ptrs_ptr = channel_ptrs.as_mut_ptr();
@@ -175,7 +212,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     audio_outputs: &mut output_buffer,
                     audio_inputs_count: 0,
                     audio_outputs_count: 1,
-                    in_events: &in_events,
+                    in_events: &input_events,
                     out_events: &mut out_events,
                 };
 
@@ -186,8 +223,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
 
                 for i in 0..num_frames as usize {
-                    data[i * 2] = left_out[i];
-                    data[i * 2 + 1] = right_out[i];
+                    data[i * 2] = left_out[i] * 0.2;
+                    data[i * 2 + 1] = right_out[i] * 0.2;
                 }
             },
             |err| eprintln!("d5358cdc Stream error: {}", err),
@@ -211,13 +248,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 (stop_proc)(plugin);
                 println!("3bdf6187 Plugin processing stopped.");
             }
-            (plugin.deactivate.unwrap())(plugin);
+            if let Some(deactivate) = plugin.deactivate {
+                (deactivate)(plugin);
+            }
         }
     } else {
         println!("7a273791 ASIO host not found.");
     }
 
-    unsafe { entry.deinit.unwrap()() };
+    unsafe {
+        if let Some(deinit) = entry.deinit {
+            (deinit)();
+        }
+    }
     println!("<END>");
 
     Ok(())
