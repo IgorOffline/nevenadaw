@@ -9,7 +9,7 @@ use clap_sys::host::clap_host;
 use clap_sys::plugin::clap_plugin;
 use clap_sys::process::clap_process;
 use clap_sys::version::CLAP_VERSION;
-use cpal::traits::{DeviceTrait, HostTrait};
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use libloading::{Library, Symbol};
 use std::ffi::{c_void, CString};
 
@@ -272,7 +272,7 @@ pub fn setup_audio_system() {
         .default_output_config()
         .expect("Failed to get default output config");
 
-    let note_frames = config.sample_rate().0.saturating_mul(2);
+    let note_frames = config.sample_rate().saturating_mul(2);
     let mut left_out = vec![0.0f32; 4096];
     let mut right_out = vec![0.0f32; 4096];
     let mut frames_remaining = 0u32;
@@ -394,7 +394,7 @@ pub fn setup_audio_system() {
         }
     }
 
-    //stream.play().expect("Failed to play stream");
+    stream.play().expect("Failed to play stream");
 
-    println!("(Audio system setup completed)");
+    println!("(audio -> lib.rs PREPARED)");
 }
