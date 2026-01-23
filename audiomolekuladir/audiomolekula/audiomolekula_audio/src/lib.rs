@@ -73,27 +73,28 @@ impl Drop for PluginCleanup<'_> {
 }
 
 unsafe fn load_entry(lib: &Library) -> Result<&clap_plugin_entry, String> {
-    let entry_symbol: Symbol<*const clap_plugin_entry> = lib
-        .get(b"clap_entry\0")
-        .map_err(|err| format!("Failed to get clap_entry: {}", err))?;
+    let entry_symbol: Symbol<*const clap_plugin_entry> = unsafe {
+        lib.get(b"clap_entry\0")
+            .map_err(|err| format!("Failed to get clap_entry: {}", err))?
+    };
     let entry_ptr = *entry_symbol;
     if entry_ptr.is_null() {
         return Err("clap_entry symbol is null".to_string());
     }
 
-    Ok(&*entry_ptr)
+    Ok(unsafe { &*entry_ptr })
 }
 
 unsafe fn get_factory(entry: &clap_plugin_entry) -> Result<&clap_plugin_factory, String> {
     let get_factory = entry
         .get_factory
         .ok_or_else(|| "get_factory missing".to_string())?;
-    let factory_ptr = get_factory(CLAP_PLUGIN_FACTORY_ID.as_ptr() as *const i8);
+    let factory_ptr = unsafe { get_factory(CLAP_PLUGIN_FACTORY_ID.as_ptr() as *const i8) };
     if factory_ptr.is_null() {
         return Err("Plugin factory is null".to_string());
     }
 
-    Ok(&*(factory_ptr as *const clap_plugin_factory))
+    Ok(unsafe { &*(factory_ptr as *const clap_plugin_factory) })
 }
 
 pub fn setup_audio_system() {
