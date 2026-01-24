@@ -14,7 +14,7 @@ pub fn frontend_show_window() {
             }),
             ..default()
         }))
-        .add_plugins(EguiPlugin)
+        .add_plugins(EguiPlugin::default())
         .init_resource::<PluginWindowState>()
         .add_systems(Startup, (setup_camera_system, setup_audio_system))
         .add_systems(
@@ -52,7 +52,8 @@ fn capture_parent_window_handle_system(
     }
 
     if let Ok(handle_wrapper) = query.single() {
-        if let RawWindowHandle::Win32(handle) = handle_wrapper.0 {
+        let handle = handle_wrapper.get_window_handle();
+        if let RawWindowHandle::Win32(handle) = handle {
             let hwnd = handle.hwnd.get();
             state.parent_hwnd = Some(hwnd);
 
@@ -69,10 +70,10 @@ fn ui_main_layout_system(
     mut state: ResMut<PluginWindowState>,
     window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
-    let Ok(window) = window_query.single() else {
+    let Ok(_window) = window_query.single() else {
         return;
     };
-    let ctx = contexts.ctx_mut();
+    let ctx = contexts.ctx_mut().expect("Failed to get egui context");
 
     egui::SidePanel::left("controls").show(ctx, |ui| {
         ui.heading("Instrument");
@@ -94,8 +95,12 @@ fn ui_main_layout_system(
 
         state.last_known_rect = Some(response.rect);
 
-        ui.painter()
-            .rect_stroke(response.rect, 0.0, (1.0, egui::Color32::DARK_GRAY));
+        ui.painter().rect_stroke(
+            response.rect,
+            0.0,
+            (1.0, egui::Color32::DARK_GRAY),
+            egui::StrokeKind::Inside,
+        );
     });
 }
 
