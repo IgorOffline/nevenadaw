@@ -12,6 +12,7 @@ use clap_sys::plugin::clap_plugin;
 use clap_sys::process::clap_process;
 use clap_sys::version::CLAP_VERSION;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use cpal::{FromSample, Sample, SampleFormat, SizedSample, SupportedBufferSize};
 use libloading::{Library, Symbol};
 use std::ffi::{c_void, CString};
 use std::mem;
@@ -106,6 +107,160 @@ fn query_gui_extension(plugin: &clap_plugin, plugin_name: &str) -> Option<*const
     }
 
     Some(gui_ext_ptr as *const clap_plugin_gui)
+}
+
+fn select_output_device(host: &cpal::Host, preferred_name: &str) -> Option<cpal::Device> {
+    host.output_devices()
+        .ok()
+        .and_then(|mut devices| {
+            devices.find(|device| {
+                device
+                    .description()
+                    .map(|desc| desc.name().contains(preferred_name))
+                    .unwrap_or(false)
+            })
+        })
+        .or_else(|| host.default_output_device())
+}
+
+fn buffer_bounds(config: &cpal::SupportedStreamConfig) -> (u32, u32) {
+    match config.buffer_size() {
+        SupportedBufferSize::Range { min, max } => (*min, *max),
+        SupportedBufferSize::Unknown => (1, 4096),
+    }
+}
+
+fn build_stream_for_format<T>(
+    device: &cpal::Device,
+    config: &cpal::StreamConfig,
+    plugin_ptr_usize: usize,
+    is_pressed: Arc<AtomicBool>,
+    max_frames: usize,
+) -> Result<cpal::Stream, cpal::BuildStreamError>
+where
+    T: SizedSample + FromSample<f32> + Send + 'static,
+{
+    let channels = config.channels as usize;
+    let mut left_out = vec![0.0f32; max_frames];
+    let mut right_out = vec![0.0f32; max_frames];
+    let mut last_pressed = false;
+
+    device.build_output_stream(
+        config,
+        move |data: &mut [T], _: &cpal::OutputCallbackInfo| {
+            let plugin_ptr = plugin_ptr_usize as *const clap_plugin;
+            let plugin = unsafe { &*plugin_ptr };
+
+            if channels == 0 {
+                data.fill(T::EQUILIBRIUM);
+                return;
+            }
+
+            let total_samples = data.len();
+            if total_samples % channels != 0 {
+                data.fill(T::EQUILIBRIUM);
+                return;
+            }
+
+            let num_frames = total_samples / channels;
+            if num_frames > max_frames {
+                data.fill(T::EQUILIBRIUM);
+                return;
+            }
+
+            left_out.fill(0.0);
+            right_out.fill(0.0);
+
+            let current_pressed = is_pressed.load(Ordering::Relaxed);
+
+            let mut my_note = if current_pressed != last_pressed {
+                let event_type = if current_pressed {
+                    CLAP_EVENT_NOTE_ON
+                } else {
+                    CLAP_EVENT_NOTE_OFF
+                };
+                last_pressed = current_pressed;
+                Some(MockNoteEvent {
+                    note: clap_event_note {
+                        header: clap_event_header {
+                            size: mem::size_of::<clap_event_note>() as u32,
+                            time: 0,
+                            space_id: CLAP_CORE_EVENT_SPACE_ID,
+                            type_: event_type,
+                            flags: 0,
+                        },
+                        note_id: -1,
+                        port_index: 0,
+                        channel: 0,
+                        key: 60,
+                        velocity: 1.0,
+                    },
+                })
+            } else {
+                None
+            };
+
+            let input_events = clap_input_events {
+                ctx: if let Some(ref mut note) = my_note {
+                    note as *mut _ as *mut c_void
+                } else {
+                    std::ptr::null_mut()
+                },
+                size: Some(event_list_size),
+                get: Some(event_list_get),
+            };
+
+            let mut out_events = clap_output_events {
+                ctx: std::ptr::null_mut(),
+                try_push: Some(output_events_push),
+            };
+
+            let mut channel_ptrs = [left_out.as_mut_ptr(), right_out.as_mut_ptr()];
+            let mut output_buffer = clap_audio_buffer {
+                data32: channel_ptrs.as_mut_ptr(),
+                data64: std::ptr::null_mut(),
+                channel_count: 2,
+                latency: 0,
+                constant_mask: 0,
+            };
+
+            let process_data = clap_process {
+                steady_time: -1,
+                frames_count: num_frames as u32,
+                transport: std::ptr::null(),
+                audio_inputs: std::ptr::null(),
+                audio_outputs: &mut output_buffer,
+                audio_inputs_count: 0,
+                audio_outputs_count: 1,
+                in_events: &input_events,
+                out_events: &mut out_events,
+            };
+
+            unsafe {
+                if let Some(process_fn) = plugin.process {
+                    (process_fn)(plugin, &process_data);
+                }
+            }
+
+            for i in 0..num_frames {
+                let left = left_out[i] * 0.2;
+                let right = right_out[i] * 0.2;
+                if channels == 1 {
+                    let mixed = (left + right) * 0.5;
+                    data[i] = T::from_sample(mixed);
+                } else {
+                    let base = i * channels;
+                    data[base] = T::from_sample(left);
+                    data[base + 1] = T::from_sample(right);
+                    for channel in 2..channels {
+                        data[base + channel] = T::EQUILIBRIUM;
+                    }
+                }
+            }
+        },
+        |err| eprintln!("Stream error: {}", err),
+        None,
+    )
 }
 
 pub fn setup_audio_system() -> Option<AudioState> {
@@ -230,140 +385,86 @@ pub fn setup_audio_system() -> Option<AudioState> {
         return None;
     }
 
-    if query_gui_extension(plugin, plugin_name).is_none() {
-        return None;
-    }
+    let _ = query_gui_extension(plugin, plugin_name);
+
+    let is_pressed = Arc::new(AtomicBool::new(false));
+    let plugin_ptr_usize = plugin_ptr as usize;
+
+    let (host_label, device) = if let Ok(asio_host) = cpal::host_from_id(cpal::HostId::Asio) {
+        if let Some(device) = select_output_device(&asio_host, "FlexASIO") {
+            ("asio", device)
+        } else {
+            let host = cpal::default_host();
+            (
+                "default",
+                select_output_device(&host, "FlexASIO").expect("No output device found."),
+            )
+        }
+    } else {
+        let host = cpal::default_host();
+        (
+            "default",
+            select_output_device(&host, "FlexASIO").expect("No output device found."),
+        )
+    };
+
+    let device_desc = device
+        .description()
+        .map(|desc| desc.to_string())
+        .unwrap_or_else(|_| "Unknown device".to_string());
+    println!("Output device ({}): {}", host_label, device_desc);
+
+    let supported_config = device
+        .default_output_config()
+        .expect("Failed to get default output config");
+    let sample_rate = supported_config.sample_rate().0 as f64;
+    let sample_format = supported_config.sample_format();
+    let (min_frames, max_frames) = buffer_bounds(&supported_config);
+    let min_frames = min_frames.max(1);
+    let max_frames = max_frames.max(min_frames);
+    let stream_config = supported_config.config();
+
+    println!(
+        "Output config: {} Hz, {} ch, format {}",
+        stream_config.sample_rate.0, stream_config.channels, sample_format
+    );
 
     if let Some(activate) = plugin.activate {
-        if unsafe { !(activate)(plugin, 44100.0, 1, 4096) } {
+        if unsafe { !(activate)(plugin, sample_rate, min_frames, max_frames) } {
             println!("Error: Plugin activation failed");
             return None;
         }
     }
 
-    let is_pressed = Arc::new(AtomicBool::new(false));
-    let is_pressed_clone = Arc::clone(&is_pressed);
-    let plugin_ptr_usize = plugin_ptr as usize;
+    let stream = match sample_format {
+        SampleFormat::F32 => build_stream_for_format::<f32>(
+            &device,
+            &stream_config,
+            plugin_ptr_usize,
+            Arc::clone(&is_pressed),
+            max_frames as usize,
+        ),
+        SampleFormat::I16 => build_stream_for_format::<i16>(
+            &device,
+            &stream_config,
+            plugin_ptr_usize,
+            Arc::clone(&is_pressed),
+            max_frames as usize,
+        ),
+        SampleFormat::U16 => build_stream_for_format::<u16>(
+            &device,
+            &stream_config,
+            plugin_ptr_usize,
+            Arc::clone(&is_pressed),
+            max_frames as usize,
+        ),
+        _ => {
+            println!("Unsupported sample format: {}", sample_format);
+            return None;
+        }
+    };
 
-    let asio_host = cpal::host_from_id(cpal::HostId::Asio).unwrap_or_else(|_| cpal::default_host());
-    let device = asio_host
-        .output_devices()
-        .unwrap()
-        .find(|d| {
-            d.description()
-                .map(|desc| desc.name().contains("FlexASIO"))
-                .unwrap_or(false)
-        })
-        .or_else(|| asio_host.default_output_device())
-        .expect("No output device found.");
-
-    let config = device
-        .default_output_config()
-        .expect("Failed to get default output config");
-
-    let mut left_out = vec![0.0f32; 4096];
-    let mut right_out = vec![0.0f32; 4096];
-    let mut last_pressed = false;
-
-    let stream = match device.build_output_stream(
-        &config.into(),
-        move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-            let plugin_ptr = plugin_ptr_usize as *const clap_plugin;
-            let plugin = unsafe { &*plugin_ptr };
-
-            let total_samples = data.len();
-            if total_samples % 2 != 0 {
-                return;
-            }
-            let num_frames = (total_samples / 2) as u32;
-
-            if num_frames > 4096 {
-                data.fill(0.0);
-                return;
-            }
-
-            left_out.fill(0.0);
-            right_out.fill(0.0);
-
-            let current_pressed = is_pressed_clone.load(Ordering::Relaxed);
-
-            let mut my_note = if current_pressed != last_pressed {
-                let event_type = if current_pressed {
-                    CLAP_EVENT_NOTE_ON
-                } else {
-                    CLAP_EVENT_NOTE_OFF
-                };
-                last_pressed = current_pressed;
-                Some(MockNoteEvent {
-                    note: clap_event_note {
-                        header: clap_event_header {
-                            size: mem::size_of::<clap_event_note>() as u32,
-                            time: 0,
-                            space_id: CLAP_CORE_EVENT_SPACE_ID,
-                            type_: event_type,
-                            flags: 0,
-                        },
-                        note_id: -1,
-                        port_index: 0,
-                        channel: 0,
-                        key: 60,
-                        velocity: 1.0,
-                    },
-                })
-            } else {
-                None
-            };
-
-            let input_events = clap_input_events {
-                ctx: if let Some(ref mut note) = my_note {
-                    note as *mut _ as *mut c_void
-                } else {
-                    std::ptr::null_mut()
-                },
-                size: Some(event_list_size),
-                get: Some(event_list_get),
-            };
-
-            let mut out_events = clap_output_events {
-                ctx: std::ptr::null_mut(),
-                try_push: Some(output_events_push),
-            };
-
-            let mut channel_ptrs = [left_out.as_mut_ptr(), right_out.as_mut_ptr()];
-            let mut output_buffer = clap_audio_buffer {
-                data32: channel_ptrs.as_mut_ptr(),
-                data64: std::ptr::null_mut(),
-                channel_count: 2,
-                latency: 0,
-                constant_mask: 0,
-            };
-
-            let process_data = clap_process {
-                steady_time: -1,
-                frames_count: num_frames,
-                transport: std::ptr::null(),
-                audio_inputs: std::ptr::null(),
-                audio_outputs: &mut output_buffer,
-                audio_inputs_count: 0,
-                audio_outputs_count: 1,
-                in_events: &input_events,
-                out_events: &mut out_events,
-            };
-
-            unsafe {
-                if let Some(process_fn) = plugin.process {
-                    (process_fn)(plugin, &process_data);
-                }
-            }
-
-            for i in 0..num_frames as usize {
-                data[i * 2] = left_out[i] * 0.2;
-                data[i * 2 + 1] = right_out[i] * 0.2;
-            }
-        },
-        |err| eprintln!("Stream error: {}", err),
-        None,
-    ) {
+    let stream = match stream {
         Ok(stream) => stream,
         Err(err) => {
             println!("Failed to build output stream: {}", err);
