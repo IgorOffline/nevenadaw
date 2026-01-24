@@ -37,7 +37,7 @@ struct PluginWindowState {
     requested_size_physical: Option<(u32, u32)>,
 }
 
-struct MainThreadToken(Rc<()>);
+struct MainThreadToken(#[allow(dead_code)] Rc<()>);
 
 impl MainThreadToken {
     fn new() -> Self {
@@ -121,7 +121,7 @@ fn ui_main_layout_system(
             desired_size.x.min(available_rect.width()),
             desired_size.y.min(available_rect.height()),
         );
-        let (rect, response) = ui.allocate_exact_size(clamped_size, egui::Sense::hover());
+        let (_rect, response) = ui.allocate_exact_size(clamped_size, egui::Sense::hover());
 
         state.last_known_rect = Some(response.rect);
 
@@ -169,7 +169,7 @@ fn sync_plugin_gui_system(
         width: (rect.width() * scale) as u32,
         height: (rect.height() * scale) as u32,
         visible: state.is_visible,
-        scale,
+        scale: scale as f64,
     };
 
     audio.update_gui_layout(physical_rect);

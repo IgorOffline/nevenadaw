@@ -20,6 +20,9 @@ pub struct AudioState {
     gui_state: Mutex<PluginGuiState>,
 }
 
+unsafe impl Send for AudioState {}
+unsafe impl Sync for AudioState {}
+
 pub struct PluginGuiRect {
     pub x: i32,
     pub y: i32,
@@ -283,10 +286,7 @@ impl AudioState {
                     false
                 }
             };
-            println!(
-                "CLAP GUI is_api_supported(win32): {}",
-                state.api_supported
-            );
+            println!("CLAP GUI is_api_supported(win32): {}", state.api_supported);
         }
 
         if !state.api_supported {
@@ -295,7 +295,9 @@ impl AudioState {
 
         if !state.created {
             state.created = match gui.create {
-                Some(create) => unsafe { (create)(self.plugin, CLAP_WINDOW_API_WIN32.as_ptr(), false) },
+                Some(create) => unsafe {
+                    (create)(self.plugin, CLAP_WINDOW_API_WIN32.as_ptr(), false)
+                },
                 None => {
                     println!("CLAP GUI create missing");
                     false
