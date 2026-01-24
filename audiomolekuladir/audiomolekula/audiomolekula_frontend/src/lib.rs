@@ -1,8 +1,9 @@
 use audiomolekula_shared::{AudioState, PluginGuiRect};
 use bevy::prelude::*;
-use bevy::window::{PrimaryWindow, RawHandleWrapper};
+use bevy::window::{ExitCondition, PrimaryWindow, RawHandleWrapper};
 use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 use raw_window_handle::RawWindowHandle;
+use std::rc::Rc;
 
 pub fn frontend_show_window() {
     App::new()
@@ -12,9 +13,12 @@ pub fn frontend_show_window() {
                 resolution: (1280, 720).into(),
                 ..default()
             }),
+            exit_condition: ExitCondition::DontExit,
+            close_when_requested: false,
             ..default()
         }))
         .add_plugins(EguiPlugin::default())
+        .insert_non_send_resource(MainThreadToken::new())
         .init_resource::<PluginWindowState>()
         .add_systems(Startup, (setup_camera_system, setup_audio_system))
         .add_systems(
@@ -30,6 +34,15 @@ struct PluginWindowState {
     parent_hwnd: Option<isize>,
     last_known_rect: Option<egui::Rect>,
     is_visible: bool,
+    requested_size_physical: Option<(u32, u32)>,
+}
+
+struct MainThreadToken(Rc<()>);
+
+impl MainThreadToken {
+    fn new() -> Self {
+        Self(Rc::new(()))
+    }
 }
 
 fn setup_audio_system(mut commands: Commands) {
@@ -46,6 +59,7 @@ fn capture_parent_window_handle_system(
     query: Query<&RawHandleWrapper, With<PrimaryWindow>>,
     mut state: ResMut<PluginWindowState>,
     audio_state: Option<Res<AudioState>>,
+    _main_thread: NonSend<MainThreadToken>,
 ) {
     if state.parent_hwnd.is_some() {
         return;
@@ -68,9 +82,10 @@ fn ui_main_layout_system(
     mut contexts: EguiContexts,
     audio_state: Option<Res<AudioState>>,
     mut state: ResMut<PluginWindowState>,
-    window_query: Query<Entity, With<PrimaryWindow>>,
+    window_query: Query<(Entity, &Window), With<PrimaryWindow>>,
+    _main_thread: NonSend<MainThreadToken>,
 ) {
-    let Ok(window_entity) = window_query.single() else {
+    let Ok((window_entity, window)) = window_query.single() else {
         return;
     };
 
@@ -94,8 +109,19 @@ fn ui_main_layout_system(
     egui::CentralPanel::default().show(ctx, |ui| {
         ui.label("Plugin Rack");
 
-        let rect = ui.available_rect_before_wrap();
-        let response = ui.allocate_rect(rect, egui::Sense::hover());
+        let available_rect = ui.available_rect_before_wrap();
+        let mut desired_size = available_rect.size();
+        if let Some((width, height)) = state.requested_size_physical {
+            let scale = window.scale_factor() as f32;
+            if scale > 0.0 {
+                desired_size = egui::vec2(width as f32 / scale, height as f32 / scale);
+            }
+        }
+        let clamped_size = egui::vec2(
+            desired_size.x.min(available_rect.width()),
+            desired_size.y.min(available_rect.height()),
+        );
+        let (rect, response) = ui.allocate_exact_size(clamped_size, egui::Sense::hover());
 
         state.last_known_rect = Some(response.rect);
 
@@ -109,11 +135,26 @@ fn ui_main_layout_system(
 }
 
 fn sync_plugin_gui_system(
-    state: Res<PluginWindowState>,
+    mut state: ResMut<PluginWindowState>,
     audio_state: Option<Res<AudioState>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
+    _main_thread: NonSend<MainThreadToken>,
 ) {
-    let (Some(audio), Some(rect)) = (audio_state, state.last_known_rect) else {
+    let Some(audio) = audio_state else {
+        return;
+    };
+    let requests = audio.take_gui_requests();
+    if let Some((width, height)) = requests.requested_resize {
+        state.requested_size_physical = Some((width, height));
+    }
+    if requests.requested_show {
+        state.is_visible = true;
+    }
+    if requests.requested_hide || requests.closed {
+        state.is_visible = false;
+    }
+
+    let Some(rect) = state.last_known_rect else {
         return;
     };
     let Ok(window) = window_query.single() else {
@@ -128,6 +169,7 @@ fn sync_plugin_gui_system(
         width: (rect.width() * scale) as u32,
         height: (rect.height() * scale) as u32,
         visible: state.is_visible,
+        scale,
     };
 
     audio.update_gui_layout(physical_rect);
