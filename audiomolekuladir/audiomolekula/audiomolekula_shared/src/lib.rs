@@ -140,9 +140,9 @@ impl AudioState {
             return;
         }
         gui_state.parent_hwnd = Some(hwnd);
+        gui_state.parent_set = false;
 
-        let gui = unsafe { &*gui_ptr };
-        if !self.ensure_gui_created(gui, &mut gui_state) {
+        if !gui_state.created {
             return;
         }
 
@@ -150,6 +150,7 @@ impl AudioState {
             return;
         }
 
+        let gui = unsafe { &*gui_ptr };
         let window = clap_window {
             api: CLAP_WINDOW_API_WIN32.as_ptr(),
             specific: clap_window_handle {
@@ -180,30 +181,34 @@ impl AudioState {
             .lock()
             .expect("72c1fafa plugin gui state lock");
 
+        let Some(hwnd) = gui_state.parent_hwnd else {
+            return;
+        };
+
+        if !gui_state.created && !rect.visible {
+            return;
+        }
+
         if !self.ensure_gui_created(gui, &mut gui_state) {
             return;
         }
 
         if !gui_state.parent_set {
-            if let Some(hwnd) = gui_state.parent_hwnd {
-                let window = clap_window {
-                    api: CLAP_WINDOW_API_WIN32.as_ptr(),
-                    specific: clap_window_handle {
-                        win32: hwnd as *mut c_void,
-                    },
-                };
-                match gui.set_parent {
-                    Some(set_parent) => {
-                        let ok = unsafe { (set_parent)(self.plugin, &window) };
-                        println!("CLAP GUI set_parent win32 -> {}", ok);
-                        if ok {
-                            gui_state.parent_set = true;
-                        }
+            let window = clap_window {
+                api: CLAP_WINDOW_API_WIN32.as_ptr(),
+                specific: clap_window_handle {
+                    win32: hwnd as *mut c_void,
+                },
+            };
+            match gui.set_parent {
+                Some(set_parent) => {
+                    let ok = unsafe { (set_parent)(self.plugin, &window) };
+                    println!("CLAP GUI set_parent win32 -> {}", ok);
+                    if ok {
+                        gui_state.parent_set = true;
                     }
-                    None => println!("CLAP GUI set_parent missing"),
                 }
-            } else {
-                return;
+                None => println!("CLAP GUI set_parent missing"),
             }
         }
 
