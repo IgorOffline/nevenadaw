@@ -93,7 +93,10 @@ unsafe fn get_factory(entry: &clap_plugin_entry) -> Result<&clap_plugin_factory,
 
 fn query_gui_extension(plugin: &clap_plugin, plugin_name: &str) -> Option<*const clap_plugin_gui> {
     let get_extension = match plugin.get_extension {
-        Some(get_extension) => get_extension,
+        Some(get_extension) => {
+            println!("get_extension found for {}", plugin_name);
+            get_extension
+        }
         None => {
             println!("get_extension missing for {}", plugin_name);
             return None;
