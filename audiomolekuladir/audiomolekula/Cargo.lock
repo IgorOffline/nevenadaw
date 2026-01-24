@@ -382,6 +382,7 @@ dependencies = [
  "audiomolekula_shared",
  "bevy",
  "bevy_egui",
+ "raw-window-handle",
 ]
 
 [[package]]
