@@ -1,7 +1,7 @@
 use audiomolekula_shared::{AudioState, PluginGuiRect};
 use bevy::prelude::*;
 use bevy::window::{PrimaryWindow, RawHandleWrapper};
-use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 use raw_window_handle::RawWindowHandle;
 
 pub fn frontend_show_window() {
@@ -21,7 +21,7 @@ pub fn frontend_show_window() {
             Update,
             (capture_parent_window_handle_system, sync_plugin_gui_system),
         )
-        .add_systems(Update, ui_main_layout_system)
+        .add_systems(EguiPrimaryContextPass, ui_main_layout_system)
         .run();
 }
 
@@ -68,12 +68,16 @@ fn ui_main_layout_system(
     mut contexts: EguiContexts,
     audio_state: Option<Res<AudioState>>,
     mut state: ResMut<PluginWindowState>,
-    window_query: Query<&Window, With<PrimaryWindow>>,
+    window_query: Query<Entity, With<PrimaryWindow>>,
 ) {
-    let Ok(_window) = window_query.single() else {
+    let Ok(window_entity) = window_query.single() else {
         return;
     };
-    let ctx = contexts.ctx_mut().expect("Failed to get egui context");
+
+    let ctx = match contexts.ctx_for_entity_mut(window_entity) {
+        Ok(ctx) => ctx,
+        Err(_) => return,
+    };
 
     egui::SidePanel::left("controls").show(ctx, |ui| {
         ui.heading("Instrument");
@@ -98,8 +102,8 @@ fn ui_main_layout_system(
         ui.painter().rect_stroke(
             response.rect,
             0.0,
-            (1.0, egui::Color32::DARK_GRAY),
-            egui::StrokeKind::Inside,
+            egui::Stroke::new(1.0, egui::Color32::DARK_GRAY),
+            egui::StrokeKind::Middle,
         );
     });
 }
