@@ -12,7 +12,7 @@ use clap_sys::plugin::clap_plugin;
 use clap_sys::process::clap_process;
 use clap_sys::version::CLAP_VERSION;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use cpal::{FromSample, Sample, SampleFormat, SizedSample, SupportedBufferSize};
+use cpal::{FromSample, SampleFormat, SizedSample, SupportedBufferSize};
 use libloading::{Library, Symbol};
 use std::ffi::{c_void, CString};
 use std::mem;
@@ -417,16 +417,16 @@ pub fn setup_audio_system() -> Option<AudioState> {
     let supported_config = device
         .default_output_config()
         .expect("Failed to get default output config");
-    let sample_rate = supported_config.sample_rate().0 as f64;
+    let stream_config = supported_config.config();
+    let sample_rate = stream_config.sample_rate as f64;
     let sample_format = supported_config.sample_format();
     let (min_frames, max_frames) = buffer_bounds(&supported_config);
     let min_frames = min_frames.max(1);
     let max_frames = max_frames.max(min_frames);
-    let stream_config = supported_config.config();
 
     println!(
         "Output config: {} Hz, {} ch, format {}",
-        stream_config.sample_rate.0, stream_config.channels, sample_format
+        stream_config.sample_rate, stream_config.channels, sample_format
     );
 
     if let Some(activate) = plugin.activate {
