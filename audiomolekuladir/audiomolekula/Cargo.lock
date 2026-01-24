@@ -359,25 +359,27 @@ dependencies = [
 name = "audiomolekula_audio"
 version = "0.1.0"
 dependencies = [
+ "audiomolekula_shared",
  "clap-sys",
  "cpal 0.17.1",
  "libloading 0.9.0",
+ "rand",
 ]
 
 [[package]]
 name = "audiomolekula_core"
 version = "0.1.0"
 dependencies = [
- "audiomolekula_audio",
  "audiomolekula_frontend",
  "audiomolekula_io",
- "rand",
 ]
 
 [[package]]
 name = "audiomolekula_frontend"
 version = "0.1.0"
 dependencies = [
+ "audiomolekula_audio",
+ "audiomolekula_shared",
  "bevy",
  "bevy_egui",
 ]
@@ -388,6 +390,15 @@ version = "0.1.0"
 dependencies = [
  "serde",
  "toml",
+]
+
+[[package]]
+name = "audiomolekula_shared"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "cpal 0.17.1",
+ "libloading 0.9.0",
 ]
 
 [[package]]
