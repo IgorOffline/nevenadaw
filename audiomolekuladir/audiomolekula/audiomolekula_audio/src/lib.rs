@@ -1,8 +1,9 @@
+use audiomolekula_shared::AudioState;
 use clap_sys::audio_buffer::clap_audio_buffer;
 use clap_sys::entry::clap_plugin_entry;
 use clap_sys::events::{
     clap_event_header, clap_event_note, clap_input_events, clap_output_events,
-    CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_NOTE_ON,
+    CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_NOTE_OFF, CLAP_EVENT_NOTE_ON,
 };
 use clap_sys::factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID};
 use clap_sys::host::clap_host;
@@ -12,6 +13,9 @@ use clap_sys::version::CLAP_VERSION;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use libloading::{Library, Symbol};
 use std::ffi::{c_void, CString};
+use std::mem;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 #[allow(dead_code)]
 struct MockNoteEvent {
@@ -47,10 +51,10 @@ unsafe extern "C" fn host_request_restart(_host: *const clap_host) {}
 unsafe extern "C" fn host_request_process(_host: *const clap_host) {}
 unsafe extern "C" fn host_request_callback(_host: *const clap_host) {}
 
-static AUDIOMOLEKULA_HOST: clap_host = clap_host {
+static HELLO_HOST: clap_host = clap_host {
     clap_version: CLAP_VERSION,
     host_data: std::ptr::null_mut(),
-    name: b"Audiomolekula\0".as_ptr() as *const i8,
+    name: b"HelloCPAL\0".as_ptr() as *const i8,
     vendor: b"Independent\0".as_ptr() as *const i8,
     url: b"https://igordurbek.com\0".as_ptr() as *const i8,
     version: b"0.1.0\0".as_ptr() as *const i8,
@@ -59,48 +63,6 @@ static AUDIOMOLEKULA_HOST: clap_host = clap_host {
     request_process: Some(host_request_process),
     request_callback: Some(host_request_callback),
 };
-
-struct PluginCleanup<'a> {
-    entry: &'a clap_plugin_entry,
-    entry_inited: bool,
-    plugin: *const clap_plugin,
-    activated: bool,
-}
-
-impl<'a> PluginCleanup<'a> {
-    fn new(entry: &'a clap_plugin_entry) -> Self {
-        Self {
-            entry,
-            entry_inited: false,
-            plugin: std::ptr::null(),
-            activated: false,
-        }
-    }
-}
-
-impl Drop for PluginCleanup<'_> {
-    fn drop(&mut self) {
-        unsafe {
-            if !self.plugin.is_null() {
-                let plugin = &*self.plugin;
-                if self.activated {
-                    if let Some(deactivate) = plugin.deactivate {
-                        deactivate(plugin);
-                    }
-                }
-                if let Some(destroy) = plugin.destroy {
-                    destroy(plugin);
-                }
-            }
-
-            if self.entry_inited {
-                if let Some(deinit) = self.entry.deinit {
-                    deinit();
-                }
-            }
-        }
-    }
-}
 
 unsafe fn load_entry(lib: &Library) -> Result<&clap_plugin_entry, String> {
     let entry_symbol: Symbol<*const clap_plugin_entry> = unsafe {
@@ -127,20 +89,28 @@ unsafe fn get_factory(entry: &clap_plugin_entry) -> Result<&clap_plugin_factory,
     Ok(unsafe { &*(factory_ptr as *const clap_plugin_factory) })
 }
 
-pub fn setup_audio_system() {
-    let plugin_path = r"C:\Program Files\Common Files\CLAP\Vital.clap";
-    let plugin_name = "Vital";
+pub fn setup_audio_system() -> Option<AudioState> {
+    let coin_toss = rand::random_range(1..=2);
+    let (plugin_path, plugin_name) = if coin_toss == 1 {
+        (r"C:\Program Files\Common Files\CLAP\Vital.clap", "Vital")
+    } else {
+        (
+            r"C:\Program Files\Common Files\CLAP\Surge Synth Team\Surge XT.clap",
+            "Surge XT",
+        )
+    };
+    println!("Coin toss result: {}", plugin_name);
 
     if !std::path::Path::new(plugin_path).exists() {
         println!("{} not found at {}", plugin_name, plugin_path);
-        return;
+        return None;
     }
 
     let lib = match unsafe { Library::new(plugin_path) } {
         Ok(lib) => lib,
         Err(err) => {
             println!("Failed to load {}: {}", plugin_name, err);
-            return;
+            return None;
         }
     };
 
@@ -148,7 +118,7 @@ pub fn setup_audio_system() {
         Ok(entry) => entry,
         Err(msg) => {
             println!("{}", msg);
-            return;
+            return None;
         }
     };
 
@@ -156,7 +126,7 @@ pub fn setup_audio_system() {
         Ok(value) => value,
         Err(err) => {
             println!("Invalid plugin path: {}", err);
-            return;
+            return None;
         }
     };
 
@@ -164,22 +134,20 @@ pub fn setup_audio_system() {
         Some(init) => init,
         None => {
             println!("Plugin init missing for {}", plugin_name);
-            return;
+            return None;
         }
     };
 
     if unsafe { !(entry_init)(plugin_path_cstring.as_ptr()) } {
         println!("Plugin entry init failed for {}", plugin_name);
-        return;
+        return None;
     }
-    let mut cleanup = PluginCleanup::new(entry);
-    cleanup.entry_inited = true;
 
     let factory = match unsafe { get_factory(entry) } {
         Ok(factory) => factory,
         Err(msg) => {
             println!("{} for {}", msg, plugin_name);
-            return;
+            return None;
         }
     };
 
@@ -187,73 +155,71 @@ pub fn setup_audio_system() {
         Some(get_plugin_count) => get_plugin_count,
         None => {
             println!("get_plugin_count missing for {}", plugin_name);
-            return;
+            return None;
         }
     };
 
     let count = unsafe { get_plugin_count(factory) };
     if count == 0 {
         println!("No plugins found in {}", plugin_name);
-        return;
+        return None;
     }
 
     let get_plugin_descriptor = match factory.get_plugin_descriptor {
         Some(get_plugin_descriptor) => get_plugin_descriptor,
         None => {
             println!("get_plugin_descriptor missing for {}", plugin_name);
-            return;
+            return None;
         }
     };
     let descriptor = unsafe { get_plugin_descriptor(factory, 0) };
     if descriptor.is_null() {
         println!("Plugin descriptor is null for {}", plugin_name);
-        return;
+        return None;
     }
 
     let plugin_id = unsafe { (*descriptor).id };
     if plugin_id.is_null() {
         println!("Plugin descriptor id is null for {}", plugin_name);
-        return;
+        return None;
     }
 
     let create_plugin = match factory.create_plugin {
         Some(create_plugin) => create_plugin,
         None => {
             println!("create_plugin missing for {}", plugin_name);
-            return;
+            return None;
         }
     };
-    let plugin_ptr = unsafe { create_plugin(factory, &AUDIOMOLEKULA_HOST, plugin_id) };
+    let plugin_ptr = unsafe { create_plugin(factory, &HELLO_HOST, plugin_id) };
 
     if plugin_ptr.is_null() {
         println!("{} failed to initialize", plugin_name);
-        return;
+        return None;
     }
 
     let plugin = unsafe { &*plugin_ptr };
-    cleanup.plugin = plugin_ptr;
     let plugin_init = match plugin.init {
         Some(init) => init,
         None => {
             println!("Plugin init missing for {}", plugin_name);
-            return;
+            return None;
         }
     };
     if unsafe { !(plugin_init)(plugin) } {
         println!("Error: Plugin init failed");
-        return;
+        return None;
     }
 
-    let mut activated = false;
     if let Some(activate) = plugin.activate {
         if unsafe { !(activate)(plugin, 44100.0, 1, 4096) } {
             println!("Error: Plugin activation failed");
-            return;
+            return None;
         }
-        activated = true;
     }
-    cleanup.activated = activated;
 
+    let is_pressed = Arc::new(AtomicBool::new(false));
+    let is_pressed_clone = Arc::clone(&is_pressed);
     let plugin_ptr_usize = plugin_ptr as usize;
 
     let asio_host = cpal::host_from_id(cpal::HostId::Asio).unwrap_or_else(|_| cpal::default_host());
@@ -272,121 +238,115 @@ pub fn setup_audio_system() {
         .default_output_config()
         .expect("Failed to get default output config");
 
-    let note_frames = config.sample_rate().saturating_mul(2);
     let mut left_out = vec![0.0f32; 4096];
     let mut right_out = vec![0.0f32; 4096];
-    let mut frames_remaining = 0u32;
-    let mut note_on_pending = true;
+    let mut last_pressed = false;
 
-    let stream = device
-        .build_output_stream(
-            &config.into(),
-            move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-                let plugin_ptr = plugin_ptr_usize as *const clap_plugin;
-                let plugin = unsafe { &*plugin_ptr };
+    let stream = match device.build_output_stream(
+        &config.into(),
+        move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+            let plugin_ptr = plugin_ptr_usize as *const clap_plugin;
+            let plugin = unsafe { &*plugin_ptr };
 
-                let total_samples = data.len();
-                if total_samples % 2 != 0 {
-                    return;
-                }
-                let num_frames = (total_samples / 2) as u32;
+            let total_samples = data.len();
+            if total_samples % 2 != 0 {
+                return;
+            }
+            let num_frames = (total_samples / 2) as u32;
 
-                if num_frames > 4096 {
-                    data.fill(0.0);
-                    return;
-                }
+            if num_frames > 4096 {
+                data.fill(0.0);
+                return;
+            }
 
-                left_out.fill(0.0);
-                right_out.fill(0.0);
+            left_out.fill(0.0);
+            right_out.fill(0.0);
 
-                if note_on_pending {
-                    note_on_pending = false;
-                    frames_remaining = note_frames;
-                }
+            let current_pressed = is_pressed_clone.load(Ordering::Relaxed);
 
-                if frames_remaining == 0 {
-                    data.fill(0.0);
-                    return;
-                }
-
-                let mut my_note = if frames_remaining == note_frames {
-                    Some(MockNoteEvent {
-                        note: clap_event_note {
-                            header: clap_event_header {
-                                size: size_of::<clap_event_note>() as u32,
-                                time: 0,
-                                space_id: CLAP_CORE_EVENT_SPACE_ID,
-                                type_: CLAP_EVENT_NOTE_ON,
-                                flags: 0,
-                            },
-                            note_id: -1,
-                            port_index: 0,
-                            channel: 0,
-                            key: 60,
-                            velocity: 1.0,
-                        },
-                    })
+            let mut my_note = if current_pressed != last_pressed {
+                let event_type = if current_pressed {
+                    CLAP_EVENT_NOTE_ON
                 } else {
-                    None
+                    CLAP_EVENT_NOTE_OFF
                 };
-
-                let input_events = clap_input_events {
-                    ctx: if let Some(ref mut note) = my_note {
-                        note as *mut _ as *mut c_void
-                    } else {
-                        std::ptr::null_mut()
+                last_pressed = current_pressed;
+                Some(MockNoteEvent {
+                    note: clap_event_note {
+                        header: clap_event_header {
+                            size: mem::size_of::<clap_event_note>() as u32,
+                            time: 0,
+                            space_id: CLAP_CORE_EVENT_SPACE_ID,
+                            type_: event_type,
+                            flags: 0,
+                        },
+                        note_id: -1,
+                        port_index: 0,
+                        channel: 0,
+                        key: 60,
+                        velocity: 1.0,
                     },
-                    size: Some(event_list_size),
-                    get: Some(event_list_get),
-                };
+                })
+            } else {
+                None
+            };
 
-                let mut out_events = clap_output_events {
-                    ctx: std::ptr::null_mut(),
-                    try_push: Some(output_events_push),
-                };
+            let input_events = clap_input_events {
+                ctx: if let Some(ref mut note) = my_note {
+                    note as *mut _ as *mut c_void
+                } else {
+                    std::ptr::null_mut()
+                },
+                size: Some(event_list_size),
+                get: Some(event_list_get),
+            };
 
-                let mut channel_ptrs = [left_out.as_mut_ptr(), right_out.as_mut_ptr()];
-                let mut output_buffer = clap_audio_buffer {
-                    data32: channel_ptrs.as_mut_ptr(),
-                    data64: std::ptr::null_mut(),
-                    channel_count: 2,
-                    latency: 0,
-                    constant_mask: 0,
-                };
+            let mut out_events = clap_output_events {
+                ctx: std::ptr::null_mut(),
+                try_push: Some(output_events_push),
+            };
 
-                let process_data = clap_process {
-                    steady_time: -1,
-                    frames_count: num_frames,
-                    transport: std::ptr::null(),
-                    audio_inputs: std::ptr::null(),
-                    audio_outputs: &mut output_buffer,
-                    audio_inputs_count: 0,
-                    audio_outputs_count: 1,
-                    in_events: &input_events,
-                    out_events: &mut out_events,
-                };
+            let mut channel_ptrs = [left_out.as_mut_ptr(), right_out.as_mut_ptr()];
+            let mut output_buffer = clap_audio_buffer {
+                data32: channel_ptrs.as_mut_ptr(),
+                data64: std::ptr::null_mut(),
+                channel_count: 2,
+                latency: 0,
+                constant_mask: 0,
+            };
 
-                unsafe {
-                    if let Some(process_fn) = plugin.process {
-                        (process_fn)(plugin, &process_data);
-                    }
+            let process_data = clap_process {
+                steady_time: -1,
+                frames_count: num_frames,
+                transport: std::ptr::null(),
+                audio_inputs: std::ptr::null(),
+                audio_outputs: &mut output_buffer,
+                audio_inputs_count: 0,
+                audio_outputs_count: 1,
+                in_events: &input_events,
+                out_events: &mut out_events,
+            };
+
+            unsafe {
+                if let Some(process_fn) = plugin.process {
+                    (process_fn)(plugin, &process_data);
                 }
+            }
 
-                let frames_to_copy = frames_remaining.min(num_frames) as usize;
-                for i in 0..frames_to_copy {
-                    data[i * 2] = left_out[i] * 0.2;
-                    data[i * 2 + 1] = right_out[i] * 0.2;
-                }
-                for i in frames_to_copy..num_frames as usize {
-                    data[i * 2] = 0.0;
-                    data[i * 2 + 1] = 0.0;
-                }
-                frames_remaining = frames_remaining.saturating_sub(num_frames);
-            },
-            |err| eprintln!("Stream error: {}", err),
-            None,
-        )
-        .expect("Failed to build output stream");
+            for i in 0..num_frames as usize {
+                data[i * 2] = left_out[i] * 0.2;
+                data[i * 2 + 1] = right_out[i] * 0.2;
+            }
+        },
+        |err| eprintln!("Stream error: {}", err),
+        None,
+    ) {
+        Ok(stream) => stream,
+        Err(err) => {
+            println!("Failed to build output stream: {}", err);
+            return None;
+        }
+    };
 
     unsafe {
         if let Some(start_proc) = plugin.start_processing {
@@ -394,7 +354,10 @@ pub fn setup_audio_system() {
         }
     }
 
-    stream.play().expect("Failed to play stream");
+    if let Err(err) = stream.play() {
+        println!("Failed to play stream: {}", err);
+        return None;
+    }
 
-    println!("(audio -> lib.rs PREPARED)");
+    Some(AudioState::new(lib, stream, is_pressed))
 }

@@ -12,5 +12,6 @@ members = [
   "audiomolekula_core",
   "audiomolekula_frontend",
   "audiomolekula_io",
+  "audiomolekula_shared",
 ]
 resolver = "3"

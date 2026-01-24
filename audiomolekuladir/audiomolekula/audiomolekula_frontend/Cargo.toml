@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+audiomolekula_audio = { path = "../audiomolekula_audio" }
+audiomolekula_shared = { path = "../audiomolekula_shared" }
 bevy = "0.18.0"
 bevy_egui = "0.39.0"
