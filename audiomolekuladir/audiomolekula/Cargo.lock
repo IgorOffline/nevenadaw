@@ -382,6 +382,7 @@ dependencies = [
  "audiomolekula_shared",
  "bevy",
  "bevy_egui",
+ "raw-window-handle",
 ]
 
 [[package]]
@@ -397,6 +398,7 @@ name = "audiomolekula_shared"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "clap-sys",
  "cpal 0.17.1",
  "libloading 0.9.0",
 ]

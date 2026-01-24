@@ -1,11 +1,11 @@
-use audiomolekula_shared::AudioState;
+use audiomolekula_shared::{AudioState, HostGuiState};
 use clap_sys::audio_buffer::clap_audio_buffer;
 use clap_sys::entry::clap_plugin_entry;
 use clap_sys::events::{
     clap_event_header, clap_event_note, clap_input_events, clap_output_events,
     CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_NOTE_OFF, CLAP_EVENT_NOTE_ON,
 };
-use clap_sys::ext::gui::{clap_plugin_gui, CLAP_EXT_GUI};
+use clap_sys::ext::gui::{clap_host_gui, clap_plugin_gui, CLAP_EXT_GUI};
 use clap_sys::factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID};
 use clap_sys::host::clap_host;
 use clap_sys::plugin::clap_plugin;
@@ -14,7 +14,7 @@ use clap_sys::version::CLAP_VERSION;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{FromSample, SampleFormat, SizedSample, SupportedBufferSize};
 use libloading::{Library, Symbol};
-use std::ffi::{c_void, CString};
+use std::ffi::{c_void, CStr, CString};
 use std::mem;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -42,10 +42,77 @@ unsafe extern "C" fn output_events_push(
     true
 }
 
+unsafe fn host_gui_state(host: *const clap_host) -> Option<&'static HostGuiState> {
+    if host.is_null() {
+        return None;
+    }
+    let host_data = unsafe { (*host).host_data } as *const HostGuiState;
+    unsafe { host_data.as_ref() }
+}
+
+unsafe extern "C" fn host_gui_resize_hints_changed(host: *const clap_host) {
+    if let Some(state) = unsafe { host_gui_state(host) } {
+        println!("CLAP host_gui resize_hints_changed");
+        state.resize_hints_changed();
+    }
+}
+
+unsafe extern "C" fn host_gui_request_resize(
+    host: *const clap_host,
+    width: u32,
+    height: u32,
+) -> bool {
+    if let Some(state) = unsafe { host_gui_state(host) } {
+        println!("CLAP host_gui request_resize {}x{}", width, height);
+        return state.request_resize(width, height);
+    }
+    false
+}
+
+unsafe extern "C" fn host_gui_request_show(host: *const clap_host) -> bool {
+    if let Some(state) = unsafe { host_gui_state(host) } {
+        println!("CLAP host_gui request_show");
+        return state.request_show();
+    }
+    false
+}
+
+unsafe extern "C" fn host_gui_request_hide(host: *const clap_host) -> bool {
+    if let Some(state) = unsafe { host_gui_state(host) } {
+        println!("CLAP host_gui request_hide");
+        return state.request_hide();
+    }
+    false
+}
+
+unsafe extern "C" fn host_gui_closed(host: *const clap_host, was_destroyed: bool) {
+    if let Some(state) = unsafe { host_gui_state(host) } {
+        println!("CLAP host_gui closed (destroyed={})", was_destroyed);
+        state.closed(was_destroyed);
+    }
+}
+
+static HOST_GUI: clap_host_gui = clap_host_gui {
+    resize_hints_changed: Some(host_gui_resize_hints_changed),
+    request_resize: Some(host_gui_request_resize),
+    request_show: Some(host_gui_request_show),
+    request_hide: Some(host_gui_request_hide),
+    closed: Some(host_gui_closed),
+};
+
 unsafe extern "C" fn host_get_extension(
     _host: *const clap_host,
-    _extension_id: *const i8,
+    extension_id: *const i8,
 ) -> *const c_void {
+    if extension_id.is_null() {
+        return std::ptr::null();
+    }
+
+    let ext = unsafe { CStr::from_ptr(extension_id) };
+    if ext == CLAP_EXT_GUI {
+        return (&HOST_GUI) as *const clap_host_gui as *const c_void;
+    }
+
     std::ptr::null()
 }
 
@@ -53,18 +120,20 @@ unsafe extern "C" fn host_request_restart(_host: *const clap_host) {}
 unsafe extern "C" fn host_request_process(_host: *const clap_host) {}
 unsafe extern "C" fn host_request_callback(_host: *const clap_host) {}
 
-static HELLO_HOST: clap_host = clap_host {
-    clap_version: CLAP_VERSION,
-    host_data: std::ptr::null_mut(),
-    name: b"HelloCPAL\0".as_ptr() as *const i8,
-    vendor: b"Independent\0".as_ptr() as *const i8,
-    url: b"https://igordurbek.com\0".as_ptr() as *const i8,
-    version: b"0.1.0\0".as_ptr() as *const i8,
-    get_extension: Some(host_get_extension),
-    request_restart: Some(host_request_restart),
-    request_process: Some(host_request_process),
-    request_callback: Some(host_request_callback),
-};
+fn build_host(host_data: *mut c_void) -> clap_host {
+    clap_host {
+        clap_version: CLAP_VERSION,
+        host_data,
+        name: b"AudioMolekula\0".as_ptr() as *const i8,
+        vendor: b"Independent\0".as_ptr() as *const i8,
+        url: b"https://igordurbek.com\0".as_ptr() as *const i8,
+        version: b"0.1.0\0".as_ptr() as *const i8,
+        get_extension: Some(host_get_extension),
+        request_restart: Some(host_request_restart),
+        request_process: Some(host_request_process),
+        request_callback: Some(host_request_callback),
+    }
+}
 
 unsafe fn load_entry(lib: &Library) -> Result<&clap_plugin_entry, String> {
     let entry_symbol: Symbol<*const clap_plugin_entry> = unsafe {
@@ -93,7 +162,10 @@ unsafe fn get_factory(entry: &clap_plugin_entry) -> Result<&clap_plugin_factory,
 
 fn query_gui_extension(plugin: &clap_plugin, plugin_name: &str) -> Option<*const clap_plugin_gui> {
     let get_extension = match plugin.get_extension {
-        Some(get_extension) => get_extension,
+        Some(get_extension) => {
+            println!("get_extension found for {}", plugin_name);
+            get_extension
+        }
         None => {
             println!("get_extension missing for {}", plugin_name);
             return None;
@@ -179,6 +251,11 @@ where
                 } else {
                     CLAP_EVENT_NOTE_OFF
                 };
+                if current_pressed {
+                    println!("MIDI note_on key=60 velocity=1.0");
+                } else {
+                    println!("MIDI note_off key=60");
+                }
                 last_pressed = current_pressed;
                 Some(MockNoteEvent {
                     note: clap_event_note {
@@ -358,6 +435,11 @@ pub fn setup_audio_system() -> Option<AudioState> {
         return None;
     }
 
+    let host_gui_state = Box::new(HostGuiState::new());
+    let host = Box::new(build_host(
+        host_gui_state.as_ref() as *const HostGuiState as *mut c_void,
+    ));
+
     let create_plugin = match factory.create_plugin {
         Some(create_plugin) => create_plugin,
         None => {
@@ -365,7 +447,8 @@ pub fn setup_audio_system() -> Option<AudioState> {
             return None;
         }
     };
-    let plugin_ptr = unsafe { create_plugin(factory, &HELLO_HOST, plugin_id) };
+    let host_ptr = host.as_ref() as *const clap_host;
+    let plugin_ptr = unsafe { create_plugin(factory, host_ptr, plugin_id) };
 
     if plugin_ptr.is_null() {
         println!("{} failed to initialize", plugin_name);
@@ -385,7 +468,7 @@ pub fn setup_audio_system() -> Option<AudioState> {
         return None;
     }
 
-    let _ = query_gui_extension(plugin, plugin_name);
+    let gui = query_gui_extension(plugin, plugin_name);
 
     let is_pressed = Arc::new(AtomicBool::new(false));
     let plugin_ptr_usize = plugin_ptr as usize;
@@ -483,5 +566,13 @@ pub fn setup_audio_system() -> Option<AudioState> {
         return None;
     }
 
-    Some(AudioState::new(lib, stream, is_pressed))
+    Some(AudioState::new(
+        lib,
+        stream,
+        is_pressed,
+        plugin_ptr,
+        gui,
+        host,
+        host_gui_state,
+    ))
 }
