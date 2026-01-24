@@ -279,6 +279,18 @@ impl AudioState {
         self._host_gui_state.take_requests()
     }
 
+    pub fn run_on_main_thread(&self) {
+        if self.plugin.is_null() {
+            return;
+        }
+        let plugin = unsafe { &*self.plugin };
+        if let Some(on_main_thread) = plugin.on_main_thread {
+            unsafe {
+                (on_main_thread)(self.plugin);
+            }
+        }
+    }
+
     fn ensure_gui_created(&self, gui: &clap_plugin_gui, state: &mut PluginGuiState) -> bool {
         if !state.checked_api {
             state.checked_api = true;

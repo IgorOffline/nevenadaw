@@ -45,7 +45,10 @@ impl MainThreadToken {
     }
 }
 
-fn setup_audio_system(mut commands: Commands) {
+fn setup_audio_system(
+    mut commands: Commands,
+    _main_thread: NonSend<MainThreadToken>,
+) {
     if let Some(audio_state) = audiomolekula_audio::setup_audio_system() {
         commands.insert_resource(audio_state);
     }
@@ -153,6 +156,8 @@ fn sync_plugin_gui_system(
     if requests.requested_hide || requests.closed {
         state.is_visible = false;
     }
+
+    audio.run_on_main_thread();
 
     let Some(rect) = state.last_known_rect else {
         return;
