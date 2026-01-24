@@ -5,6 +5,7 @@ use clap_sys::events::{
     clap_event_header, clap_event_note, clap_input_events, clap_output_events,
     CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_NOTE_OFF, CLAP_EVENT_NOTE_ON,
 };
+use clap_sys::ext::gui::{clap_plugin_gui, CLAP_EXT_GUI};
 use clap_sys::factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID};
 use clap_sys::host::clap_host;
 use clap_sys::plugin::clap_plugin;
@@ -87,6 +88,24 @@ unsafe fn get_factory(entry: &clap_plugin_entry) -> Result<&clap_plugin_factory,
     }
 
     Ok(unsafe { &*(factory_ptr as *const clap_plugin_factory) })
+}
+
+fn query_gui_extension(plugin: &clap_plugin, plugin_name: &str) -> Option<*const clap_plugin_gui> {
+    let get_extension = match plugin.get_extension {
+        Some(get_extension) => get_extension,
+        None => {
+            println!("get_extension missing for {}", plugin_name);
+            return None;
+        }
+    };
+
+    let gui_ext_ptr = unsafe { get_extension(plugin, CLAP_EXT_GUI.as_ptr()) };
+    if gui_ext_ptr.is_null() {
+        println!("{} does not support CLAP_EXT_GUI", plugin_name);
+        return None;
+    }
+
+    Some(gui_ext_ptr as *const clap_plugin_gui)
 }
 
 pub fn setup_audio_system() -> Option<AudioState> {
@@ -208,6 +227,10 @@ pub fn setup_audio_system() -> Option<AudioState> {
     };
     if unsafe { !(plugin_init)(plugin) } {
         println!("Error: Plugin init failed");
+        return None;
+    }
+
+    if query_gui_extension(plugin, plugin_name).is_none() {
         return None;
     }
 
