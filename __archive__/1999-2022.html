@@ -1,0 +1,73 @@
+
+.idea
+vscode
+target
+old
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+          name="viewport">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+    <link href="https://iosevka-webfonts.github.io/iosevka/iosevka.css" rel="stylesheet">
+    <style>
+        h2 {
+            font-family: 'Iosevka Web', monospace;
+        }
+
+        span {
+            font-family: 'Iosevka Web', monospace;
+        }
+
+        img {
+            max-width: 5%;
+        }
+
+        .align-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+    <script>
+      function domReady(fn) {
+        document.addEventListener("DOMContentLoaded", fn);
+        if (document.readyState === "interactive" || document.readyState === "complete") {
+          fn();
+        }
+      }
+
+      domReady(() => {
+        for (let i = 0; i < 24; i++) {
+          const mainDiv = document.getElementById('main');
+          const newDiv = document.createElement('div');
+          newDiv.classList.add('align-container');
+          const newElementImage = document.createElement('img');
+          newElementImage.alt = 'logo' + i;
+          newElementImage.id = 'logo' + i;
+          newElementImage.src = 'logo.webp';
+          newDiv.appendChild(newElementImage);
+          const newElementText = document.createElement('span');
+          if (i < 23) {
+            newElementText.innerHTML = '(' + (i + 1999) + ') piracy is illegal!';
+          } else {
+            newElementText.innerHTML = '(' + (i + 1999) + ') piracy is illegal, unless...';
+          }
+          newElementText.id = 'newElementText' + i;
+          newDiv.appendChild(newElementText);
+          //const newElementNewline = document.createElement('br');
+          //mainDiv.appendChild(newElementNewline);
+          mainDiv.appendChild(newDiv);
+        }
+      });
+    </script>
+    <title>Pirmeme</title>
+</head>
+<body>
+<div id="main">
+    <h2>The State of AI Training - 2026 Report</h2>
+</div>
+</body>
+</html>
