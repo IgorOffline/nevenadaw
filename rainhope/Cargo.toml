@@ -3,6 +3,17 @@ name = "rainhope"
 version = "0.1.0"
 edition = "2024"
 
+[workspace]
+members = ["xtask", "."]
+
+[lib]
+name = "rainhope_lib"
+crate-type = ["cdylib", "lib"]
+
+[[bin]]
+name = "rainhope"
+path = "src/main.rs"
+
 [dependencies]
 nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = ["standalone"] }
 nih_plug_iced = { git = "https://github.com/robbert-vdh/nih-plug.git" }
