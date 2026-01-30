@@ -17,3 +17,7 @@ path = "src/main.rs"
 [dependencies]
 nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = ["standalone"] }
 nih_plug_iced = { git = "https://github.com/robbert-vdh/nih-plug.git" }
+
+[patch."https://github.com/robbert-vdh/nih-plug.git"]
+nih_plug = { path = "vendor/nih-plug" }
+nih_plug_iced = { path = "vendor/nih-plug/nih_plug_iced" }

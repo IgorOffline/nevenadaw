@@ -1382,7 +1382,6 @@ dependencies = [
 [[package]]
 name = "nih_plug"
 version = "0.0.0"
-source = "git+https://github.com/robbert-vdh/nih-plug.git#28b149ec4d62757d0b448809148a0c3ca6e09a95"
 dependencies = [
  "anyhow",
  "anymap3",
@@ -1423,7 +1422,6 @@ source = "git+https://github.com/robbert-vdh/nih_plug_assets.git#a04e327923e120b
 [[package]]
 name = "nih_plug_derive"
 version = "0.1.0"
-source = "git+https://github.com/robbert-vdh/nih-plug.git#28b149ec4d62757d0b448809148a0c3ca6e09a95"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1433,7 +1431,6 @@ dependencies = [
 [[package]]
 name = "nih_plug_iced"
 version = "0.0.0"
-source = "git+https://github.com/robbert-vdh/nih-plug.git#28b149ec4d62757d0b448809148a0c3ca6e09a95"
 dependencies = [
  "atomic_refcell",
  "baseview 0.1.0 (git+https://github.com/RustAudio/baseview.git?rev=1d9806d5bd92275d0d8142d9c9c90198757b9b25)",
