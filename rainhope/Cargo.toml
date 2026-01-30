@@ -7,7 +7,7 @@ edition = "2024"
 members = ["xtask", "."]
 
 [lib]
-name = "rainhope_lib"
+name = "rainhope"
 crate-type = ["cdylib", "lib"]
 
 [[bin]]
