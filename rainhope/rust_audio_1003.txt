@@ -1,0 +1,246 @@
+--- OUTPUT 1 ---
+
+PS C:\D\nevenadawdir\nevenadaw\rainhope> cargo xtask bundle rainhope
+   Compiling proc-macro2 v1.0.106
+   Compiling unicode-ident v1.0.22
+   Compiling quote v1.0.44
+   Compiling serde_core v1.0.228
+   Compiling serde v1.0.228
+   Compiling zmij v1.0.17
+   Compiling serde_json v1.0.149
+   Compiling camino v1.2.2
+   Compiling equivalent v1.0.2
+   Compiling hashbrown v0.16.1
+   Compiling thiserror v1.0.69
+   Compiling winapi v0.3.9
+   Compiling anyhow v1.0.100
+   Compiling winnow v0.5.40
+   Compiling itoa v1.0.17
+   Compiling memchr v2.7.6
+   Compiling plain v0.2.3
+   Compiling log v0.4.29
+   Compiling indexmap v2.13.0
+   Compiling syn v2.0.114
+   Compiling reflink v0.1.3 (https://github.com/nicokoch/reflink.git?rev=e8d93b465f5d9ad340cd052b64bbc77b8ee107e2#e8d93b46)
+   Compiling serde_derive v1.0.228
+   Compiling scroll_derive v0.11.1
+   Compiling thiserror-impl v1.0.69
+   Compiling semver v1.0.27
+   Compiling scroll v0.11.0
+   Compiling goblin v0.6.1
+   Compiling toml_datetime v0.6.11
+   Compiling serde_spanned v0.6.9
+   Compiling cargo-platform v0.1.9
+   Compiling cargo_metadata v0.18.1
+   Compiling toml_edit v0.19.15
+   Compiling toml v0.7.8
+   Compiling nih_plug_xtask v0.1.0 (https://github.com/robbert-vdh/nih-plug.git#28b149ec)
+   Compiling xtask v0.1.0 (C:\D\nevenadawdir\nevenadaw\rainhope\xtask)
+    Finished `release` profile [optimized] target(s) in 21.85s
+     Running `target\release\xtask.exe bundle rainhope`
+    Blocking waiting for file lock on artifact directory
+warning: output filename collision at C:\D\nevenadawdir\nevenadaw\rainhope\target\debug\deps\rainhope.pdb
+  |
+  = note: the bin target `rainhope` in package `rainhope v0.1.0 (C:\D\nevenadawdir\nevenadaw\rainhope)` has the same output filename as the lib target `rainhope` in package `rainhope v0.1.0 (C:\D\nevenadawdir\nevenadaw\rainhope)`
+  = note: this may become a hard error in the future; see <https://github.com/rust-lang/cargo/issues/6313>
+  = help: consider changing their names to be unique or compiling them separately
+warning: output filename collision at C:\D\nevenadawdir\nevenadaw\rainhope\target\debug\rainhope.pdb
+  |
+  = note: the bin target `rainhope` in package `rainhope v0.1.0 (C:\D\nevenadawdir\nevenadaw\rainhope)` has the same output filename as the lib target `rainhope` in package `rainhope v0.1.0 (C:\D\nevenadawdir\nevenadaw\rainhope)`
+  = note: this may become a hard error in the future; see <https://github.com/rust-lang/cargo/issues/6313>
+  = help: consider changing their names to be unique or compiling them separately
+   Compiling cfg-if v1.0.4
+   Compiling bitflags v1.3.2
+   Compiling windows-link v0.2.1
+   Compiling log v0.4.29
+   Compiling memchr v2.7.6
+   Compiling futures-sink v0.3.31
+   Compiling futures-core v0.3.31
+   Compiling futures-io v0.3.31
+   Compiling ttf-parser v0.25.1
+   Compiling slab v0.4.11
+   Compiling pin-project-lite v0.2.16
+   Compiling futures-task v0.3.31
+   Compiling crossbeam-utils v0.8.21
+   Compiling winapi v0.3.9
+   Compiling zerocopy v0.8.36
+   Compiling pin-utils v0.1.0
+   Compiling num-traits v0.2.19
+   Compiling num_cpus v1.17.0
+   Compiling ab_glyph_rasterizer v0.1.10
+   Compiling windows_x86_64_msvc v0.52.6
+   Compiling windows-sys v0.61.2
+   Compiling getrandom v0.3.4
+   Compiling windows_x86_64_msvc v0.42.2
+   Compiling windows_x86_64_msvc v0.53.1
+   Compiling futures-channel v0.3.31
+   Compiling either v1.15.0
+   Compiling jack-sys v0.5.1
+   Compiling windows-targets v0.52.6
+   Compiling rand_core v0.9.5
+   Compiling windows-targets v0.53.5
+   Compiling iced_core v0.4.0 (https://github.com/iced-rs/iced.git?rev=a53fa91e0ddf374bbeb66d5e831b79127ed47a9d#a53fa91e)
+   Compiling getrandom v0.2.17
+   Compiling static_assertions v1.1.0
+   Compiling cty v0.2.2
+   Compiling utf8parse v0.2.2
+   Compiling rustc-hash v2.1.1
+   Compiling linked-hash-map v0.5.6
+   Compiling xi-unicode v0.3.0
+   Compiling once_cell_polyfill v1.70.2
+   Compiling anstyle v1.0.13
+   Compiling uuid v0.8.2
+   Compiling anstyle-parse v0.2.7
+   Compiling raw-window-handle v0.4.3
+   Compiling twox-hash v1.6.3
+   Compiling windows-sys v0.60.2
+   Compiling iced_style v0.3.0 (https://github.com/iced-rs/iced.git?rev=a53fa91e0ddf374bbeb66d5e831b79127ed47a9d#a53fa91e)
+   Compiling windows-result v0.1.2
+   Compiling bytemuck v1.24.0
+   Compiling keyboard-types v0.6.2
+   Compiling powerfmt v0.2.0
+   Compiling crossbeam-epoch v0.9.18
+   Compiling crossbeam-channel v0.5.15
+   Compiling itoa v1.0.17
+   Compiling colorchoice v1.0.4
+   Compiling futures-util v0.3.31
+   Compiling num-conv v0.2.0
+   Compiling time-core v0.1.8
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling unicode-segmentation v1.12.0
+   Compiling deranged v0.5.5
+   Compiling crossbeam-deque v0.8.6
+   Compiling approx v0.5.1
+   Compiling ordered-float v5.1.0
+   Compiling windows-core v0.54.0
+   Compiling anstyle-wincon v3.0.11
+   Compiling anstyle-query v1.1.5
+   Compiling winapi-util v0.1.11
+   Compiling terminal_size v0.4.3
+   Compiling thiserror v1.0.69
+   Compiling glam v0.10.2
+   Compiling serde_core v1.0.228
+   Compiling time-macros v0.2.26
+   Compiling anstream v0.6.21
+   Compiling libc v0.2.180
+   Compiling rayon-core v1.13.0
+   Compiling windows-targets v0.42.2
+   Compiling lazy_static v1.5.0
+   Compiling smallvec v1.15.1
+   Compiling lazy-bytes-cast v5.0.1
+   Compiling glow v0.11.2
+   Compiling strsim v0.11.1
+   Compiling clap_lex v0.7.7
+   Compiling scopeguard v1.2.0
+   Compiling jack v0.11.4
+   Compiling windows v0.44.0
+   Compiling lock_api v0.4.14
+   Compiling parking_lot_core v0.9.12
+   Compiling termcolor v1.4.1
+   Compiling clap_builder v4.5.56
+   Compiling vst3-com v0.1.0 (https://github.com/robbert-vdh/vst3-sys.git?branch=fix%2Fdrop-box-from-raw#b3ff4d77)
+   Compiling euclid v0.22.13
+   Compiling zmij v1.0.17
+   Compiling rayon v1.11.0
+   Compiling windows v0.54.0
+   Compiling crossbeam-queue v0.3.12
+   Compiling windows v0.43.0
+   Compiling dasp_sample v0.11.0
+   Compiling once_cell v1.21.3
+   Compiling raw-window-handle v0.5.2
+   Compiling cache-padded v1.3.0
+   Compiling owned_ttf_parser v0.25.1
+   Compiling libloading v0.7.4
+   Compiling atty v0.2.14
+   Compiling clipboard-win v3.1.1
+   Compiling ab_glyph v0.2.32
+   Compiling rustc-demangle v0.1.27
+   Compiling baseview v0.1.0 (https://github.com/RustAudio/baseview.git?rev=579130ecb4f9f315ae52190af42f0ea46aeaa4a2#579130ec)
+   Compiling copypasta v0.7.1
+   Compiling baseview v0.1.0 (https://github.com/RustAudio/baseview.git?rev=1d9806d5bd92275d0d8142d9c9c90198757b9b25#1d9806d5)
+   Compiling rtrb v0.2.3
+   Compiling glyph_brush_layout v0.2.4
+   Compiling backtrace v0.3.76
+   Compiling time v0.3.46
+   Compiling crossbeam v0.8.4
+   Compiling parking_lot v0.12.5
+   Compiling vst3-sys v0.1.0 (https://github.com/robbert-vdh/vst3-sys.git?branch=fix%2Fdrop-box-from-raw#b3ff4d77)
+   Compiling anyhow v1.0.100
+   Compiling atomic_refcell v0.1.13
+   Compiling anymap3 v1.0.1
+   Compiling widestring v1.2.1
+   Compiling clap-sys v0.5.0 (https://github.com/micahrj/clap-sys.git?rev=25d7f53fdb6363ad63fbd80049cb7a42a97ac156#25d7f53f)
+   Compiling atomic_float v0.1.0
+   Compiling midi-consts v0.1.0
+   Compiling nih_plug_assets v0.1.0 (https://github.com/robbert-vdh/nih_plug_assets.git#a04e3279)
+   Compiling serde_json v1.0.149
+   Compiling serde v1.0.228
+   Compiling clap v4.5.56
+   Compiling futures-executor v0.3.31
+   Compiling ppv-lite86 v0.2.21
+   Compiling glyph_brush_draw_cache v0.1.6
+   Compiling futures v0.3.31
+   Compiling iced_futures v0.3.0 (https://github.com/iced-rs/iced.git?rev=a53fa91e0ddf374bbeb66d5e831b79127ed47a9d#a53fa91e)
+   Compiling iced_native v0.4.0 (https://github.com/iced-rs/iced.git?rev=a53fa91e0ddf374bbeb66d5e831b79127ed47a9d#a53fa91e)
+   Compiling rand_chacha v0.9.0
+   Compiling rand v0.9.2
+   Compiling midir v0.9.1
+   Compiling twox-hash v2.1.2
+   Compiling glyph_brush v0.7.12
+   Compiling iced_graphics v0.2.0 (https://github.com/iced-rs/iced.git?rev=a53fa91e0ddf374bbeb66d5e831b79127ed47a9d#a53fa91e)
+   Compiling glow_glyph v0.5.1
+   Compiling iced_glow v0.2.0 (https://github.com/iced-rs/iced.git?rev=a53fa91e0ddf374bbeb66d5e831b79127ed47a9d#a53fa91e)
+   Compiling iced_baseview v0.0.3 (https://github.com/robbert-vdh/iced_baseview.git?branch=feature%2Fupdate-baseview#df3a852a)
+   Compiling nih_log v0.3.1
+   Compiling cpal v0.15.3
+   Compiling nih_plug v0.0.0 (https://github.com/robbert-vdh/nih-plug.git#28b149ec)
+   Compiling nih_plug_iced v0.0.0 (https://github.com/robbert-vdh/nih-plug.git#28b149ec)
+   Compiling rainhope v0.1.0 (C:\D\nevenadawdir\nevenadaw\rainhope)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 25.07s
+
+Created a standalone bundle at 'C:\D\nevenadawdir\nevenadaw\rainhope\target\bundled\rainhope.exe'
+Created a CLAP bundle at 'C:\D\nevenadawdir\nevenadaw\rainhope\target\bundled\rainhope.clap'
+PS C:\D\nevenadawdir\nevenadaw\rainhope>
+
+--- OUTPUT 2 ---
+
+PS C:\D\nevenadawdir\nevenadaw\rainhope\target\bundled> .\rainhope
+10:39:22 [INFO] jack_sys: Loading jack from libjack64.dll.
+10:39:22 [INFO] nih_plug::wrapper::standalone::backend::cpal: Audio inputs are not connected automatically to prevent feedback. Use the '--input-device' option to choose an input device.
+10:39:22 [INFO] nih_plug::wrapper::standalone: Using the WASAPI backend
+10:39:22 [ERROR] nih_plug::wrapper::util: thread 'cpal_wasapi_out' panicked at 'Received 1056 samples, while the configured buffer size is 512': C:\Users\igor\.cargo\git\checkouts\nih-plug-d4210f82e920295f\28b149e\src\wrapper\standalone\backend\cpal.rs:832
+   0: <unknown>
+   1: <unknown>
+   2: <unknown>
+   3: <unknown>
+   4: <unknown>
+   5: <unknown>
+   6: <unknown>
+   7: <unknown>
+   8: <unknown>
+   9: <unknown>
+  10: <unknown>
+  11: <unknown>
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: <unknown>
+  17: <unknown>
+  18: <unknown>
+  19: <unknown>
+  20: <unknown>
+  21: <unknown>
+  22: <unknown>
+  23: <unknown>
+  24: <unknown>
+  25: BaseThreadInitThunk
+  26: RtlUserThreadStart
+
+10:39:22 [INFO] iced_glow::window::compositor: Version: 3.3.0, NVIDIA 591.74
+10:39:22 [INFO] iced_glow::window::compositor: Embedded: false
+10:39:22 [INFO] iced_glow::window::compositor: Renderer: NVIDIA GeForce RTX 4090 Laptop GPU/PCIe/SSE2
+10:39:22 [INFO] glow_glyph: Mode: core
+10:39:22 [INFO] glow_glyph::pipeline::core: Shader directive: #version 330
+10:39:22 [INFO] iced_glow::program: Shader directive: #version 330
+10:39:22 [INFO] iced_glow::quad: Mode: core
