@@ -1,0 +1,164 @@
+use nih_plug::prelude::*;
+use nih_plug_iced::*;
+use std::sync::Arc;
+
+struct Foo {
+    params: Arc<FooParams>,
+}
+
+#[derive(Params)]
+struct FooParams {
+    #[id = "foo"]
+    pub foo: FloatParam,
+}
+
+impl Default for Foo {
+    fn default() -> Self {
+        Self {
+            params: Arc::new(FooParams::default()),
+        }
+    }
+}
+
+impl Default for FooParams {
+    fn default() -> Self {
+        Self {
+            foo: FloatParam::new(
+                "Gain",
+                1.0,
+                FloatRange::Skewed {
+                    min: 0.0,
+                    max: 2.0,
+                    factor: FloatRange::gain_skew_factor(0.0, 2.0),
+                },
+            )
+            .with_unit(" x"),
+        }
+    }
+}
+
+impl Plugin for Foo {
+    const NAME: &'static str = "Gain Plugin";
+    const VENDOR: &'static str = "Foo Vendor";
+    const URL: &'static str = "https://example.com";
+    const EMAIL: &'static str = "info@example.com";
+
+    const VERSION: &'static str = "0.1.0";
+
+    const AUDIO_IO_LAYOUTS: &'static [AudioIOLayout] = &[AudioIOLayout {
+        main_input_channels: NonZeroU32::new(2),
+        main_output_channels: NonZeroU32::new(2),
+        aux_input_ports: &[],
+        aux_output_ports: &[],
+        names: PortNames::const_default(),
+    }];
+
+    type SysExMessage = ();
+    type BackgroundTask = ();
+
+    fn params(&self) -> Arc<dyn Params> {
+        self.params.clone()
+    }
+
+    fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
+        create(self.params.clone(), default_state())
+    }
+
+    fn process(
+        &mut self,
+        buffer: &mut Buffer,
+        _aux: &mut AuxiliaryBuffers,
+        _context: &mut impl ProcessContext<Self>,
+    ) -> ProcessStatus {
+        for channel in buffer.as_slice() {
+            for sample in channel.iter_mut() {
+                *sample *= self.params.foo.value();
+            }
+        }
+
+        ProcessStatus::Normal
+    }
+}
+
+pub(crate) fn default_state() -> Arc<IcedState> {
+    IcedState::from_size(300, 200)
+}
+
+pub(crate) fn create(
+    params: Arc<FooParams>,
+    editor_state: Arc<IcedState>,
+) -> Option<Box<dyn Editor>> {
+    create_iced_editor::<FooEditor>(editor_state, params)
+}
+
+struct FooEditor {
+    params: Arc<FooParams>,
+    context: Arc<dyn GuiContext>,
+
+    foo_slider_state: widgets::param_slider::State,
+}
+
+#[derive(Debug, Clone, Copy)]
+enum Message {
+    ParamUpdate(widgets::ParamMessage),
+}
+
+impl IcedEditor for FooEditor {
+    type Executor = executor::Default;
+    type Message = Message;
+    type InitializationFlags = Arc<FooParams>;
+
+    fn new(
+        params: Self::InitializationFlags,
+        context: Arc<dyn GuiContext>,
+    ) -> (Self, Command<Self::Message>) {
+        let editor = FooEditor {
+            params,
+            context,
+
+            foo_slider_state: Default::default(),
+        };
+
+        (editor, Command::none())
+    }
+
+    fn context(&self) -> &dyn GuiContext {
+        self.context.as_ref()
+    }
+
+    fn update(
+        &mut self,
+        _window: &mut WindowQueue,
+        message: Self::Message,
+    ) -> Command<Self::Message> {
+        match message {
+            Message::ParamUpdate(message) => self.handle_param_message(message),
+        }
+
+        Command::none()
+    }
+
+    fn view(&mut self) -> Element<'_, Self::Message> {
+        Column::new()
+            .align_items(Alignment::Center)
+            .padding(20)
+            .spacing(10)
+            .push(
+                Text::new("Gain Plugin")
+                    .size(24)
+                    .height(30.into())
+                    .width(Length::Fill)
+                    .horizontal_alignment(alignment::Horizontal::Center)
+                    .vertical_alignment(alignment::Vertical::Center),
+            )
+            .push(
+                widgets::ParamSlider::new(&mut self.foo_slider_state, &self.params.foo)
+                    .map(Message::ParamUpdate),
+            )
+            .into()
+    }
+}
+
+fn main() {
+    nih_export_standalone::<Foo>();
+}
