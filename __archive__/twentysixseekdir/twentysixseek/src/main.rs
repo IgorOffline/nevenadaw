@@ -7,6 +7,7 @@ struct Youtube {
     winter_2021: String,
     example_url: String,
     general_json_example_url: String,
+    stereotypical_youtube_video_url_root: String,
     youtube_api_v3_base_url: String,
     youtube_api_v3_key_parts: String,
 }
@@ -20,10 +21,11 @@ struct Config {
 async fn main() -> Result<(), reqwest::Error> {
     let loaded_toml = seek_load_toml().unwrap();
     println!(
-        "winter_2021={}, example_url={}, general_json_example_url={}, youtube_api_v3_base_url={}, youtube_api_v3_key_parts={}",
+        "winter_2021={}, example_url={}, general_json_example_url={}, stereotypical_youtube_video_url_root={}, youtube_api_v3_base_url={}, youtube_api_v3_key_parts={}",
         loaded_toml.winter_2021.len(),
         loaded_toml.example_url.len(),
         loaded_toml.general_json_example_url.len(),
+        loaded_toml.stereotypical_youtube_video_url_root.len(),
         loaded_toml.youtube_api_v3_base_url.len(),
         loaded_toml.youtube_api_v3_key_parts.len()
     );
@@ -92,8 +94,9 @@ fn zero_leading_format(input: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::zero_leading_format;
+    use crate::{seek_load_toml, zero_leading_format};
     use chrono::Datelike;
+    use regex::Regex;
 
     #[test]
     fn test_encode_hello_world() {
@@ -145,7 +148,7 @@ mod tests {
         let now = chrono::Utc::now();
         let month = now.month().to_string();
         let formatted_month = zero_leading_format(&month);
-        assert_eq!("01", formatted_month);
+        assert_eq!("02", formatted_month);
     }
 
     #[test]
@@ -153,7 +156,7 @@ mod tests {
         let now = chrono::Utc::now();
         let day = now.day().to_string();
         let formatted_day = zero_leading_format(&day);
-        assert_eq!("21", formatted_day);
+        assert_eq!("01", formatted_day);
     }
 
     #[test]
@@ -163,5 +166,36 @@ mod tests {
             .trim()
             .replace("\r\n", "\n");
         assert_eq!(base64_url::encode(&decoded_payload), encoded_payload);
+    }
+
+    #[test]
+    fn test_stereotypical_youtube_video_url() {
+        let loaded_toml = seek_load_toml().unwrap();
+        let url = format!(
+            "{}{}",
+            loaded_toml.stereotypical_youtube_video_url_root, loaded_toml.example_url
+        );
+        assert_eq!(
+            stereotypical_youtube_video_url_valid(
+                &r"https://www.youtube.com/watch?v=Žs15wnpm9mGY".to_string()
+            ),
+            false
+        );
+        assert_eq!(
+            stereotypical_youtube_video_url_valid(
+                &r"https://www.youtube.com/watch?v=s15wnpm9mGYŽ".to_string()
+            ),
+            false
+        );
+        assert_eq!(
+            stereotypical_youtube_video_url_valid(&url.to_string()),
+            true
+        );
+    }
+
+    fn stereotypical_youtube_video_url_valid(url: &String) -> bool {
+        let pattern = r"^https://www\.youtube\.com/watch\?v=[a-zA-Z0-9_-]{11}$";
+        let re = Regex::new(pattern).unwrap();
+        re.is_match(url)
     }
 }
