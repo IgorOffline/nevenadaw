@@ -1,5 +1,7 @@
 use chrono::Datelike;
+use regex::Regex;
 use serde::Deserialize;
+use std::fs;
 use uuid::Uuid;
 
 #[derive(Clone, Deserialize)]
@@ -17,8 +19,58 @@ struct Config {
     youtube: Youtube,
 }
 
+fn main() {
+    println!("<START>");
+    let january = r"C:\D\notes\january";
+    let mut count_all = 0;
+    let mut count_valid = 0;
+    fs::read_dir(january)
+        .unwrap()
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .filter(|path| path.is_file() && path.extension().map_or(false, |ext| ext == "txt"))
+        .for_each(|file_content| {
+            for content in fs::read_to_string(file_content).unwrap().lines() {
+                if stereotypical_youtube_video_url_valid(content) {
+                    count_valid += 1;
+                }
+                count_all += 1;
+            }
+        });
+    println!("{}/{}", count_valid, count_all);
+    let mut basic_count = 0;
+    let mut advanced_count = 0;
+    let lines = read_lines("strict_url_examples.txt");
+    let lines_iterable = lines.clone();
+    lines_iterable.into_iter().for_each(|line| {
+        if line.len() > 0 {
+            basic_count += 1;
+        }
+    });
+    lines.into_iter().for_each(|line| {
+        if line.len() > 0 {
+            if stereotypical_youtube_video_url_valid(&line) {
+                advanced_count += 1;
+            }
+        }
+    });
+    println!("{}/{}", advanced_count, basic_count);
+    println!("<END>");
+}
+
+fn read_lines(filename: &str) -> Vec<String> {
+    let mut result = Vec::new();
+
+    for line in fs::read_to_string(filename).unwrap().lines() {
+        result.push(line.to_string())
+    }
+
+    result
+}
+
+#[allow(dead_code)]
 #[tokio::main]
-async fn main() -> Result<(), reqwest::Error> {
+async fn old_main() -> Result<(), reqwest::Error> {
     let loaded_toml = seek_load_toml().unwrap();
     println!(
         "winter_2021={}, example_url={}, general_json_example_url={}, stereotypical_youtube_video_url_root={}, youtube_api_v3_base_url={}, youtube_api_v3_key_parts={}",
@@ -92,11 +144,16 @@ fn zero_leading_format(input: &str) -> String {
     format!("{:0>2}", input)
 }
 
+fn stereotypical_youtube_video_url_valid(url: &str) -> bool {
+    let pattern = r"^https://www\.youtube\.com/watch\?v=[a-zA-Z0-9_-]{11}$";
+    let re = Regex::new(pattern).unwrap();
+    re.is_match(url)
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::{seek_load_toml, zero_leading_format};
+    use crate::{seek_load_toml, stereotypical_youtube_video_url_valid, zero_leading_format};
     use chrono::Datelike;
-    use regex::Regex;
 
     #[test]
     fn test_encode_hello_world() {
@@ -176,26 +233,13 @@ mod tests {
             loaded_toml.stereotypical_youtube_video_url_root, loaded_toml.example_url
         );
         assert_eq!(
-            stereotypical_youtube_video_url_valid(
-                &r"https://www.youtube.com/watch?v=Žs15wnpm9mGY".to_string()
-            ),
+            stereotypical_youtube_video_url_valid(r"https://www.youtube.com/watch?v=Žs15wnpm9mGY"),
             false
         );
         assert_eq!(
-            stereotypical_youtube_video_url_valid(
-                &r"https://www.youtube.com/watch?v=s15wnpm9mGYŽ".to_string()
-            ),
+            stereotypical_youtube_video_url_valid(r"https://www.youtube.com/watch?v=s15wnpm9mGYŽ"),
             false
         );
-        assert_eq!(
-            stereotypical_youtube_video_url_valid(&url.to_string()),
-            true
-        );
-    }
-
-    fn stereotypical_youtube_video_url_valid(url: &String) -> bool {
-        let pattern = r"^https://www\.youtube\.com/watch\?v=[a-zA-Z0-9_-]{11}$";
-        let re = Regex::new(pattern).unwrap();
-        re.is_match(url)
+        assert_eq!(stereotypical_youtube_video_url_valid(&url), true);
     }
 }
