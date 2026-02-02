@@ -9,6 +9,7 @@ struct Regina {
     uuid_two: Uuid,
     movable_vertical_translation_y: f32,
     movable_horizontal_translation_x: f32,
+    do_spawn: bool,
 }
 
 #[derive(Component)]
@@ -39,9 +40,13 @@ fn main() {
             uuid_two: Uuid::new_v4(),
             movable_vertical_translation_y: 0.0,
             movable_horizontal_translation_x: 0.0,
+            do_spawn: false,
         })
         .add_systems(Startup, setup)
-        .add_systems(Update, (movable_vertical, movable_horizontal))
+        .add_systems(
+            Update,
+            (movable_vertical, movable_horizontal, spawn_new_marker),
+        )
         .add_systems(EguiPrimaryContextPass, ui_update)
         .run();
 }
@@ -115,7 +120,33 @@ fn movable_vertical(
         _ => false,
     };
     if direction_old != direction_new {
-        println!("{} --> {}", direction_old, direction_new);
+        //println!("{} --> {}", direction_old, direction_new);
+        regina.do_spawn = true;
+    }
+}
+
+fn spawn_new_marker(
+    mut regina: ResMut<Regina>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    if regina.do_spawn {
+        commands.spawn((
+            Mesh2d(meshes.add(Circle::new(20.0))),
+            MeshMaterial2d(
+                materials.add(ColorMaterial::from_color(Srgba::hex("#E64A19").unwrap())),
+            ),
+            Transform {
+                translation: Vec3::new(
+                    regina.movable_horizontal_translation_x,
+                    regina.movable_vertical_translation_y,
+                    0.0,
+                ),
+                ..Default::default()
+            },
+        ));
+        regina.do_spawn = false;
     }
 }
 
