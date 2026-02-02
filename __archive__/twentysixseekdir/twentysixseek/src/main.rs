@@ -21,43 +21,10 @@ struct Config {
 
 fn main() {
     println!("<START>");
-    let january = r"C:\D\notes\january";
-    let mut count_all = 0;
-    let mut count_valid = 0;
-    fs::read_dir(january)
-        .unwrap()
-        .filter_map(Result::ok)
-        .map(|entry| entry.path())
-        .filter(|path| path.is_file() && path.extension().map_or(false, |ext| ext == "txt"))
-        .for_each(|file_content| {
-            for content in fs::read_to_string(file_content).unwrap().lines() {
-                if stereotypical_youtube_video_url_valid(content) {
-                    count_valid += 1;
-                }
-                count_all += 1;
-            }
-        });
-    println!("{}/{}", count_valid, count_all);
-    let mut basic_count = 0;
-    let mut advanced_count = 0;
-    let lines = read_lines("strict_url_examples.txt");
-    let lines_iterable = lines.clone();
-    lines_iterable.into_iter().for_each(|line| {
-        if line.len() > 0 {
-            basic_count += 1;
-        }
-    });
-    lines.into_iter().for_each(|line| {
-        if line.len() > 0 {
-            if stereotypical_youtube_video_url_valid(&line) {
-                advanced_count += 1;
-            }
-        }
-    });
-    println!("{}/{}", advanced_count, basic_count);
     println!("<END>");
 }
 
+#[allow(dead_code)]
 fn read_lines(filename: &str) -> Vec<String> {
     let mut result = Vec::new();
 
@@ -70,7 +37,7 @@ fn read_lines(filename: &str) -> Vec<String> {
 
 #[allow(dead_code)]
 #[tokio::main]
-async fn old_main() -> Result<(), reqwest::Error> {
+async fn old_youtube_api_reqwest_logic() -> Result<(), reqwest::Error> {
     let loaded_toml = seek_load_toml().unwrap();
     println!(
         "winter_2021={}, example_url={}, general_json_example_url={}, stereotypical_youtube_video_url_root={}, youtube_api_v3_base_url={}, youtube_api_v3_key_parts={}",
@@ -99,7 +66,7 @@ async fn old_main() -> Result<(), reqwest::Error> {
         let pretty_json = serde_json::to_string_pretty(&json).unwrap();
         let encoded_payload = base64_url::encode(&pretty_json);
         let filename = prepare_filename();
-        std::fs::write(filename, &encoded_payload).expect("Unable to write file");
+        fs::write(filename, &encoded_payload).expect("Unable to write file");
         println!("--- RAW JSON PAYLOAD ---");
         println!("{}", pretty_json);
         println!("-------------------------");
@@ -115,7 +82,7 @@ async fn old_main() -> Result<(), reqwest::Error> {
 }
 
 fn seek_load_toml() -> Result<Youtube, String> {
-    let content_raw = std::fs::read_to_string(r"C:\Users\igor\.ssh\youtube.toml")
+    let content_raw = fs::read_to_string(r"C:\Users\igor\.ssh\youtube.toml")
         .map_err(|e| format!("Failed to read config file: {}", e))?;
 
     let config: Config =
@@ -144,6 +111,7 @@ fn zero_leading_format(input: &str) -> String {
     format!("{:0>2}", input)
 }
 
+#[allow(dead_code)]
 fn stereotypical_youtube_video_url_valid(url: &str) -> bool {
     let pattern = r"^https://www\.youtube\.com/watch\?v=[a-zA-Z0-9_-]{11}$";
     let re = Regex::new(pattern).unwrap();
@@ -152,8 +120,11 @@ fn stereotypical_youtube_video_url_valid(url: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::{seek_load_toml, stereotypical_youtube_video_url_valid, zero_leading_format};
+    use crate::{
+        read_lines, seek_load_toml, stereotypical_youtube_video_url_valid, zero_leading_format,
+    };
     use chrono::Datelike;
+    use std::fs;
 
     #[test]
     fn test_encode_hello_world() {
@@ -213,7 +184,7 @@ mod tests {
         let now = chrono::Utc::now();
         let day = now.day().to_string();
         let formatted_day = zero_leading_format(&day);
-        assert_eq!("01", formatted_day);
+        assert_eq!("02", formatted_day);
     }
 
     #[test]
@@ -241,5 +212,49 @@ mod tests {
             false
         );
         assert_eq!(stereotypical_youtube_video_url_valid(&url), true);
+    }
+
+    #[test]
+    fn filter_one() {
+        let january = r"C:\D\notes\january";
+        let mut count_all = 0;
+        let mut count_valid = 0;
+        fs::read_dir(january)
+            .unwrap()
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+            .filter(|path| path.is_file() && path.extension().map_or(false, |ext| ext == "txt"))
+            .for_each(|file_content| {
+                for content in fs::read_to_string(file_content).unwrap().lines() {
+                    if stereotypical_youtube_video_url_valid(content) {
+                        count_valid += 1;
+                    }
+                    count_all += 1;
+                }
+            });
+        assert_eq!(count_valid, 444);
+        assert_eq!(count_all, 1833);
+    }
+
+    #[test]
+    fn filter_two() {
+        let mut basic_count = 0;
+        let mut advanced_count = 0;
+        let lines = read_lines("strict_url_examples.txt");
+        let lines_iterable = lines.clone();
+        lines_iterable.into_iter().for_each(|line| {
+            if line.len() > 0 {
+                basic_count += 1;
+            }
+        });
+        lines.into_iter().for_each(|line| {
+            if line.len() > 0 {
+                if stereotypical_youtube_video_url_valid(&line) {
+                    advanced_count += 1;
+                }
+            }
+        });
+        assert_eq!(advanced_count, 1);
+        assert_eq!(basic_count, 5);
     }
 }
