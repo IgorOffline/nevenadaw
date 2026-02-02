@@ -7,13 +7,19 @@ use uuid::Uuid;
 struct Regina {
     uuid_one: Uuid,
     uuid_two: Uuid,
-    translation_y: f32,
+    movable_vertical_translation_y: f32,
+    movable_horizontal_translation_x: f32,
 }
 
 #[derive(Component)]
-struct Movable {
+struct MovableVertical {
     speed: f32,
     amplitude: f32,
+}
+
+#[derive(Component)]
+struct MovableHorizontal {
+    speed: f32,
 }
 
 fn main() {
@@ -31,10 +37,11 @@ fn main() {
         .insert_resource(Regina {
             uuid_one: Uuid::new_v4(),
             uuid_two: Uuid::new_v4(),
-            translation_y: 0.0,
+            movable_vertical_translation_y: 0.0,
+            movable_horizontal_translation_x: 0.0,
         })
         .add_systems(Startup, setup)
-        .add_systems(Update, movable)
+        .add_systems(Update, (movable_vertical, movable_horizontal))
         .add_systems(EguiPrimaryContextPass, ui_update)
         .run();
 }
@@ -50,12 +57,22 @@ fn setup(
     commands.spawn((
         Mesh2d(meshes.add(Circle::new(20.0))),
         MeshMaterial2d(materials.add(ColorMaterial::from_color(Srgba::hex("#1976D2").unwrap()))),
-        Movable {
+        MovableVertical {
             speed: 2.0,
             amplitude: 100.0,
         },
         Transform {
-            translation: Vec3::new(-120.0, regina.translation_y, 0.0),
+            translation: Vec3::new(-130.0, regina.movable_vertical_translation_y, 0.0),
+            ..Default::default()
+        },
+    ));
+
+    commands.spawn((
+        Mesh2d(meshes.add(Circle::new(20.0))),
+        MeshMaterial2d(materials.add(ColorMaterial::from_color(Srgba::hex("#E64A19").unwrap()))),
+        MovableHorizontal { speed: 15.0 },
+        Transform {
+            translation: Vec3::new(-90.0, regina.movable_vertical_translation_y, 0.0),
             ..Default::default()
         },
     ));
@@ -68,7 +85,7 @@ fn ui_update(regina: Res<Regina>, mut contexts: EguiContexts) {
     let hello_string = format!("Hello {}", regina.uuid_one);
     let world_string = format!("World {}", regina.uuid_two);
     egui::Window::new("Hello World").show(ctx, |ui| {
-        let direction = match regina.translation_y {
+        let direction = match regina.movable_vertical_translation_y {
             y if y > 0.0 => "+",
             y if y < 0.0 => "-",
             _ => "0",
@@ -77,13 +94,38 @@ fn ui_update(regina: Res<Regina>, mut contexts: EguiContexts) {
     });
 }
 
-fn movable(
+fn movable_vertical(
     mut regina: ResMut<Regina>,
     time: Res<Time>,
-    mut query: Query<(&mut Transform, &Movable)>,
+    mut query: Query<(&mut Transform, &MovableVertical)>,
+) {
+    let direction_old = match regina.movable_vertical_translation_y {
+        y if y > 0.0 => true,
+        y if y < 0.0 => false,
+        _ => false,
+    };
+    for (mut transform, movable) in &mut query {
+        regina.movable_vertical_translation_y =
+            ops::sin(movable.speed * time.elapsed_secs()) * movable.amplitude;
+        transform.translation.y = regina.movable_vertical_translation_y;
+    }
+    let direction_new = match regina.movable_vertical_translation_y {
+        y if y > 0.0 => true,
+        y if y < 0.0 => false,
+        _ => false,
+    };
+    if direction_old != direction_new {
+        println!("{} --> {}", direction_old, direction_new);
+    }
+}
+
+fn movable_horizontal(
+    mut regina: ResMut<Regina>,
+    time: Res<Time>,
+    mut query: Query<(&mut Transform, &MovableHorizontal)>,
 ) {
     for (mut transform, movable) in &mut query {
-        regina.translation_y = ops::sin(time.elapsed_secs() * movable.speed) * movable.amplitude;
-        transform.translation.y = regina.translation_y;
+        regina.movable_horizontal_translation_x = movable.speed * time.elapsed_secs();
+        transform.translation.x = regina.movable_horizontal_translation_x;
     }
 }
