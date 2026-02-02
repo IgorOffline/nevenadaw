@@ -1,5 +1,20 @@
 use bevy::prelude::*;
 use bevy::window::WindowResolution;
+use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass};
+use uuid::Uuid;
+
+#[derive(Resource)]
+struct Regina {
+    uuid_one: Uuid,
+    uuid_two: Uuid,
+    translation_y: f32,
+}
+
+#[derive(Component)]
+struct Movable {
+    speed: f32,
+    amplitude: f32,
+}
 
 fn main() {
     App::new()
@@ -11,20 +26,21 @@ fn main() {
             }),
             ..default()
         }))
+        .add_plugins(EguiPlugin::default())
         .insert_resource(ClearColor(Color::Srgba(Srgba::hex("#212121").unwrap())))
+        .insert_resource(Regina {
+            uuid_one: Uuid::new_v4(),
+            uuid_two: Uuid::new_v4(),
+            translation_y: 0.0,
+        })
         .add_systems(Startup, setup)
-        .add_systems(Update, move_circle)
+        .add_systems(Update, movable)
+        .add_systems(EguiPrimaryContextPass, ui_update)
         .run();
 }
 
-#[derive(Component)]
-
-struct MovingCircle {
-    speed: f32,
-    amplitude: f32,
-}
-
 fn setup(
+    regina: Res<Regina>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -34,19 +50,35 @@ fn setup(
     commands.spawn((
         Mesh2d(meshes.add(Circle::new(20.0))),
         MeshMaterial2d(materials.add(ColorMaterial::from_color(Srgba::hex("#1976D2").unwrap()))),
-        MovingCircle {
+        Movable {
             speed: 2.0,
             amplitude: 100.0,
         },
         Transform {
-            translation: Vec3::new(0.0, 0.0, 0.0),
+            translation: Vec3::new(-120.0, regina.translation_y, 0.0),
             ..Default::default()
         },
     ));
 }
 
-fn move_circle(time: Res<Time>, mut query: Query<(&mut Transform, &MovingCircle)>) {
-    for (mut transform, bouncer) in &mut query {
-        transform.translation.y = (time.elapsed_secs() * bouncer.speed).sin() * bouncer.amplitude;
+fn ui_update(regina: Res<Regina>, mut contexts: EguiContexts) {
+    let Ok(ctx) = contexts.ctx_mut() else {
+        return;
+    };
+    let hello_string = format!("Hello {}", regina.uuid_one);
+    let world_string = format!("World {}", regina.uuid_two);
+    egui::Window::new("Hello World").show(ctx, |ui| {
+        ui.label(format!("{} {}", hello_string, world_string));
+    });
+}
+
+fn movable(
+    mut regina: ResMut<Regina>,
+    time: Res<Time>,
+    mut query: Query<(&mut Transform, &Movable)>,
+) {
+    for (mut transform, movable) in &mut query {
+        regina.translation_y = ops::sin(time.elapsed_secs() * movable.speed) * movable.amplitude;
+        transform.translation.y = regina.translation_y;
     }
 }
