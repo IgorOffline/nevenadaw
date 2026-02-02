@@ -68,7 +68,12 @@ fn ui_update(regina: Res<Regina>, mut contexts: EguiContexts) {
     let hello_string = format!("Hello {}", regina.uuid_one);
     let world_string = format!("World {}", regina.uuid_two);
     egui::Window::new("Hello World").show(ctx, |ui| {
-        ui.label(format!("{} {}", hello_string, world_string));
+        let direction = match regina.translation_y {
+            y if y > 0.0 => "+",
+            y if y < 0.0 => "-",
+            _ => "0",
+        };
+        ui.label(format!("({}) {} {}", direction, hello_string, world_string));
     });
 }
 
