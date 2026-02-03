@@ -9,12 +9,22 @@ struct Regina {
     uuid_two: Uuid,
     movable_vertical_translation_y: f32,
     movable_horizontal_translation_x: f32,
+    spawn_delay: i32,
+    spawn_counter: u32,
+    do_spawn: bool,
+    current_color_state: bool,
+    do_change_state: bool,
 }
 
 #[derive(Component)]
 struct MovableVertical {
     speed: f32,
     amplitude: f32,
+}
+
+#[derive(Component)]
+struct DefaultHorizontal {
+    id: i32,
 }
 
 #[derive(Component)]
@@ -39,9 +49,22 @@ fn main() {
             uuid_two: Uuid::new_v4(),
             movable_vertical_translation_y: 0.0,
             movable_horizontal_translation_x: 0.0,
+            spawn_delay: 0,
+            spawn_counter: 0,
+            do_spawn: false,
+            current_color_state: true,
+            do_change_state: false,
         })
         .add_systems(Startup, setup)
-        .add_systems(Update, (movable_vertical, movable_horizontal))
+        .add_systems(
+            Update,
+            (
+                movable_vertical,
+                default_horizontal,
+                movable_horizontal,
+                spawn_new_marker,
+            ),
+        )
         .add_systems(EguiPrimaryContextPass, ui_update)
         .run();
 }
@@ -67,9 +90,13 @@ fn setup(
         },
     ));
 
+    let default_horizontal = DefaultHorizontal { id: 1 };
+    println!("__ignorable__ {}", default_horizontal.id);
+
     commands.spawn((
         Mesh2d(meshes.add(Circle::new(20.0))),
         MeshMaterial2d(materials.add(ColorMaterial::from_color(Srgba::hex("#E64A19").unwrap()))),
+        default_horizontal,
         MovableHorizontal { speed: 15.0 },
         Transform {
             translation: Vec3::new(-90.0, regina.movable_vertical_translation_y, 0.0),
@@ -88,7 +115,7 @@ fn ui_update(regina: Res<Regina>, mut contexts: EguiContexts) {
         let direction = match regina.movable_vertical_translation_y {
             y if y > 0.0 => "+",
             y if y < 0.0 => "-",
-            _ => "0",
+            _ => "-",
         };
         ui.label(format!("({}) {} {}", direction, hello_string, world_string));
     });
@@ -115,7 +142,67 @@ fn movable_vertical(
         _ => false,
     };
     if direction_old != direction_new {
-        println!("{} --> {}", direction_old, direction_new);
+        //println!("{} --> {}", direction_old, direction_new);
+        if regina.spawn_delay < 2 {
+            regina.spawn_delay += 1;
+        } else {
+            regina.do_spawn = true;
+            regina.do_change_state = true;
+        }
+        regina.spawn_counter += 1;
+    }
+}
+
+fn spawn_new_marker(
+    mut regina: ResMut<Regina>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    if regina.do_spawn {
+        let spawn_counter = regina.spawn_counter.clone();
+        let color_material = colorize(spawn_counter);
+        regina.current_color_state = !regina.current_color_state;
+        commands.spawn((
+            Mesh2d(meshes.add(Circle::new(20.0))),
+            MeshMaterial2d(materials.add(color_material)),
+            Transform {
+                translation: Vec3::new(regina.movable_horizontal_translation_x, 0.0, 0.0),
+                ..Default::default()
+            },
+        ));
+        regina.do_spawn = false;
+    }
+}
+
+fn colorize(spawn_counter: u32) -> ColorMaterial {
+    if spawn_counter % 2 == 0 {
+        return ColorMaterial::from_color(Srgba::hex("#FFCCBC").unwrap());
+    }
+
+    ColorMaterial::from_color(Srgba::hex("#E64A19").unwrap())
+}
+
+fn colorize_binary(flag: bool) -> ColorMaterial {
+    if flag {
+        return ColorMaterial::from_color(Srgba::hex("#FFCCBC").unwrap());
+    }
+
+    ColorMaterial::from_color(Srgba::hex("#E64A19").unwrap())
+}
+
+fn default_horizontal(
+    mut regina: ResMut<Regina>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    query: Query<&MeshMaterial2d<ColorMaterial>, With<DefaultHorizontal>>,
+) {
+    if regina.do_change_state {
+        for material_handle in &query {
+            if let Some(material) = materials.get_mut(material_handle) {
+                *material = colorize_binary(regina.current_color_state);
+            }
+        }
+        regina.do_change_state = false;
     }
 }
 
