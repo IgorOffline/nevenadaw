@@ -1,8 +1,7 @@
 [package]
-name = "bevyskymana"
+name = "icedhappycube"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = "0.18.0"
-bevy_obj = "0.18.2"
+iced = "0.14.0"
