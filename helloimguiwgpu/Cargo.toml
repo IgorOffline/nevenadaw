@@ -1,0 +1,12 @@
+[package]
+name = "helloimguiwgpu"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+env_logger = "0.11.8"
+imgui-wgpu = "0.25.0"
+pollster = "0.4.0"
+winit = "0.31.0-beta.2"
+dpi = "0.1.2"
+wgpu = "25.0.2"
