@@ -1,0 +1,214 @@
+egui-wgpu v0.33.3
+|-- ahash v0.8.12
+|   |-- cfg-if v1.0.4
+|   |-- once_cell v1.21.3
+|   `-- zerocopy v0.8.38
+|       `-- zerocopy-derive v0.8.38 (proc-macro)
+|           |-- proc-macro2 v1.0.106
+|           |   `-- unicode-ident v1.0.22
+|           |-- quote v1.0.44
+|           |   `-- proc-macro2 v1.0.106 (*)
+|           `-- syn v2.0.114
+|               |-- proc-macro2 v1.0.106 (*)
+|               |-- quote v1.0.44 (*)
+|               `-- unicode-ident v1.0.22
+|   [build-dependencies]
+|   `-- version_check v0.9.5
+|-- bytemuck v1.25.0
+|   `-- bytemuck_derive v1.10.2 (proc-macro)
+|       |-- proc-macro2 v1.0.106 (*)
+|       |-- quote v1.0.44 (*)
+|       `-- syn v2.0.114 (*)
+|-- document-features v0.2.12 (proc-macro)
+|   `-- litrs v1.0.0
+|-- egui v0.33.3
+|   |-- ahash v0.8.12 (*)
+|   |-- bitflags v2.10.0
+|   |-- emath v0.33.3
+|   |   `-- bytemuck v1.25.0 (*)
+|   |-- epaint v0.33.3
+|   |   |-- ab_glyph v0.2.32
+|   |   |   |-- ab_glyph_rasterizer v0.1.10
+|   |   |   `-- owned_ttf_parser v0.25.1
+|   |   |       `-- ttf-parser v0.25.1
+|   |   |-- ahash v0.8.12 (*)
+|   |   |-- bytemuck v1.25.0 (*)
+|   |   |-- ecolor v0.33.3
+|   |   |   |-- bytemuck v1.25.0 (*)
+|   |   |   `-- emath v0.33.3 (*)
+|   |   |-- emath v0.33.3 (*)
+|   |   |-- epaint_default_fonts v0.33.3
+|   |   |-- log v0.4.29
+|   |   |-- nohash-hasher v0.2.0
+|   |   |-- parking_lot v0.12.5
+|   |   |   |-- lock_api v0.4.14
+|   |   |   |   `-- scopeguard v1.2.0
+|   |   |   `-- parking_lot_core v0.9.12
+|   |   |       |-- cfg-if v1.0.4
+|   |   |       |-- smallvec v1.15.1
+|   |   |       `-- windows-link v0.2.1
+|   |   `-- profiling v1.0.17
+|   |-- log v0.4.29
+|   |-- nohash-hasher v0.2.0
+|   |-- profiling v1.0.17
+|   |-- smallvec v1.15.1
+|   `-- unicode-segmentation v1.12.0
+|-- epaint v0.33.3 (*)
+|-- log v0.4.29
+|-- profiling v1.0.17
+|-- thiserror v2.0.18
+|   `-- thiserror-impl v2.0.18 (proc-macro)
+|       |-- proc-macro2 v1.0.106 (*)
+|       |-- quote v1.0.44 (*)
+|       `-- syn v2.0.114 (*)
+|-- type-map v0.5.1
+|   `-- rustc-hash v2.1.1
+|-- web-time v1.1.0
+`-- wgpu v27.0.1
+    |-- arrayvec v0.7.6
+    |-- bitflags v2.10.0
+    |-- cfg-if v1.0.4
+    |-- document-features v0.2.12 (proc-macro) (*)
+    |-- hashbrown v0.16.1
+    |   `-- foldhash v0.2.0
+    |-- log v0.4.29
+    |-- parking_lot v0.12.5 (*)
+    |-- profiling v1.0.17
+    |-- raw-window-handle v0.6.2
+    |-- smallvec v1.15.1
+    |-- static_assertions v1.1.0
+    |-- wgpu-core v27.0.3
+    |   |-- arrayvec v0.7.6
+    |   |-- bit-set v0.8.0
+    |   |   `-- bit-vec v0.8.0
+    |   |-- bit-vec v0.8.0
+    |   |-- bitflags v2.10.0
+    |   |-- bytemuck v1.25.0 (*)
+    |   |-- document-features v0.2.12 (proc-macro) (*)
+    |   |-- hashbrown v0.16.1 (*)
+    |   |-- indexmap v2.13.0
+    |   |   |-- equivalent v1.0.2
+    |   |   `-- hashbrown v0.16.1 (*)
+    |   |-- log v0.4.29
+    |   |-- naga v27.0.3
+    |   |   |-- arrayvec v0.7.6
+    |   |   |-- bit-set v0.8.0 (*)
+    |   |   |-- bitflags v2.10.0
+    |   |   |-- cfg-if v1.0.4
+    |   |   |-- codespan-reporting v0.12.0
+    |   |   |   `-- unicode-width v0.2.2
+    |   |   |-- half v2.7.1
+    |   |   |   |-- cfg-if v1.0.4
+    |   |   |   |-- num-traits v0.2.19
+    |   |   |   |   `-- libm v0.2.16
+    |   |   |   |   [build-dependencies]
+    |   |   |   |   `-- autocfg v1.5.0
+    |   |   |   `-- zerocopy v0.8.38 (*)
+    |   |   |-- hashbrown v0.16.1 (*)
+    |   |   |-- hexf-parse v0.2.1
+    |   |   |-- indexmap v2.13.0 (*)
+    |   |   |-- libm v0.2.16
+    |   |   |-- log v0.4.29
+    |   |   |-- num-traits v0.2.19 (*)
+    |   |   |-- once_cell v1.21.3
+    |   |   |-- rustc-hash v1.1.0
+    |   |   |-- spirv v0.3.0+sdk-1.3.268.0
+    |   |   |   `-- bitflags v2.10.0
+    |   |   |-- thiserror v2.0.18 (*)
+    |   |   `-- unicode-ident v1.0.22
+    |   |   [build-dependencies]
+    |   |   `-- cfg_aliases v0.2.1
+    |   |-- once_cell v1.21.3
+    |   |-- parking_lot v0.12.5 (*)
+    |   |-- profiling v1.0.17
+    |   |-- raw-window-handle v0.6.2
+    |   |-- rustc-hash v1.1.0
+    |   |-- smallvec v1.15.1
+    |   |-- thiserror v2.0.18 (*)
+    |   |-- wgpu-core-deps-windows-linux-android v27.0.0
+    |   |   `-- wgpu-hal v27.0.4
+    |   |       |-- arrayvec v0.7.6
+    |   |       |-- ash v0.38.0+1.3.281
+    |   |       |   `-- libloading v0.8.9
+    |   |       |       `-- windows-link v0.2.1
+    |   |       |-- bit-set v0.8.0 (*)
+    |   |       |-- bitflags v2.10.0
+    |   |       |-- bytemuck v1.25.0 (*)
+    |   |       |-- cfg-if v1.0.4
+    |   |       |-- glow v0.16.0
+    |   |       |-- glutin_wgl_sys v0.6.1
+    |   |       |   [build-dependencies]
+    |   |       |   `-- gl_generator v0.14.0
+    |   |       |       |-- khronos_api v3.1.0
+    |   |       |       |-- log v0.4.29
+    |   |       |       `-- xml-rs v0.8.28
+    |   |       |-- gpu-alloc v0.6.0
+    |   |       |   |-- bitflags v2.10.0
+    |   |       |   `-- gpu-alloc-types v0.3.0
+    |   |       |       `-- bitflags v2.10.0
+    |   |       |-- gpu-allocator v0.27.0
+    |   |       |   |-- log v0.4.29
+    |   |       |   |-- presser v0.3.1
+    |   |       |   |-- thiserror v1.0.69
+    |   |       |   |   `-- thiserror-impl v1.0.69 (proc-macro)
+    |   |       |   |       |-- proc-macro2 v1.0.106 (*)
+    |   |       |   |       |-- quote v1.0.44 (*)
+    |   |       |   |       `-- syn v2.0.114 (*)
+    |   |       |   `-- windows v0.58.0
+    |   |       |       |-- windows-core v0.58.0
+    |   |       |       |   |-- windows-implement v0.58.0 (proc-macro)
+    |   |       |       |   |   |-- proc-macro2 v1.0.106 (*)
+    |   |       |       |   |   |-- quote v1.0.44 (*)
+    |   |       |       |   |   `-- syn v2.0.114 (*)
+    |   |       |       |   |-- windows-interface v0.58.0 (proc-macro)
+    |   |       |       |   |   |-- proc-macro2 v1.0.106 (*)
+    |   |       |       |   |   |-- quote v1.0.44 (*)
+    |   |       |       |   |   `-- syn v2.0.114 (*)
+    |   |       |       |   |-- windows-result v0.2.0
+    |   |       |       |   |   `-- windows-targets v0.52.6
+    |   |       |       |   |       `-- windows_x86_64_msvc v0.52.6
+    |   |       |       |   |-- windows-strings v0.1.0
+    |   |       |       |   |   |-- windows-result v0.2.0 (*)
+    |   |       |       |   |   `-- windows-targets v0.52.6 (*)
+    |   |       |       |   `-- windows-targets v0.52.6 (*)
+    |   |       |       `-- windows-targets v0.52.6 (*)
+    |   |       |-- gpu-descriptor v0.3.2
+    |   |       |   |-- bitflags v2.10.0
+    |   |       |   |-- gpu-descriptor-types v0.2.0
+    |   |       |   |   `-- bitflags v2.10.0
+    |   |       |   `-- hashbrown v0.15.5
+    |   |       |       `-- foldhash v0.1.5
+    |   |       |-- hashbrown v0.16.1 (*)
+    |   |       |-- khronos-egl v6.0.0
+    |   |       |   |-- libc v0.2.180
+    |   |       |   `-- libloading v0.8.9 (*)
+    |   |       |-- libloading v0.8.9 (*)
+    |   |       |-- log v0.4.29
+    |   |       |-- naga v27.0.3 (*)
+    |   |       |-- once_cell v1.21.3
+    |   |       |-- ordered-float v5.1.0
+    |   |       |   `-- num-traits v0.2.19 (*)
+    |   |       |-- parking_lot v0.12.5 (*)
+    |   |       |-- profiling v1.0.17
+    |   |       |-- range-alloc v0.1.4
+    |   |       |-- raw-window-handle v0.6.2
+    |   |       |-- renderdoc-sys v1.1.0
+    |   |       |-- smallvec v1.15.1
+    |   |       |-- thiserror v2.0.18 (*)
+    |   |       |-- wgpu-types v27.0.1
+    |   |       |   |-- bitflags v2.10.0
+    |   |       |   |-- bytemuck v1.25.0 (*)
+    |   |       |   |-- log v0.4.29
+    |   |       |   `-- thiserror v2.0.18 (*)
+    |   |       |-- windows v0.58.0 (*)
+    |   |       `-- windows-core v0.58.0 (*)
+    |   |       [build-dependencies]
+    |   |       `-- cfg_aliases v0.2.1
+    |   |-- wgpu-hal v27.0.4 (*)
+    |   `-- wgpu-types v27.0.1 (*)
+    |   [build-dependencies]
+    |   `-- cfg_aliases v0.2.1
+    |-- wgpu-hal v27.0.4 (*)
+    `-- wgpu-types v27.0.1 (*)
+    [build-dependencies]
+    `-- cfg_aliases v0.2.1
