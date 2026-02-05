@@ -12,7 +12,6 @@ fn main() -> iced::Result {
 
 struct State {
     cube: BananaCube,
-    counter: u32,
 }
 
 impl Default for State {
@@ -22,7 +21,6 @@ impl Default for State {
                 size: 300.0,
                 counter: 0,
             },
-            counter: 0,
         }
     }
 }
@@ -44,9 +42,7 @@ impl State {
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Tick => {
-                println!("{}", self.counter);
-                self.counter += 1;
-                self.cube.counter = self.counter;
+                self.cube.counter += 1;
 
                 Task::perform(tokio::time::sleep(Duration::from_millis(200)), |_| {
                     Message::Tick
