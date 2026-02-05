@@ -18,7 +18,10 @@ struct State {
 impl Default for State {
     fn default() -> Self {
         Self {
-            cube: BananaCube { size: 300.0 },
+            cube: BananaCube {
+                size: 300.0,
+                counter: 0,
+            },
             counter: 0,
         }
     }
@@ -43,6 +46,7 @@ impl State {
             Message::Tick => {
                 println!("{}", self.counter);
                 self.counter += 1;
+                self.cube.counter = self.counter;
 
                 Task::perform(tokio::time::sleep(Duration::from_millis(200)), |_| {
                     Message::Tick
@@ -62,6 +66,7 @@ impl State {
 #[derive(Debug)]
 struct BananaCube {
     size: f32,
+    counter: u32,
 }
 
 impl<Message> canvas::Program<Message> for BananaCube {
@@ -104,7 +109,7 @@ impl<Message> canvas::Program<Message> for BananaCube {
         );
 
         let color_primary_text = color!(0x212121);
-        let pupil_radius = eye_radius * 0.5;
+        let pupil_radius = eye_radius * 0.5 + self.counter as f32 * 0.5;
         frame.fill(
             &canvas::Path::circle(left_eye_pos, pupil_radius),
             color_primary_text,
