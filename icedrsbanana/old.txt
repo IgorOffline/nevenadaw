@@ -1,9 +1,8 @@
 use iced::widget::canvas;
 use iced::{color, mouse, Element, Point, Rectangle, Renderer, Size, Task, Theme};
-use std::time::Duration;
 
 fn main() -> iced::Result {
-    iced::application(State::init, State::update, State::view)
+    iced::application(State::default, State::update, State::view)
         .title(State::title)
         .centered()
         .theme(|_: &State| Theme::Dark)
@@ -12,43 +11,28 @@ fn main() -> iced::Result {
 
 struct State {
     cube: BananaCube,
-    counter: u32,
 }
 
 impl Default for State {
     fn default() -> Self {
         Self {
             cube: BananaCube { size: 300.0 },
-            counter: 0,
         }
     }
 }
 
-#[derive(Debug, Clone, Copy)]
 enum Message {
-    Tick,
+    #[allow(dead_code)]
+    None,
 }
 
 impl State {
-    fn init() -> (Self, Task<Message>) {
-        (Self::default(), Task::done(Message::Tick))
-    }
-
     fn title(&self) -> String {
         "Banana Cube".to_string()
     }
 
-    fn update(&mut self, message: Message) -> Task<Message> {
-        match message {
-            Message::Tick => {
-                println!("{}", self.counter);
-                self.counter += 1;
-
-                Task::perform(tokio::time::sleep(Duration::from_millis(200)), |_| {
-                    Message::Tick
-                })
-            }
-        }
+    fn update(&mut self, _message: Message) -> Task<Message> {
+        Task::none()
     }
 
     fn view(&self) -> Element<'_, Message> {
