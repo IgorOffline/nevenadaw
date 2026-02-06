@@ -1,0 +1,8 @@
+[package]
+name = "icedaudiocubes"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nih_plug = { path = "C:/D/robbert-vdh-nih-plug", features = ["standalone"] }
+nih_plug_iced = { path = "C:/D/robbert-vdh-nih-plug/nih_plug_iced" }
