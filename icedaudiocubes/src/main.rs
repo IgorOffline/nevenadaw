@@ -1,3 +1,6 @@
+use icedaudiocubes::Audiocubes;
+use nih_plug::prelude::*;
+
 fn main() {
-    println!("Hello, world!1000");
+    nih_export_standalone::<Audiocubes>();
 }
