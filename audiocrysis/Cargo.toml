@@ -1,0 +1,22 @@
+[package]
+name = "audiocrysis"
+version.workspace = true
+edition.workspace = true
+
+[workspace]
+members = ["xtask", "."]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[[bin]]
+name = "audiocrysis"
+path = "src/main.rs"
+
+[dependencies]
+nih_plug = { path = "C:/D/robbert-vdh-nih-plug", features = ["standalone"] }
+nih_plug_iced = { path = "C:/D/robbert-vdh-nih-plug/nih_plug_iced" }
