@@ -1,3 +1,3 @@
 cargo run -- --period-size 1056
 cargo run -p xtask -- bundle icedaudiocubes --release
---> C:\Program Files\Common Files\CLAP\Audiocubes --> Audiocubes.clap
+target\bundled\(clap) --> C:\Program Files\Common Files\CLAP\Audiocubes --> Audiocubes.clap
