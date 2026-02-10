@@ -1,5 +1,5 @@
 [package]
-name = "icedaudiocubes"
+name = "audiocrysis"
 version.workspace = true
 edition.workspace = true
 
@@ -14,11 +14,9 @@ edition = "2024"
 crate-type = ["cdylib", "lib"]
 
 [[bin]]
-name = "audiocubes"
+name = "audiocrysis"
 path = "src/main.rs"
 
 [dependencies]
 nih_plug = { path = "C:/D/robbert-vdh-nih-plug", features = ["standalone"] }
 nih_plug_iced = { path = "C:/D/robbert-vdh-nih-plug/nih_plug_iced" }
-rand = "0.9.2"
-iced = { git = "https://github.com/iced-rs/iced.git", rev = "a53fa91e0ddf374bbeb66d5e831b79127ed47a9d", features = ["tokio", "canvas"] }
