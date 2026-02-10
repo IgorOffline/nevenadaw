@@ -536,3 +536,86 @@ mod tests {
         assert_eq!(*result.lock().unwrap(), 42);
     }
 }
+
+//
+// --- --- ---
+//
+// DEBUG
+//
+// --- --- ---
+//
+
+#[macro_export]
+macro_rules! nih_log {
+    ($format:expr $(, $($args:tt)*)?) => (
+        eprintln!(concat!("[", file!(), ":", line!(), "] ", $format), $($($args)*)?)
+    );
+}
+
+#[macro_export]
+macro_rules! nih_debug_assert {
+    ($cond:expr $(,)?) => (
+        if cfg!(debug_assertions) && !$cond {
+            nih_log!(concat!("Debug assertion failed: ", stringify!($cond)));
+        }
+    );
+    ($cond:expr, $format:expr $(, $($args:tt)*)?) => (
+        if cfg!(debug_assertions) && !$cond {
+            nih_log!(concat!("Debug assertion failed: ", stringify!($cond), ", ", $format), $($($args)*)?);
+        }
+    );
+}
+
+#[macro_export]
+macro_rules! nih_debug_assert_failure {
+    () => (
+        if cfg!(debug_assertions) {
+            nih_log!("Debug assertion failed");
+        }
+    );
+    ($format:expr $(, $($args:tt)*)?) => (
+        if cfg!(debug_assertions) {
+            nih_log!(concat!("Debug assertion failed: ", $format), $($($args)*)?);
+        }
+    );
+}
+
+#[macro_export]
+macro_rules! nih_debug_assert_eq {
+    ($left:expr, $right:expr $(,)?) => (
+        if cfg!(debug_assertions) && $left != $right {
+            nih_log!(concat!("Debug assertion failed: ", stringify!($left), " != ", stringify!($right)));
+        }
+    );
+    (left:expr, $right:expr, $format:expr $(, $($args:tt)*)?) => (
+        if cfg!(debug_assertions) && $left != $right  {
+            nih_log!(concat!("Debug assertion failed: ", stringify!($left), " != ", stringify!($right), ", ", $format), $($($args)*)?);
+        }
+    );
+}
+
+#[macro_export]
+macro_rules! nih_debug_assert_neq {
+    ($left:expr, $right:expr $(,)?) => (
+        if cfg!(debug_assertions) && $left == $right {
+            nih_log!(concat!("Debug assertion failed: ", stringify!($left), " == ", stringify!($right)));
+        }
+    );
+    (left:expr, $right:expr, $format:expr $(, $($args:tt)*)?) => (
+        if cfg!(debug_assertions) && $left == $right  {
+            nih_log!(concat!("Debug assertion failed: ", stringify!($left), " == ", stringify!($right), ", ", $format), $($($args)*)?);
+        }
+    );
+}
+
+//
+// --- --- ---
+//
+// FORMATTERS
+//
+// --- --- ---
+//
+
+pub fn f32_rounded(digits: usize) -> Option<Arc<dyn Fn(f32) -> String + Send + Sync>> {
+    Some(Arc::new(move |x| format!("{:.digits$}", x)))
+}
