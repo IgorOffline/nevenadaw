@@ -1,0 +1,4 @@
+[steam]
+player_id = "76100200300400500600700800900"
+key = "1A2B1A2B1A2B1A2B1A2B1A2B1A2B"
+url_raw = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={key}&steamid={player_id}&format=json"
