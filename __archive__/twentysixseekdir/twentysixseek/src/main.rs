@@ -3,6 +3,8 @@ use regex::Regex;
 use reqwest::Client;
 use serde::Deserialize;
 use std::fs;
+use std::fs::File;
+use std::io::Write;
 use uuid::Uuid;
 
 #[derive(Clone, Deserialize)]
@@ -79,6 +81,55 @@ where id = (1866366,2639114,156334,15147);"#;
             println!("--- --- ---");
             println!("{}", text);
             println!("--- --- ---");
+        } else if &args[1] == "prepare_external_games_list" {
+            let expected_game_count = args[2]
+                .parse::<u64>()
+                .expect("Unable to parse expected_game_count");
+            let steam_result_filename = &args[3];
+            let text_raw = fs::read_to_string(steam_result_filename).expect("Failed to read file");
+            let decoded_bytes: Vec<u8> =
+                base64_url::decode(text_raw.trim()).expect("Error decoding base64url");
+            let json: serde_json::Value =
+                serde_json::from_slice(&decoded_bytes).expect("Failed to parse JSON");
+            if let Some(game_count) = json
+                .get("response")
+                .and_then(|r| r.get("game_count"))
+                .and_then(|v| v.as_u64())
+            {
+                if game_count == expected_game_count {
+                    println!("game_count={}", game_count);
+                    let mut appids = Vec::new();
+                    for (_, game) in json["response"]["games"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .enumerate()
+                    {
+                        let appid = game["appid"].as_u64().unwrap();
+                        appids.push(appid);
+                    }
+                    println!("appids={:?}", appids);
+                    let batch_size = 10;
+                    for (batch_index, chunk) in appids.chunks(batch_size).enumerate() {
+                        let filename = format!("external_games_{}.txt", batch_index);
+                        let mut file =
+                            File::create(&filename).expect("Failed to create batch file");
+                        for appid in chunk {
+                            writeln!(file, "{}", appid).expect("Failed to write appid to file");
+                        }
+                        println!("Wrote {} ids to {}", chunk.len(), filename);
+                    }
+                } else {
+                    println!(
+                        "game_count invalid: got {}, expected {}",
+                        game_count, expected_game_count
+                    );
+                }
+            } else {
+                println!("Failed to get game_count");
+            }
+        } else if &args[1] == "seek_external_games_list" {
+            println!("seek_external_games_list");
         }
 
         //process_old_one();
