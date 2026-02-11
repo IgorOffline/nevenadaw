@@ -619,3 +619,11 @@ macro_rules! nih_debug_assert_neq {
 pub fn f32_rounded(digits: usize) -> Option<Arc<dyn Fn(f32) -> String + Send + Sync>> {
     Some(Arc::new(move |x| format!("{:.digits$}", x)))
 }
+
+//
+// --- --- ---
+//
+// SINE EXAMPLE
+//
+// --- --- ---
+//
