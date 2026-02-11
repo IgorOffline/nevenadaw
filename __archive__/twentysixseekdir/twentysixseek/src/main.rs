@@ -15,14 +15,72 @@ struct Youtube {
 }
 
 #[derive(Clone, Deserialize)]
-struct Config {
+struct YoutubeConfig {
     youtube: Youtube,
+}
+
+#[derive(Clone, Deserialize)]
+struct Steam {
+    player_id: String,
+    key: String,
+    url_raw: String,
+}
+
+#[derive(Clone, Deserialize)]
+struct SteamConfig {
+    steam: Steam,
 }
 
 fn main() {
     println!("<START>");
+    steam_reqwest_logic();
     println!("<END>");
 }
+
+#[tokio::main]
+async fn steam_reqwest_logic() -> Result<(), reqwest::Error> {
+    let loaded_toml = steam_load_toml().unwrap();
+    println!(
+        "player_id={}, key={}, url_raw={}",
+        loaded_toml.player_id.len(),
+        loaded_toml.key.len(),
+        loaded_toml.url_raw.len()
+    );
+    let client = reqwest::Client::new();
+
+    let url_with_player_id_replaced = loaded_toml
+        .url_raw
+        .as_str()
+        .replace("{player_id}", &loaded_toml.player_id);
+    let steam_url = url_with_player_id_replaced
+        .as_str()
+        .replace("{key}", &loaded_toml.key);
+
+    let response = client.get(steam_url).send().await?;
+
+    if response.status().is_success() {
+        let json: serde_json::Value = response.json().await?;
+        let pretty_json = serde_json::to_string_pretty(&json).unwrap();
+        let encoded_payload = base64_url::encode(&pretty_json);
+        let filename = prepare_filename();
+        fs::write(filename, &encoded_payload).expect("Unable to write file");
+        println!("--- RAW JSON PAYLOAD ---");
+        println!("{}", pretty_json);
+        println!("-------------------------");
+    } else {
+        println!(
+            "c9cf6abb Error=[{}][{}]",
+            response.status(),
+            response.text().await?
+        );
+    }
+
+    Ok(())
+}
+
+//
+// ---
+//
 
 #[allow(dead_code)]
 fn read_lines(filename: &str) -> Vec<String> {
@@ -85,10 +143,20 @@ fn seek_load_toml() -> Result<Youtube, String> {
     let content_raw = fs::read_to_string(r"C:\Users\igor\.ssh\youtube.toml")
         .map_err(|e| format!("Failed to read config file: {}", e))?;
 
-    let config: Config =
+    let config: YoutubeConfig =
         toml::from_str(&content_raw).map_err(|e| format!("Failed to parse TOML: {}", e))?;
 
     Ok(config.youtube)
+}
+
+fn steam_load_toml() -> Result<Steam, String> {
+    let content_raw = fs::read_to_string(r"C:\Users\igor\.ssh\steam.toml")
+        .map_err(|e| format!("Failed to read config file: {}", e))?;
+
+    let config: SteamConfig =
+        toml::from_str(&content_raw).map_err(|e| format!("Failed to parse TOML: {}", e))?;
+
+    Ok(config.steam)
 }
 
 fn prepare_filename() -> String {
@@ -184,7 +252,7 @@ mod tests {
         let now = chrono::Utc::now();
         let day = now.day().to_string();
         let formatted_day = zero_leading_format(&day);
-        assert_eq!("02", formatted_day);
+        assert_eq!("10", formatted_day);
     }
 
     #[test]
