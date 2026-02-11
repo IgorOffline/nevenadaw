@@ -1,5 +1,6 @@
 use chrono::Datelike;
 use regex::Regex;
+use reqwest::Client;
 use serde::Deserialize;
 use std::fs;
 use uuid::Uuid;
@@ -31,7 +32,8 @@ struct SteamConfig {
     steam: Steam,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     println!("<START>");
     let args: Vec<String> = std::env::args().collect();
     let args_len = args.len();
@@ -39,20 +41,69 @@ fn main() {
     args.clone()
         .into_iter()
         .for_each(|arg| println!("arg={}", arg));
-    if args_len == 2 {
-        let steam_payload_json = args[1].clone();
-        let json_payload = fs::read_to_string(steam_payload_json).expect("Failed to read file");
-        let _ = process_steam_payload_json(&json_payload);
+    if args_len == 4 {
+        if &args[1] == "external_games" {
+            let client_id = &args[2];
+            let token = &args[3];
+            let query = r#"fields game, uid; where uid = "730";"#;
+            let client = Client::new();
+            let response = client
+                .post("https://api.igdb.com/v4/games")
+                .header("Client-ID", client_id)
+                .header("Authorization", format!("Bearer {}", token))
+                .body(query)
+                .send()
+                .await
+                .expect("Failed to send request");
 
-        //let steam_result_filename = args[1].clone();
-        //println!("steam_result_filename={}", steam_result_filename);
-        //process_steam_result(&steam_result_filename);
+            let text = response.text().await.expect("Failed to read response body");
+            println!("--- --- ---");
+            println!("{}", text);
+            println!("--- --- ---");
+        } else if &args[1] == "games" {
+            let client_id = &args[2];
+            let token = &args[3];
+            let query = r#"fields id, game, name, category;
+where id = (1866366,2639114,156334,15147);"#;
+            let client = Client::new();
+            let response = client
+                .post("https://api.igdb.com/v4/external_games")
+                .header("Client-ID", client_id)
+                .header("Authorization", format!("Bearer {}", token))
+                .body(query)
+                .send()
+                .await
+                .expect("Failed to send request");
+
+            let text = response.text().await.expect("Failed to read response body");
+            println!("--- --- ---");
+            println!("{}", text);
+            println!("--- --- ---");
+        }
+
+        //process_old_one();
+        //process_old_two();
     }
 
     //steam_reqwest_logic();
     println!("<END>");
 }
 
+#[allow(dead_code)]
+fn process_old_one() {
+    //let steam_payload_json = args[1].clone();
+    //let json_payload = fs::read_to_string(steam_payload_json).expect("Failed to read file");
+    //let _ = process_steam_payload_json(&json_payload);
+}
+
+#[allow(dead_code)]
+fn process_old_two() {
+    //let steam_result_filename = args[1].clone();
+    //println!("steam_result_filename={}", steam_result_filename);
+    //process_steam_result(&steam_result_filename);
+}
+
+#[allow(dead_code)]
 fn process_steam_payload_json(json_payload: &str) {
     println!("json.len={}", json_payload.len());
     let json: serde_json::Value = serde_json::from_str(json_payload).expect("Failed to parse JSON");
