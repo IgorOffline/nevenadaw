@@ -33,10 +33,51 @@ struct SteamConfig {
 
 fn main() {
     println!("<START>");
-    steam_reqwest_logic();
+    let args: Vec<String> = std::env::args().collect();
+    let args_len = args.len();
+    println!("args.len={:?}", args_len);
+    args.clone()
+        .into_iter()
+        .for_each(|arg| println!("arg={}", arg));
+    if args_len == 2 {
+        let steam_payload_json = args[1].clone();
+        let json_payload = fs::read_to_string(steam_payload_json).expect("Failed to read file");
+        let _ = process_steam_payload_json(&json_payload);
+
+        //let steam_result_filename = args[1].clone();
+        //println!("steam_result_filename={}", steam_result_filename);
+        //process_steam_result(&steam_result_filename);
+    }
+
+    //steam_reqwest_logic();
     println!("<END>");
 }
 
+fn process_steam_payload_json(json_payload: &str) {
+    println!("json.len={}", json_payload.len());
+    let json: serde_json::Value = serde_json::from_str(json_payload).expect("Failed to parse JSON");
+    if let Some(game_count) = json
+        .get("response")
+        .and_then(|r| r.get("game_count"))
+        .and_then(|v| v.as_u64())
+    {
+        println!("game_count={}", game_count);
+    } else {
+        println!("Failed to get game_count");
+    }
+}
+
+#[allow(dead_code)]
+fn process_steam_result(steam_result_filename: &str) {
+    let text_raw = fs::read_to_string(steam_result_filename).expect("Failed to read file");
+    let text = text_raw.trim();
+    let decoded = base64_url::decode(text).expect("Error decoding");
+    println!("decoded.len={}", decoded.len());
+    let filename = prepare_filename();
+    fs::write(filename, &decoded).expect("Unable to write file");
+}
+
+#[allow(dead_code)]
 #[tokio::main]
 async fn steam_reqwest_logic() -> Result<(), reqwest::Error> {
     let loaded_toml = steam_load_toml().unwrap();
@@ -150,7 +191,7 @@ fn seek_load_toml() -> Result<Youtube, String> {
 }
 
 fn steam_load_toml() -> Result<Steam, String> {
-    let content_raw = fs::read_to_string(r"C:\Users\igor\.ssh\steam.toml")
+    let content_raw = fs::read_to_string(r"C:\Users\igor\.ssh\steam_oldschool.toml")
         .map_err(|e| format!("Failed to read config file: {}", e))?;
 
     let config: SteamConfig =
