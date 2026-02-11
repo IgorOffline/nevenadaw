@@ -40,13 +40,31 @@ fn main() {
         .into_iter()
         .for_each(|arg| println!("arg={}", arg));
     if args_len == 2 {
-        let steam_result_filename = args[1].clone();
-        println!("steam_result_filename={}", steam_result_filename);
+        let steam_payload_json = args[1].clone();
+        let json_payload = fs::read_to_string(steam_payload_json).expect("Failed to read file");
+        let _ = process_steam_payload_json(&json_payload);
+
+        //let steam_result_filename = args[1].clone();
+        //println!("steam_result_filename={}", steam_result_filename);
         //process_steam_result(&steam_result_filename);
     }
 
     //steam_reqwest_logic();
     println!("<END>");
+}
+
+fn process_steam_payload_json(json_payload: &str) {
+    println!("json.len={}", json_payload.len());
+    let json: serde_json::Value = serde_json::from_str(json_payload).expect("Failed to parse JSON");
+    if let Some(game_count) = json
+        .get("response")
+        .and_then(|r| r.get("game_count"))
+        .and_then(|v| v.as_u64())
+    {
+        println!("game_count={}", game_count);
+    } else {
+        println!("Failed to get game_count");
+    }
 }
 
 #[allow(dead_code)]
