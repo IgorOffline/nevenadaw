@@ -43,7 +43,7 @@ async fn main() {
     args.clone()
         .into_iter()
         .for_each(|arg| println!("arg={}", arg));
-    if args_len == 4 {
+    if args_len > 1 {
         if &args[1] == "external_games" {
             let client_id = &args[2];
             let token = &args[3];
@@ -129,7 +129,14 @@ where id = (1866366,2639114,156334,15147);"#;
                 println!("Failed to get game_count");
             }
         } else if &args[1] == "seek_external_games_list" {
-            println!("seek_external_games_list");
+            println!("(seek_external_games_list)");
+            let filename = &args[2];
+            let lines = read_lines(filename);
+            let external_game_ids = lines
+                .iter()
+                .map(|id| id.parse::<u64>().unwrap())
+                .collect::<Vec<u64>>();
+            println!("external_game_ids={:?}", external_game_ids);
         }
 
         //process_old_one();
@@ -225,7 +232,6 @@ async fn steam_reqwest_logic() -> Result<(), reqwest::Error> {
 // ---
 //
 
-#[allow(dead_code)]
 fn read_lines(filename: &str) -> Vec<String> {
     let mut result = Vec::new();
 
