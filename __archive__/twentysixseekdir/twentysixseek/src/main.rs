@@ -136,7 +136,38 @@ where id = (1866366,2639114,156334,15147);"#;
                 .iter()
                 .map(|id| id.parse::<u64>().unwrap())
                 .collect::<Vec<u64>>();
-            println!("external_game_ids={:?}", external_game_ids);
+            let external_game_ids_stringified_raw = external_game_ids
+                .iter()
+                .map(|id| format!("\"{}\"", id))
+                .collect::<Vec<_>>()
+                .join(",");
+
+            let external_game_ids_stringified = format!("({})", external_game_ids_stringified_raw);
+            println!(
+                "external_game_ids={:?} ; [{}]",
+                external_game_ids, external_game_ids_stringified
+            );
+
+            let client_id = &args[3];
+            let token = &args[4];
+            let query = format!(
+                r#"fields game; where uid = {} & external_game_source = 1;"#,
+                external_game_ids_stringified
+            );
+            let client = Client::new();
+            let response = client
+                .post("https://api.igdb.com/v4/external_games")
+                .header("Client-ID", client_id)
+                .header("Authorization", format!("Bearer {}", token))
+                .body(query)
+                .send()
+                .await
+                .expect("Failed to send request");
+
+            let text = response.text().await.expect("Failed to read response body");
+            println!("--- --- ---");
+            println!("{}", text);
+            println!("--- --- ---");
         }
 
         //process_old_one();
