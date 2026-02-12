@@ -168,6 +168,30 @@ where id = (1866366,2639114,156334,15147);"#;
             println!("--- --- ---");
             println!("{}", text);
             println!("--- --- ---");
+        } else if &args[1] == "seek_one_game" {
+            let client_id = &args[2];
+            let token = &args[3];
+            let game_id = "14";
+            let query = format!(
+                "fields age_ratings,aggregated_rating,aggregated_rating_count,alternative_names,artworks,bundles,category,checksum,collection,collections,cover,created_at,dlcs,expanded_games,expansions,external_games,first_release_date,follows,forks,franchise,franchises,game_engines,game_localizations,game_modes,game_status,game_type,genres,hypes,involved_companies,keywords,language_supports,multiplayer_modes,name,parent_game,platforms,player_perspectives,ports,rating,rating_count,release_dates,remakes,remasters,screenshots,similar_games,slug,standalone_expansions,status,storyline,summary,tags,themes,total_rating,total_rating_count,updated_at,url,version_parent,version_title,videos,websites; where id = {};",
+                game_id
+            );
+            let client = Client::new();
+            let response = client
+                .post("https://api.igdb.com/v4/games")
+                .header("Client-ID", client_id)
+                .header("Authorization", format!("Bearer {}", token))
+                .body(query)
+                .send()
+                .await
+                .expect("Failed to send request");
+
+            let text = response.text().await.expect("Failed to read response body");
+            println!("--- --- ---");
+            println!("{}", text);
+            println!("--- --- ---");
+        } else if &args[1] == "seek_game_batch" {
+            println!("(seek_game_batch)");
         }
 
         //process_old_one();
