@@ -40,6 +40,26 @@ async fn main() {
     let args: Vec<String> = std::env::args().collect();
     let args_len = args.len();
     println!("args.len={:?}", args_len);
+    if args_len > 1 && &args[1] == "seek_game_batch" {
+        let delay = std::time::Duration::from_secs(10);
+        println!("(1)");
+        tokio::time::sleep(delay).await;
+        println!("(2)");
+        tokio::time::sleep(delay).await;
+        println!("(3)");
+    } else {
+        println!("Please provide valid arguments");
+    }
+    println!("<END>");
+}
+
+#[allow(dead_code)]
+#[tokio::main]
+async fn initial_arguments() {
+    println!("<START>");
+    let args: Vec<String> = std::env::args().collect();
+    let args_len = args.len();
+    println!("args.len={:?}", args_len);
     args.clone()
         .into_iter()
         .for_each(|arg| println!("arg={}", arg));
@@ -190,8 +210,6 @@ where id = (1866366,2639114,156334,15147);"#;
             println!("--- --- ---");
             println!("{}", text);
             println!("--- --- ---");
-        } else if &args[1] == "seek_game_batch" {
-            println!("(seek_game_batch)");
         }
 
         //process_old_one();
