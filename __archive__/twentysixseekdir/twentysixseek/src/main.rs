@@ -8,6 +8,9 @@ use std::io::Write;
 use std::path::Path;
 use uuid::Uuid;
 
+use rand::seq::SliceRandom;
+use rand::{rngs::StdRng, SeedableRng};
+
 #[derive(Clone, Deserialize)]
 struct Youtube {
     winter_2021: String,
@@ -49,7 +52,56 @@ struct GameTwo {
     url: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct GameThreeBody {
+    response: GameThreeResponse,
+}
+
+#[derive(Debug, Deserialize)]
+struct GameThreeResponse {
+    game_count: u32,
+    games: Vec<GameThreeGame>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Deserialize)]
+struct GameThreeGame {
+    appid: u32,
+}
+
 fn main() {
+    println!("<START>");
+    let args: Vec<String> = std::env::args().collect();
+    let args_len = args.len();
+    println!("args.len={:?}", args_len);
+    if args_len == 3 && &args[1] == "seek_1040" {
+        println!("(seek_1040)");
+        let games_json_path = &args[2];
+        let json_raw = fs::read_to_string(games_json_path).expect("Failed to read JSON file");
+        println!("content.len={}", &json_raw.len());
+        let mut games =
+            serde_json::from_str::<GameThreeBody>(&json_raw).expect("Failed to parse JSON");
+        println!(
+            "games.response.game_count={}, games.response.games.len={}",
+            games.response.game_count,
+            games.response.games.len()
+        );
+        assert_eq!(
+            games.response.game_count,
+            games.response.games.len() as u32,
+            "games.response.game_count != games.response.games.len()"
+        );
+        let mut rng = StdRng::seed_from_u64(12345);
+        games.response.games.shuffle(&mut rng);
+        assert_eq!(games.response.games.len() > 10, true);
+        let ten = &games.response.games[..10.min(games.response.games.len())];
+        println!("ten={:?}", ten);
+    }
+    println!("<END>");
+}
+
+#[allow(dead_code)]
+fn main_analyze_one_game_1002() {
     println!("<START>");
     let args: Vec<String> = std::env::args().collect();
     let args_len = args.len();
@@ -74,6 +126,7 @@ fn main() {
     println!("<END>");
 }
 
+#[allow(dead_code)]
 fn process_batch_path_list(batch_path_list: &Vec<String>) -> Vec<GameTwo> {
     let mut games: Vec<GameTwo> = Vec::new();
     for batch_dir in batch_path_list {
@@ -99,6 +152,7 @@ fn process_batch_path_list(batch_path_list: &Vec<String>) -> Vec<GameTwo> {
     games
 }
 
+#[allow(dead_code)]
 fn process_games(games: &Vec<GameTwo>) {
     println!("--- --- ---");
     for game in games {
