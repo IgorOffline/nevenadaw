@@ -57,18 +57,58 @@ fn main() {
     if args_len == 3 && &args[1] == "analyze_one_game_1002" {
         println!("(analyze_one_game_1002)");
         let lines = read_lines(&args[2]);
-        lines.iter().for_each(|line| {
-            let exists = Path::new(&line).exists();
+        let mut batch_path_list: Vec<String> = Vec::new();
+        lines.iter().for_each(|batch_path| {
+            let exists = Path::new(&batch_path).exists();
             if !exists {
-                panic!("File not found: {}", line);
+                panic!("File not found: {}", batch_path);
             }
-            println!("line={}, exists={}", line, exists);
+            println!("batch_path={}, exists={}", batch_path, exists);
+            batch_path_list.push(batch_path.to_string());
         });
+        let games = process_batch_path_list(&batch_path_list);
+        process_games(&games);
     } else {
         println!("ERR::args args_len={}", args_len);
     }
     println!("<END>");
 }
+
+fn process_batch_path_list(batch_path_list: &Vec<String>) -> Vec<GameTwo> {
+    let mut games: Vec<GameTwo> = Vec::new();
+    for batch_dir in batch_path_list {
+        let batch_path = Path::new(batch_dir);
+        if !batch_path.is_dir() {
+            panic!("batch_path is not a directory: {}", batch_path.display());
+        }
+        for entry_raw in fs::read_dir(batch_path).expect("Failed to read batch directory") {
+            let entry = entry_raw.expect("Bad entry");
+            let file_path = entry.path();
+            if !file_path.is_file() {
+                panic!("Not a file: {}", file_path.display());
+            }
+            let content = fs::read_to_string(&file_path)
+                .unwrap_or_else(|e| panic!("Failed to read {}: {}", file_path.display(), e));
+            let games_local: Vec<GameTwo> = serde_json::from_str(&content).unwrap_or_else(|e| {
+                panic!("Failed to parse JSON in {}: {}", file_path.display(), e)
+            });
+            games.extend(games_local);
+        }
+    }
+
+    games
+}
+
+fn process_games(games: &Vec<GameTwo>) {
+    println!("--- --- ---");
+    for game in games {
+        println!("{}", game.url);
+    }
+}
+
+//
+// --- --- ---
+//
 
 #[allow(dead_code)]
 fn main_analyze_one_game_1001() {
