@@ -46,51 +46,32 @@ struct GameOne {
 #[derive(Debug, Deserialize)]
 struct GameTwo {
     id: u64,
-
-    age_ratings: Option<Vec<u64>>,
-    alternative_names: Option<Vec<u64>>,
-    artworks: Option<Vec<u64>>,
-    bundles: Option<Vec<u64>>,
-    cover: Option<u64>,
-    created_at: Option<u64>,
-    dlcs: Option<Vec<u64>>,
-    expansions: Option<Vec<u64>>,
-    external_games: Option<Vec<u64>>,
-    first_release_date: Option<u64>,
-    game_engines: Option<Vec<u64>>,
-    game_modes: Option<Vec<u64>>,
-    genres: Option<Vec<u64>>,
-    involved_companies: Option<Vec<u64>>,
-    keywords: Option<Vec<u64>>,
-    multiplayer_modes: Option<Vec<u64>>,
-    name: Option<String>,
-    platforms: Option<Vec<u64>>,
-    player_perspectives: Option<Vec<u64>>,
-    rating: Option<f64>,
-    rating_count: Option<u64>,
-    release_dates: Option<Vec<u64>>,
-    screenshots: Option<Vec<u64>>,
-    similar_games: Option<Vec<u64>>,
-    slug: Option<String>,
-    storyline: Option<String>,
-    summary: Option<String>,
-    tags: Option<Vec<u64>>,
-    themes: Option<Vec<u64>>,
-    total_rating: Option<f64>,
-    total_rating_count: Option<u64>,
-    updated_at: Option<u64>,
-    url: Option<String>,
-    videos: Option<Vec<u64>>,
-    websites: Option<Vec<u64>>,
-    checksum: Option<String>,
-    remasters: Option<Vec<u64>>,
-    ports: Option<Vec<u64>>,
-    language_supports: Option<Vec<u64>>,
-    collections: Option<Vec<u64>>,
-    game_type: Option<u64>,
+    url: String,
 }
 
 fn main() {
+    println!("<START>");
+    let args: Vec<String> = std::env::args().collect();
+    let args_len = args.len();
+    println!("args.len={:?}", args_len);
+    if args_len == 3 && &args[1] == "analyze_one_game_1002" {
+        println!("(analyze_one_game_1002)");
+        let lines = read_lines(&args[2]);
+        lines.iter().for_each(|line| {
+            let exists = Path::new(&line).exists();
+            if !exists {
+                panic!("File not found: {}", line);
+            }
+            println!("line={}, exists={}", line, exists);
+        });
+    } else {
+        println!("ERR::args args_len={}", args_len);
+    }
+    println!("<END>");
+}
+
+#[allow(dead_code)]
+fn main_analyze_one_game_1001() {
     println!("<START>");
     let args: Vec<String> = std::env::args().collect();
     let args_len = args.len();
@@ -99,15 +80,32 @@ fn main() {
         println!("(analyze_one_game_1001)");
         let paths: Vec<String> = serde_json::from_str(&args[2]).expect("Failed to parse JSON");
         println!("paths={:?}", paths);
-        for path in paths.clone() {
+        for path in &paths {
             let exists = Path::new(&path).exists();
             if !exists {
                 panic!("File not found: {}", path);
             }
         }
+        let mut content_list: Vec<String> = Vec::new();
         for path in paths {
-            println!("path={}", path);
+            for entry in fs::read_dir(&path).expect("Failed to read directory") {
+                let file_path = entry.expect("Bad entry").path();
+
+                if !file_path.is_file() {
+                    panic!("Not a file: {}", file_path.display());
+                }
+
+                let content = fs::read_to_string(&file_path).expect("Failed to read file");
+                content_list.push(content);
+            }
         }
+        println!("content_list.len={}", content_list.len());
+        println!("--- --- ---");
+        for content in content_list {
+            let game: GameTwo = serde_json::from_str(&content).expect("Failed to parse JSON");
+            println!("{:?}", game.url);
+        }
+        println!("--- --- ---");
     } else {
         println!("ERR::args args_len={}", args_len);
     }
@@ -129,7 +127,7 @@ fn main_analyze_one_game_1000() {
         //println!("games={:?}", games);
         let mut some_count = 0;
         games.iter().for_each(|game| {
-            if game.url.is_some() {
+            if game.url.len() > 0 {
                 some_count += 1;
             }
         });
