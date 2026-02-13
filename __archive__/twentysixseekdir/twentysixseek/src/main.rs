@@ -5,6 +5,7 @@ use serde::Deserialize;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
+use std::path::Path;
 use uuid::Uuid;
 
 #[derive(Clone, Deserialize)]
@@ -41,13 +42,136 @@ struct GameOne {
     game: u64,
 }
 
+#[allow(dead_code)]
+#[derive(Debug, Deserialize)]
+struct GameTwo {
+    id: u64,
+    url: String,
+}
+
 fn main() {
+    println!("<START>");
+    let args: Vec<String> = std::env::args().collect();
+    let args_len = args.len();
+    println!("args.len={:?}", args_len);
+    if args_len == 3 && &args[1] == "analyze_one_game_1002" {
+        println!("(analyze_one_game_1002)");
+        let lines = read_lines(&args[2]);
+        let mut batch_path_list: Vec<String> = Vec::new();
+        lines.iter().for_each(|batch_path| {
+            let exists = Path::new(&batch_path).exists();
+            if !exists {
+                panic!("File not found: {}", batch_path);
+            }
+            println!("batch_path={}, exists={}", batch_path, exists);
+            batch_path_list.push(batch_path.to_string());
+        });
+        let games = process_batch_path_list(&batch_path_list);
+        process_games(&games);
+    } else {
+        println!("ERR::args args_len={}", args_len);
+    }
+    println!("<END>");
+}
+
+fn process_batch_path_list(batch_path_list: &Vec<String>) -> Vec<GameTwo> {
+    let mut games: Vec<GameTwo> = Vec::new();
+    for batch_dir in batch_path_list {
+        let batch_path = Path::new(batch_dir);
+        if !batch_path.is_dir() {
+            panic!("batch_path is not a directory: {}", batch_path.display());
+        }
+        for entry_raw in fs::read_dir(batch_path).expect("Failed to read batch directory") {
+            let entry = entry_raw.expect("Bad entry");
+            let file_path = entry.path();
+            if !file_path.is_file() {
+                panic!("Not a file: {}", file_path.display());
+            }
+            let content = fs::read_to_string(&file_path)
+                .unwrap_or_else(|e| panic!("Failed to read {}: {}", file_path.display(), e));
+            let games_local: Vec<GameTwo> = serde_json::from_str(&content).unwrap_or_else(|e| {
+                panic!("Failed to parse JSON in {}: {}", file_path.display(), e)
+            });
+            games.extend(games_local);
+        }
+    }
+
+    games
+}
+
+fn process_games(games: &Vec<GameTwo>) {
+    println!("--- --- ---");
+    for game in games {
+        println!("{}", game.url);
+    }
+}
+
+//
+// --- --- ---
+//
+
+#[allow(dead_code)]
+fn main_analyze_one_game_1001() {
+    println!("<START>");
+    let args: Vec<String> = std::env::args().collect();
+    let args_len = args.len();
+    println!("args.len={:?}", args_len);
+    if args_len > 1 && &args[1] == "analyze_one_game_1001" {
+        println!("(analyze_one_game_1001)");
+        let paths: Vec<String> = serde_json::from_str(&args[2]).expect("Failed to parse JSON");
+        println!("paths={:?}", paths);
+        for path in &paths {
+            let exists = Path::new(&path).exists();
+            if !exists {
+                panic!("File not found: {}", path);
+            }
+        }
+        let mut content_list: Vec<String> = Vec::new();
+        for path in paths {
+            for entry in fs::read_dir(&path).expect("Failed to read directory") {
+                let file_path = entry.expect("Bad entry").path();
+
+                if !file_path.is_file() {
+                    panic!("Not a file: {}", file_path.display());
+                }
+
+                let content = fs::read_to_string(&file_path).expect("Failed to read file");
+                content_list.push(content);
+            }
+        }
+        println!("content_list.len={}", content_list.len());
+        println!("--- --- ---");
+        for content in content_list {
+            let game: GameTwo = serde_json::from_str(&content).expect("Failed to parse JSON");
+            println!("{:?}", game.url);
+        }
+        println!("--- --- ---");
+    } else {
+        println!("ERR::args args_len={}", args_len);
+    }
+    println!("<END>");
+}
+
+#[allow(dead_code)]
+fn main_analyze_one_game_1000() {
     println!("<START>");
     let args: Vec<String> = std::env::args().collect();
     let args_len = args.len();
     println!("args.len={:?}", args_len);
     if args_len > 1 && &args[1] == "analyze_one_game_1000" {
         println!("(analyze_one_game_1000)");
+        let game_filename = &args[2];
+        let prepared_json_raw = fs::read_to_string(game_filename).expect("Failed to read file");
+        let games: Vec<GameTwo> =
+            serde_json::from_str(&prepared_json_raw).expect("Failed to parse JSON");
+        //println!("games={:?}", games);
+        let mut some_count = 0;
+        games.iter().for_each(|game| {
+            if game.url.len() > 0 {
+                some_count += 1;
+            }
+        });
+        println!("some_count={}", some_count);
     } else {
         println!("ERR::args args_len={}", args_len);
     }
