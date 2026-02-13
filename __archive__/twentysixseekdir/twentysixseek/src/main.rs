@@ -34,23 +34,73 @@ struct SteamConfig {
     steam: Steam,
 }
 
+#[allow(dead_code)]
+#[derive(Debug, Deserialize)]
+struct GameOne {
+    id: u64,
+    game: u64,
+}
+
+fn main() {
+    println!("<START>");
+    let args: Vec<String> = std::env::args().collect();
+    let args_len = args.len();
+    println!("args.len={:?}", args_len);
+    if args_len > 1 && &args[1] == "analyze_one_game_1000" {
+        println!("(analyze_one_game_1000)");
+    } else {
+        println!("ERR::args args_len={}", args_len);
+    }
+    println!("<END>");
+}
+
+#[allow(dead_code)]
 #[tokio::main]
-async fn main() {
+async fn main_process_game_one_old() {
     println!("<START>");
     let args: Vec<String> = std::env::args().collect();
     let args_len = args.len();
     println!("args.len={:?}", args_len);
     if args_len > 1 && &args[1] == "seek_game_batch" {
-        let delay = std::time::Duration::from_secs(10);
-        println!("(1)");
-        tokio::time::sleep(delay).await;
-        println!("(2)");
-        tokio::time::sleep(delay).await;
-        println!("(3)");
+        let prepared_json_raw =
+            fs::read_to_string(&args[2]).expect("Failed to read file to string");
+        let games: Vec<GameOne> =
+            serde_json::from_str(&prepared_json_raw).expect("Failed to parse JSON");
+        println!("games={:?}", games);
+        let client = Client::new();
+        for game in games {
+            let client_id = &args[3];
+            let token = &args[4];
+            process_game_one(client_id, token, &client, &game).await;
+        }
     } else {
         println!("Please provide valid arguments");
     }
     println!("<END>");
+}
+
+async fn process_game_one(client_id: &str, token: &str, client: &Client, game: &GameOne) {
+    let game_id = game.game;
+    let query = format!(
+        "fields age_ratings,aggregated_rating,aggregated_rating_count,alternative_names,artworks,bundles,category,checksum,collection,collections,cover,created_at,dlcs,expanded_games,expansions,external_games,first_release_date,follows,forks,franchise,franchises,game_engines,game_localizations,game_modes,game_status,game_type,genres,hypes,involved_companies,keywords,language_supports,multiplayer_modes,name,parent_game,platforms,player_perspectives,ports,rating,rating_count,release_dates,remakes,remasters,screenshots,similar_games,slug,standalone_expansions,status,storyline,summary,tags,themes,total_rating,total_rating_count,updated_at,url,version_parent,version_title,videos,websites; where id = {};",
+        game_id
+    );
+    let response = client
+        .post("https://api.igdb.com/v4/games")
+        .header("Client-ID", client_id)
+        .header("Authorization", format!("Bearer {}", token))
+        .body(query)
+        .send()
+        .await
+        .expect("Failed to send request");
+
+    let body = response.text().await.expect("Failed to read response body");
+    println!("body.len={}", body.len());
+
+    let filename = prepare_filename();
+    fs::write(filename, body).expect("Unable to write file");
+
+    tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
 }
 
 #[allow(dead_code)]
