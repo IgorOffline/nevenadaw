@@ -4,7 +4,7 @@ use reqwest::Client;
 use serde::Deserialize;
 use std::fs;
 use std::fs::File;
-use std::io::Write;
+use std::io::{BufWriter, Write};
 use std::path::Path;
 use uuid::Uuid;
 
@@ -71,10 +71,117 @@ struct GameThreeGame {
 
 fn main() {
     println!("<START>");
+    println!("<END>");
+}
+
+#[allow(dead_code)]
+#[tokio::main]
+async fn main_game_batches_1060() {
+    println!("<START>");
     let args: Vec<String> = std::env::args().collect();
     let args_len = args.len();
     println!("args.len={:?}", args_len);
-    if args_len == 3 && &args[1] == "seek_1040" {
+    if args_len == 3 && &args[1] == "seek_1060" {
+        println!("(seek_1060)");
+        let games_json_path = &args[2];
+        let json_raw = fs::read_to_string(games_json_path).expect("Failed to read JSON file");
+        let json_bytes = base64_url::decode(&json_raw).expect("Error decoding base64");
+        let json_string = String::from_utf8(json_bytes).expect("Decoded data is not valid UTF-8");
+        let mut games =
+            serde_json::from_str::<GameThreeBody>(&json_string).expect("Failed to parse JSON");
+        println!("--- --- ---");
+        println!("{:?}", games);
+        println!("--- --- ---");
+        let mut rng = StdRng::seed_from_u64(12345);
+        games.response.games.shuffle(&mut rng);
+        assert_eq!(games.response.games.len() > 10, true);
+        let batch_size = 30;
+        for (batch_idx, chunk) in games.response.games.chunks(batch_size).enumerate() {
+            let filename = format!("game_batch_{:03}.txt", batch_idx);
+            let file = File::create(&filename).expect("Failed to create batch file");
+            let mut writer = BufWriter::new(file);
+            for game in chunk {
+                writeln!(writer, "{}", game.appid).expect("Failed to write appid");
+            }
+            writer.flush().ok();
+            println!("wrote {} appids -> {}", chunk.len(), filename);
+        }
+    }
+    println!("<END>");
+}
+
+#[allow(dead_code)]
+#[tokio::main]
+async fn main_old_ten_fifty() {
+    println!("<START>");
+    let args: Vec<String> = std::env::args().collect();
+    let args_len = args.len();
+    println!("args.len={:?}", args_len);
+    if args_len == 5 && &args[1] == "seek_1050" {
+        println!("(seek_1050)");
+        let games_json_path = &args[2];
+        let json_raw = fs::read_to_string(games_json_path).expect("Failed to read JSON file");
+        let json_bytes = base64_url::decode(&json_raw).expect("Error decoding base64");
+        let json_string = String::from_utf8(json_bytes).expect("Decoded data is not valid UTF-8");
+        let mut games =
+            serde_json::from_str::<GameThreeBody>(&json_string).expect("Failed to parse JSON");
+        println!("--- --- ---");
+        println!("{:?}", games);
+        println!("--- --- ---");
+        let mut rng = StdRng::seed_from_u64(12345);
+        games.response.games.shuffle(&mut rng);
+        assert_eq!(games.response.games.len() > 10, true);
+        let ten = &games.response.games[..10.min(games.response.games.len())];
+        println!("ten={:?}", ten);
+        let client = Client::new();
+        let client_id = &args[3];
+        let token = &args[4];
+        process_games_slice_old_ten_fifty(&client, client_id, token, ten).await;
+    }
+    println!("<END>");
+}
+
+#[allow(dead_code)]
+async fn process_games_slice_old_ten_fifty(
+    client: &Client,
+    client_id: &String,
+    token: &String,
+    games_slice: &[GameThreeGame],
+) {
+    for game in games_slice {
+        let game_id = game.appid;
+        println!("game_id={}", game_id);
+        let query = format!(
+            r#"fields game.*; where external_game_source = 1 & uid = "{}";"#,
+            game_id
+        );
+        let response = client
+            .post("https://api.igdb.com/v4/external_games")
+            .header("Client-ID", client_id)
+            .header("Authorization", format!("Bearer {}", token))
+            .body(query)
+            .send()
+            .await
+            .expect("Failed to send request");
+
+        let body = response.text().await.expect("Failed to read response body");
+        println!("body.len={}", body.len());
+
+        let filename = prepare_filename();
+        fs::write(filename, body).expect("Unable to write file");
+
+        tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+    }
+}
+
+#[allow(dead_code)]
+#[tokio::main]
+async fn main_err_slice() {
+    println!("<START>");
+    let args: Vec<String> = std::env::args().collect();
+    let args_len = args.len();
+    println!("args.len={:?}", args_len);
+    if args_len == 5 && &args[1] == "seek_1040" {
         println!("(seek_1040)");
         let games_json_path = &args[2];
         let json_raw = fs::read_to_string(games_json_path).expect("Failed to read JSON file");
@@ -96,8 +203,45 @@ fn main() {
         assert_eq!(games.response.games.len() > 10, true);
         let ten = &games.response.games[..10.min(games.response.games.len())];
         println!("ten={:?}", ten);
+        let client = Client::new();
+        let client_id = &args[3];
+        let token = &args[4];
+        process_games_slice_old(&client, client_id, token, ten).await;
     }
     println!("<END>");
+}
+
+#[allow(dead_code)]
+async fn process_games_slice_old(
+    client: &Client,
+    client_id: &String,
+    token: &String,
+    games_slice: &[GameThreeGame],
+) {
+    for game in games_slice {
+        let game_id = game.appid;
+        println!("game_id={}", game_id);
+        let query = format!(
+            "fields age_ratings,aggregated_rating,aggregated_rating_count,alternative_names,artworks,bundles,category,checksum,collection,collections,cover,created_at,dlcs,expanded_games,expansions,external_games,first_release_date,follows,forks,franchise,franchises,game_engines,game_localizations,game_modes,game_status,game_type,genres,hypes,involved_companies,keywords,language_supports,multiplayer_modes,name,parent_game,platforms,player_perspectives,ports,rating,rating_count,release_dates,remakes,remasters,screenshots,similar_games,slug,standalone_expansions,status,storyline,summary,tags,themes,total_rating,total_rating_count,updated_at,url,version_parent,version_title,videos,websites; where id = {};",
+            game_id
+        );
+        let response = client
+            .post("https://api.igdb.com/v4/games")
+            .header("Client-ID", client_id)
+            .header("Authorization", format!("Bearer {}", token))
+            .body(query)
+            .send()
+            .await
+            .expect("Failed to send request");
+
+        let body = response.text().await.expect("Failed to read response body");
+        println!("body.len={}", body.len());
+
+        let filename = prepare_filename();
+        fs::write(filename, body).expect("Unable to write file");
+
+        tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+    }
 }
 
 #[allow(dead_code)]
