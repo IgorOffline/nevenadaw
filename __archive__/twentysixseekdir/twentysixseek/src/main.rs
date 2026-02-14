@@ -4,7 +4,7 @@ use reqwest::Client;
 use serde::Deserialize;
 use std::fs;
 use std::fs::File;
-use std::io::Write;
+use std::io::{BufWriter, Write};
 use std::path::Path;
 use uuid::Uuid;
 
@@ -69,13 +69,19 @@ struct GameThreeGame {
     appid: u32,
 }
 
+fn main() {
+    println!("<START>");
+    println!("<END>");
+}
+
+#[allow(dead_code)]
 #[tokio::main]
-async fn main() {
+async fn main_game_batches_1060() {
     println!("<START>");
     let args: Vec<String> = std::env::args().collect();
     let args_len = args.len();
     println!("args.len={:?}", args_len);
-    if args_len == 2 && &args[1] == "seek_1060" {
+    if args_len == 3 && &args[1] == "seek_1060" {
         println!("(seek_1060)");
         let games_json_path = &args[2];
         let json_raw = fs::read_to_string(games_json_path).expect("Failed to read JSON file");
@@ -89,6 +95,17 @@ async fn main() {
         let mut rng = StdRng::seed_from_u64(12345);
         games.response.games.shuffle(&mut rng);
         assert_eq!(games.response.games.len() > 10, true);
+        let batch_size = 30;
+        for (batch_idx, chunk) in games.response.games.chunks(batch_size).enumerate() {
+            let filename = format!("game_batch_{:03}.txt", batch_idx);
+            let file = File::create(&filename).expect("Failed to create batch file");
+            let mut writer = BufWriter::new(file);
+            for game in chunk {
+                writeln!(writer, "{}", game.appid).expect("Failed to write appid");
+            }
+            writer.flush().ok();
+            println!("wrote {} appids -> {}", chunk.len(), filename);
+        }
     }
     println!("<END>");
 }
