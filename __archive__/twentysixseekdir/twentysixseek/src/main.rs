@@ -30,9 +30,11 @@ struct RootFour {
     game: GameFour,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct GameFour {
     url: String,
+    total_rating: Option<f32>,
 }
 
 fn main() {
@@ -42,18 +44,34 @@ fn main() {
     if args.len() >= 3 && args[1] == "process_1070" {
         println!("(process_1070)");
         let directories = &args[2..];
+        let mut highly_rated_games: Vec<GameFour> = Vec::new();
         for directory in directories {
-            process_directory(&directory);
+            let mut games = process_directory(&directory);
+            highly_rated_games.append(&mut games);
+        }
+        println!("highly_rated_games.len={}", highly_rated_games.len());
+        highly_rated_games.sort_by(|a, b| {
+            b.total_rating
+                .partial_cmp(&a.total_rating)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        for game in highly_rated_games.iter() {
+            println!(
+                "url={}, total_rating={}",
+                game.url,
+                game.total_rating.unwrap()
+            );
         }
     }
 
     println!("<END>");
 }
 
-fn process_directory(directory: &&String) {
+fn process_directory(directory: &&String) -> Vec<GameFour> {
+    let mut return_value: Vec<GameFour> = Vec::new();
     if Path::new(directory).exists() == false {
         println!("Directory {} does not exist", directory);
-        return;
+        return return_value;
     }
     fs::read_dir(directory)
         .expect("Failed to read directory")
@@ -63,10 +81,20 @@ fn process_directory(directory: &&String) {
             let games: Vec<RootFour> = serde_json::from_str(&raw).expect("Parsing failed");
             if games.len() > 0 {
                 for game in games {
-                    println!("url={}", game.game.url);
+                    let total_rating = game.game.total_rating.unwrap_or_else(|| 0.0);
+                    //println!("url={}, total_rating={}", game.game.url, total_rating);
+                    if total_rating > 69.0 {
+                        let new_game: GameFour = GameFour {
+                            url: game.game.url.clone(),
+                            total_rating: Some(total_rating),
+                        };
+                        return_value.push(new_game);
+                    }
                 }
             }
         });
+
+    return_value
 }
 
 #[allow(dead_code)]
