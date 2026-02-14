@@ -2,6 +2,7 @@ use chrono::Datelike;
 use reqwest::Client;
 use serde::Deserialize;
 use std::fs;
+use std::path::Path;
 use uuid::Uuid;
 
 #[allow(dead_code)]
@@ -22,8 +23,55 @@ struct GameThreeGame {
     appid: u32,
 }
 
+#[allow(dead_code)]
+#[derive(Debug, Deserialize)]
+struct RootFour {
+    id: u32,
+    game: GameFour,
+}
+
+#[derive(Debug, Deserialize)]
+struct GameFour {
+    url: String,
+}
+
+fn main() {
+    println!("<START>");
+    let args: Vec<String> = std::env::args().collect();
+    println!("args.len={}", args.len());
+    if args.len() >= 3 && args[1] == "process_1070" {
+        println!("(process_1070)");
+        let directories = &args[2..];
+        for directory in directories {
+            process_directory(&directory);
+        }
+    }
+
+    println!("<END>");
+}
+
+fn process_directory(directory: &&String) {
+    if Path::new(directory).exists() == false {
+        println!("Directory {} does not exist", directory);
+        return;
+    }
+    fs::read_dir(directory)
+        .expect("Failed to read directory")
+        .for_each(|entry| {
+            let path = entry.unwrap().path();
+            let raw = fs::read_to_string(path).expect("Failed to read file");
+            let games: Vec<RootFour> = serde_json::from_str(&raw).expect("Parsing failed");
+            if games.len() > 0 {
+                for game in games {
+                    println!("url={}", game.game.url);
+                }
+            }
+        });
+}
+
+#[allow(dead_code)]
 #[tokio::main]
-async fn main() {
+async fn main_seek_1070() {
     println!("<START>");
     let args: Vec<String> = std::env::args().collect();
     let args_len = args.len();
