@@ -1,4 +1,3 @@
-use regex::Regex;
 use reqwest::Client;
 use serde::Deserialize;
 use std::fs;
@@ -49,44 +48,31 @@ struct Statistics {
     comment_count: Option<String>,
 }
 
-#[tokio::main]
-async fn main() {
-    println!("<START>");
-    let args: Vec<String> = std::env::args().collect();
-    let args_len = args.len();
-    if args_len == 3 {
-        let api_key = &args[2];
-        let january = r"C:\D\notes\january";
-        let youtube_url_root = "https://www.youtube.com/watch?v=";
-        let mut video_ids: Vec<String> = Vec::new();
-        fs::read_dir(january)
-            .unwrap()
-            .filter_map(Result::ok)
-            .map(|entry| entry.path())
-            .filter(|path| path.is_file() && path.extension().map_or(false, |ext| ext == "txt"))
-            .for_each(|file_content| {
-                for youtube_url_raw in fs::read_to_string(file_content).unwrap().lines() {
-                    if stereotypical_youtube_video_url_valid(youtube_url_raw) {
-                        let youtube_url = &youtube_url_raw[youtube_url_root.len()..];
-                        video_ids.push(youtube_url.to_string());
-                    }
-                }
-            });
-        println!("video_ids.len={}", video_ids.len());
-        let client = Client::new();
-        let fetch = fetch_videos_batch(&client, &api_key, video_ids)
-            .await
-            .expect("ERR fetch_videos_batch");
-        println!("fetch.items.len={}", fetch.items.len());
-        // WRITE FETCH TO A FILE
-    }
-    println!("<END>");
+#[allow(dead_code)]
+async fn fetch_videos_batch(
+    client: &Client,
+    api_key: &String,
+    video_ids: Vec<String>,
+) -> Result<VideosListResponse, reqwest::Error> {
+    let ids_csv = video_ids.join(",");
+
+    client
+        .get("https://www.googleapis.com/youtube/v3/videos")
+        .query(&[
+            ("part", "snippet,contentDetails,statistics"),
+            ("id", &ids_csv),
+            ("key", api_key),
+        ])
+        .send()
+        .await?
+        .error_for_status()?
+        .json::<VideosListResponse>()
+        .await
 }
 
-fn stereotypical_youtube_video_url_valid(url: &str) -> bool {
-    let pattern = r"^https://www\.youtube\.com/watch\?v=[a-zA-Z0-9_-]{11}$";
-    let re = Regex::new(pattern).unwrap();
-    re.is_match(url)
+fn main() {
+    println!("<START>");
+    println!("<END>");
 }
 
 #[allow(dead_code)]
@@ -125,25 +111,4 @@ fn read_lines(filename: &str) -> Vec<String> {
     }
 
     result
-}
-
-async fn fetch_videos_batch(
-    client: &Client,
-    api_key: &String,
-    video_ids: Vec<String>,
-) -> Result<VideosListResponse, reqwest::Error> {
-    let ids_csv = video_ids.join(",");
-
-    client
-        .get("https://www.googleapis.com/youtube/v3/videos")
-        .query(&[
-            ("part", "snippet,contentDetails,statistics"),
-            ("id", &ids_csv),
-            ("key", api_key),
-        ])
-        .send()
-        .await?
-        .error_for_status()?
-        .json::<VideosListResponse>()
-        .await
 }
