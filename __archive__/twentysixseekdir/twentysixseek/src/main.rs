@@ -77,6 +77,79 @@ struct Statistics {
     comment_count: Option<String>,
 }
 
+fn main() {
+    println!("<START>");
+    let args: Vec<String> = std::env::args().collect();
+    let args_len = args.len();
+    if args_len == 4 && &args[1] == "youtube_1101" {
+        let mut videos: Vec<VideoItem> = Vec::new();
+        let _api_key = &args[2];
+        let comma_separated_json_files = &args[3];
+
+        for filename in comma_separated_json_files
+            .split(',')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            let file = File::open(filename).expect("Cannot open file");
+
+            let resp: VideosListResponse =
+                serde_json::from_reader(file).expect("Cannot parse file as VideosListResponse");
+
+            videos.extend(resp.items);
+        }
+
+        println!("videos.len()={}", videos.len());
+
+        videos.sort_by(|a, b| {
+            let b_views: u64 = b
+                .statistics
+                .as_ref()
+                .unwrap()
+                .view_count
+                .as_ref()
+                .unwrap()
+                .parse()
+                .unwrap();
+            let a_views: u64 = a
+                .statistics
+                .as_ref()
+                .unwrap()
+                .view_count
+                .as_ref()
+                .unwrap()
+                .parse()
+                .unwrap();
+            b_views.cmp(&a_views)
+        });
+
+        videos.iter().take(5555).for_each(|video| {
+            let view_count = &&video
+                .statistics
+                .as_ref()
+                .unwrap()
+                .view_count
+                .as_ref()
+                .unwrap();
+            let snippet = &video.snippet.as_ref().unwrap();
+            let title = &&snippet.title;
+            let medium_thumbnail_url = &snippet
+                .thumbnails
+                .as_ref()
+                .unwrap()
+                .medium
+                .as_ref()
+                .unwrap()
+                .url;
+            println!(
+                "title={} view_count={}, medium_thumbnail_url={}",
+                title, view_count, medium_thumbnail_url
+            );
+        })
+    }
+    println!("<END>");
+}
+
 #[allow(dead_code)]
 fn main_videos() {
     let folder = r"C:\Users\igor\dev\youtube_january";
@@ -138,22 +211,6 @@ fn main_videos() {
     });
     let video_info_list_filename = prepare_filename(true);
     fs::write(video_info_list_filename, video_info_list.join("\n")).expect("Unable to write file");
-}
-
-#[allow(dead_code)]
-#[tokio::main]
-async fn main() {
-    println!("<START>");
-    let args: Vec<String> = std::env::args().collect();
-    let args_len = args.len();
-    if args_len == 4 && &args[1] == "youtube_1101" {
-        let _api_key = &args[2];
-        let comma_separated_json_files = &args[3];
-        comma_separated_json_files.split(',').for_each(|filename| {
-            println!("filename=[{}]", filename);
-        });
-    }
-    println!("<END>");
 }
 
 #[allow(dead_code)]
