@@ -1,10 +1,10 @@
 use chrono::Datelike;
+use num_format::{Locale, ToFormattedString};
 use regex::Regex;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
 use uuid::Uuid;
 use walkdir::WalkDir;
 
@@ -34,6 +34,29 @@ struct Snippet {
     channel_title: Option<String>,
     #[serde(rename = "publishedAt", default)]
     published_at: Option<String>,
+    #[serde(default)]
+    thumbnails: Option<Thumbnails>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+struct Thumbnails {
+    #[serde(rename = "default", default)]
+    default: Option<Thumbnail>,
+    #[serde(default)]
+    medium: Option<Thumbnail>,
+    #[serde(default)]
+    high: Option<Thumbnail>,
+    #[serde(default)]
+    standard: Option<Thumbnail>,
+    #[serde(default)]
+    maxres: Option<Thumbnail>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+struct Thumbnail {
+    url: String,
+    width: Option<u32>,
+    height: Option<u32>,
 }
 
 #[allow(dead_code)]
@@ -54,10 +77,10 @@ struct Statistics {
     comment_count: Option<String>,
 }
 
-fn main() {
+#[allow(dead_code)]
+fn main_videos() {
     let folder = r"C:\Users\igor\dev\youtube_january";
-    let mut total_lines: u64 = 0;
-
+    let mut videos: Vec<VideoItem> = Vec::new();
     for entry in WalkDir::new(folder)
         .into_iter()
         .filter_map(Result::ok)
@@ -69,48 +92,66 @@ fn main() {
         })
     {
         let file = File::open(entry.path()).expect("Cannot open file");
-        let reader = BufReader::new(file);
-
-        let line_count = reader.lines().count() as u64;
-        println!("{} :: {} lines", entry.path().display(), line_count);
-
-        total_lines += line_count;
+        let videos_json =
+            serde_json::from_reader::<_, VideosListResponse>(file).expect("Cannot parse file");
+        for video_item in videos_json.items {
+            videos.push(video_item);
+        }
     }
-
-    println!("total_lines={}", total_lines);
+    println!("videos.len={}", videos.len());
+    videos.sort_by(|a, b| {
+        let b_views: u64 = b
+            .statistics
+            .as_ref()
+            .unwrap()
+            .view_count
+            .as_ref()
+            .unwrap()
+            .parse()
+            .unwrap();
+        let a_views: u64 = a
+            .statistics
+            .as_ref()
+            .unwrap()
+            .view_count
+            .as_ref()
+            .unwrap()
+            .parse()
+            .unwrap();
+        b_views.cmp(&a_views)
+    });
+    let mut video_info_list: Vec<String> = Vec::new();
+    videos.iter().take(9999).for_each(|video| {
+        let title = &video.snippet.as_ref().unwrap().title;
+        let view_count: u64 = video
+            .statistics
+            .as_ref()
+            .unwrap()
+            .view_count
+            .as_ref()
+            .unwrap()
+            .parse()
+            .unwrap();
+        let formatted_view_count = view_count.to_formatted_string(&Locale::hr);
+        let video_info = format!("[{} {}]", title, formatted_view_count);
+        video_info_list.push(video_info);
+    });
+    let video_info_list_filename = prepare_filename(true);
+    fs::write(video_info_list_filename, video_info_list.join("\n")).expect("Unable to write file");
 }
 
 #[allow(dead_code)]
 #[tokio::main]
-async fn main_january000() {
+async fn main() {
     println!("<START>");
     let args: Vec<String> = std::env::args().collect();
     let args_len = args.len();
-    if args_len == 3 && &args[1] == "youtube_1101" {
-        let api_key = &args[2];
-        let january = r"C:\Users\igor\dev\youtube_january\january000";
-        let mut video_ids: Vec<String> = Vec::new();
-        fs::read_dir(january)
-            .unwrap()
-            .filter_map(Result::ok)
-            .map(|entry| entry.path())
-            .filter(|path| path.is_file() && path.extension().map_or(false, |ext| ext == "txt"))
-            .for_each(|file_content| {
-                for youtube_url in fs::read_to_string(file_content).unwrap().lines() {
-                    video_ids.push(youtube_url.to_string());
-                }
-            });
-        println!("video_ids.len={}", video_ids.len());
-        if video_ids.len() > 0 {
-            let client = Client::new();
-            let fetch = fetch_videos_batch(&client, &api_key, video_ids)
-                .await
-                .expect("ERR fetch_videos_batch");
-            println!("fetch.items.len={}", fetch.items.len());
-            let filename_json = prepare_filename(false);
-            let mut file = File::create(filename_json).expect("ERR create fetch.json");
-            serde_json::to_writer_pretty(&mut file, &fetch).expect("ERR write fetch.json");
-        }
+    if args_len == 4 && &args[1] == "youtube_1101" {
+        let _api_key = &args[2];
+        let comma_separated_json_files = &args[3];
+        comma_separated_json_files.split(',').for_each(|filename| {
+            println!("filename=[{}]", filename);
+        });
     }
     println!("<END>");
 }
