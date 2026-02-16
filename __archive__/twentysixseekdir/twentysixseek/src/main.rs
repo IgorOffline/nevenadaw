@@ -1,112 +1,60 @@
-use iced::widget::{button, column, text, Column};
-use iced::Center;
-use serde::{Deserialize, Serialize};
+use iced::time::Instant;
+use iced::widget::{center, image};
+use iced::{Element, Fill, Subscription, Task, Theme};
 
-#[allow(dead_code)]
-#[derive(Debug, Deserialize, Serialize)]
-struct VideosListResponse {
-    items: Vec<VideoItem>,
+pub fn main() -> iced::Result {
+    iced::application::timed(Hello::new, Hello::update, Hello::subscription, Hello::view)
+        .window(iced::window::Settings {
+            size: [512.0, 512.0].into(),
+            ..Default::default()
+        })
+        .theme(Hello::theme)
+        .run()
 }
 
-#[allow(dead_code)]
-#[derive(Debug, Deserialize, Serialize)]
-struct VideoItem {
-    id: String,
-    #[serde(default)]
-    snippet: Option<Snippet>,
-    #[serde(rename = "contentDetails", default)]
-    content_details: Option<ContentDetails>,
-    #[serde(default)]
-    statistics: Option<Statistics>,
+struct Hello {
+    now: Instant,
+    picture: image::Handle,
 }
 
-#[allow(dead_code)]
-#[derive(Debug, Deserialize, Serialize)]
-struct Snippet {
-    title: String,
-    #[serde(rename = "channelTitle", default)]
-    channel_title: Option<String>,
-    #[serde(rename = "publishedAt", default)]
-    published_at: Option<String>,
-    #[serde(default)]
-    thumbnails: Option<Thumbnails>,
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone, Deserialize, Serialize)]
-struct Thumbnails {
-    #[serde(rename = "default", default)]
-    default: Option<Thumbnail>,
-    #[serde(default)]
-    medium: Option<Thumbnail>,
-    #[serde(default)]
-    high: Option<Thumbnail>,
-    #[serde(default)]
-    standard: Option<Thumbnail>,
-    #[serde(default)]
-    maxres: Option<Thumbnail>,
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone, Deserialize, Serialize)]
-struct Thumbnail {
-    url: String,
-    width: Option<u32>,
-    height: Option<u32>,
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Deserialize, Serialize)]
-struct ContentDetails {
-    #[serde(default)]
-    duration: Option<String>,
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Deserialize, Serialize)]
-struct Statistics {
-    #[serde(rename = "viewCount", default)]
-    view_count: Option<String>,
-    #[serde(rename = "likeCount", default)]
-    like_count: Option<String>,
-    #[serde(rename = "commentCount", default)]
-    comment_count: Option<String>,
-}
-
-#[derive(Default)]
-struct Counter {
-    value: i64,
-}
-
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 enum Message {
-    Increment,
-    Decrement,
+    Tick,
 }
 
-impl Counter {
-    fn update(&mut self, message: Message) {
+impl Hello {
+    fn new() -> (Self, Task<Message>) {
+        let picture = image::Handle::from_path("assets/alice1a_alice1a.png");
+
+        (
+            Self {
+                now: Instant::now(),
+                picture,
+            },
+            Task::none(),
+        )
+    }
+
+    fn update(&mut self, message: Message, now: Instant) -> Task<Message> {
+        self.now = now;
+
         match message {
-            Message::Increment => {
-                self.value += 1;
-            }
-            Message::Decrement => {
-                self.value -= 1;
-            }
+            Message::Tick => Task::none(),
         }
     }
 
-    fn view(&self) -> Column<'_, Message> {
-        column![
-            button("Increment").on_press(Message::Increment),
-            text(self.value).size(50),
-            button("Decrement").on_press(Message::Decrement)
-        ]
-        .padding(20)
-        .align_x(Center)
+    fn view(&self) -> Element<'_, Message> {
+        center(image(&self.picture).width(256).height(256))
+            .width(Fill)
+            .height(Fill)
+            .into()
     }
-}
 
-pub fn main() -> iced::Result {
-    iced::run(Counter::update, Counter::view)
+    fn theme(&self) -> Theme {
+        Theme::TokyoNight
+    }
+
+    fn subscription(&self) -> Subscription<Message> {
+        iced::time::every(iced::time::Duration::from_millis(10)).map(|_| Message::Tick)
+    }
 }
