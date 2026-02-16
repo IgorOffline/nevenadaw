@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 base64-url = "3.0.2"
 chrono = "0.4.43"
+iced = { version = "0.14.0", features = ["image", "tokio"] }
 num-format = "0.4.4"
 rand = "0.10.0"
 regex = "1.12.2"
@@ -18,5 +19,5 @@ walkdir = "2.5.0"
 [dependencies.uuid]
 version = "1.19.0"
 features = [
-  "v4",
+    "v4",
 ]
