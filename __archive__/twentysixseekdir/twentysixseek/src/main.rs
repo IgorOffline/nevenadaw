@@ -1,5 +1,5 @@
 use iced::time::Instant;
-use iced::widget::{center, image};
+use iced::widget::{column, image, scrollable, text};
 use iced::{Element, Fill, Subscription, Task, Theme};
 
 pub fn main() -> iced::Result {
@@ -44,10 +44,21 @@ impl Hello {
     }
 
     fn view(&self) -> Element<'_, Message> {
-        center(image(&self.picture).width(256).height(256))
-            .width(Fill)
-            .height(Fill)
+        let content = column((0..25).map(|i| {
+            column![
+                text(format!("image {i}")).size(20),
+                image(&self.picture).width(256).height(256),
+            ]
+            .spacing(10)
+            .align_x(iced::Alignment::Center)
             .into()
+        }))
+        .spacing(40)
+        .padding(20)
+        .width(Fill)
+        .align_x(iced::Alignment::Center);
+
+        scrollable(content).width(Fill).height(Fill).into()
     }
 
     fn theme(&self) -> Theme {
