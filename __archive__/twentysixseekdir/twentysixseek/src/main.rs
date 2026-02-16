@@ -1,71 +1,136 @@
-use iced::time::Instant;
-use iced::widget::{column, image, scrollable, text};
-use iced::{Element, Fill, Subscription, Task, Theme};
+use serde::{Deserialize, Serialize};
+use std::fs::File;
 
-pub fn main() -> iced::Result {
-    iced::application::timed(Hello::new, Hello::update, Hello::subscription, Hello::view)
-        .window(iced::window::Settings {
-            size: [512.0, 512.0].into(),
-            ..Default::default()
-        })
-        .theme(Hello::theme)
-        .run()
+#[allow(dead_code)]
+#[derive(Debug, Deserialize, Serialize)]
+struct VideosListResponse {
+    items: Vec<VideoItem>,
 }
 
-struct Hello {
-    now: Instant,
-    picture: image::Handle,
+#[allow(dead_code)]
+#[derive(Debug, Deserialize, Serialize)]
+struct VideoItem {
+    id: String,
+    #[serde(default)]
+    snippet: Option<Snippet>,
+    #[serde(rename = "contentDetails", default)]
+    content_details: Option<ContentDetails>,
+    #[serde(default)]
+    statistics: Option<Statistics>,
 }
 
-#[derive(Debug, Clone)]
-enum Message {
-    Tick,
+#[allow(dead_code)]
+#[derive(Debug, Deserialize, Serialize)]
+struct Snippet {
+    title: String,
+    #[serde(rename = "channelTitle", default)]
+    channel_title: Option<String>,
+    #[serde(rename = "publishedAt", default)]
+    published_at: Option<String>,
+    #[serde(default)]
+    thumbnails: Option<Thumbnails>,
 }
 
-impl Hello {
-    fn new() -> (Self, Task<Message>) {
-        let picture = image::Handle::from_path("assets/alice1a_alice1a.png");
+#[derive(Debug, Clone, Deserialize, Serialize)]
+struct Thumbnails {
+    #[serde(rename = "default", default)]
+    default: Option<Thumbnail>,
+    #[serde(default)]
+    medium: Option<Thumbnail>,
+    #[serde(default)]
+    high: Option<Thumbnail>,
+    #[serde(default)]
+    standard: Option<Thumbnail>,
+    #[serde(default)]
+    maxres: Option<Thumbnail>,
+}
 
-        (
-            Self {
-                now: Instant::now(),
-                picture,
-            },
-            Task::none(),
-        )
-    }
+#[derive(Debug, Clone, Deserialize, Serialize)]
+struct Thumbnail {
+    url: String,
+    width: Option<u32>,
+    height: Option<u32>,
+}
 
-    fn update(&mut self, message: Message, now: Instant) -> Task<Message> {
-        self.now = now;
+#[allow(dead_code)]
+#[derive(Debug, Deserialize, Serialize)]
+struct ContentDetails {
+    #[serde(default)]
+    duration: Option<String>,
+}
 
-        match message {
-            Message::Tick => Task::none(),
+#[allow(dead_code)]
+#[derive(Debug, Deserialize, Serialize)]
+struct Statistics {
+    #[serde(rename = "viewCount", default)]
+    view_count: Option<String>,
+    #[serde(rename = "likeCount", default)]
+    like_count: Option<String>,
+    #[serde(rename = "commentCount", default)]
+    comment_count: Option<String>,
+}
+
+fn main() {
+    println!("<START>");
+    let args: Vec<String> = std::env::args().collect();
+    let args_len = args.len();
+    if args_len == 4 && &args[1] == "youtube_1101" {
+        let mut videos: Vec<VideoItem> = Vec::new();
+        let _api_key = &args[2];
+        let comma_separated_json_files = &args[3];
+
+        for filename in comma_separated_json_files
+            .split(',')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            let file = File::open(filename).expect("Cannot open file");
+
+            let resp: VideosListResponse =
+                serde_json::from_reader(file).expect("Cannot parse file as VideosListResponse");
+
+            videos.extend(resp.items);
+        }
+
+        println!("videos.len()={}", videos.len());
+
+        videos.sort_by(|a, b| {
+            let b_views: u64 = b
+                .statistics
+                .as_ref()
+                .unwrap()
+                .view_count
+                .as_ref()
+                .unwrap()
+                .parse()
+                .unwrap();
+            let a_views: u64 = a
+                .statistics
+                .as_ref()
+                .unwrap()
+                .view_count
+                .as_ref()
+                .unwrap()
+                .parse()
+                .unwrap();
+            b_views.cmp(&a_views)
+        });
+
+        for video in videos.iter().take(5) {
+            let medium_thumbnail_url = video
+                .snippet
+                .as_ref()
+                .unwrap()
+                .thumbnails
+                .as_ref()
+                .unwrap()
+                .medium
+                .as_ref()
+                .unwrap()
+                .url
+                .clone();
+            println!("medium_thumbnail_url={}", medium_thumbnail_url);
         }
     }
-
-    fn view(&self) -> Element<'_, Message> {
-        let content = column((0..25).map(|i| {
-            column![
-                text(format!("image {i}")).size(20),
-                image(&self.picture).width(256).height(256),
-            ]
-            .spacing(10)
-            .align_x(iced::Alignment::Center)
-            .into()
-        }))
-        .spacing(40)
-        .padding(20)
-        .width(Fill)
-        .align_x(iced::Alignment::Center);
-
-        scrollable(content).width(Fill).height(Fill).into()
-    }
-
-    fn theme(&self) -> Theme {
-        Theme::TokyoNight
-    }
-
-    fn subscription(&self) -> Subscription<Message> {
-        iced::time::every(iced::time::Duration::from_millis(10)).map(|_| Message::Tick)
-    }
+    println!("<END>");
 }
