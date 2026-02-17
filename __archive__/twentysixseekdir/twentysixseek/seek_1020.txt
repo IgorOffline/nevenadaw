@@ -1,7 +1,12 @@
+use chrono::Datelike;
+use num_format::{Locale, ToFormattedString};
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
+use std::time::Duration;
+use uuid::Uuid;
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize, Serialize)]
@@ -163,4 +168,73 @@ async fn sort_video_list(raw_videos: Vec<VideoItem>) -> Vec<UniqueVideoItem> {
 
 fn process_videos(videos: Vec<UniqueVideoItem>) {
     println!("videos.len()={}", videos.len());
+}
+
+async fn save_thumbnails(thumbnails: &Vec<String>) {
+    for thumbnail in thumbnails {
+        let filename_timepart = prepare_filename_timepart();
+        let thumbnail_filename = format!("thumbnail_{}.jpg", filename_timepart);
+        download_image(thumbnail, &*thumbnail_filename)
+            .await
+            .expect("Cannot download image");
+    }
+}
+
+async fn download_image(url: &str, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let client = Client::builder()
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        .timeout(Duration::from_secs(25))
+        .build()?;
+
+    println!("Target URL: {}", url);
+    println!("Output file: {}", filename);
+
+    let mut response = client.get(url).send().await?.error_for_status()?;
+
+    if let Some(content_length) = response.content_length() {
+        println!(
+            "Content length: {} bytes",
+            content_length.to_formatted_string(&Locale::en)
+        );
+    } else {
+        println!("Content length: Unknown");
+    }
+
+    let mut file = File::create(filename)?;
+    let mut downloaded: u64 = 0;
+
+    while let Some(chunk) = response.chunk().await? {
+        file.write_all(&chunk)?;
+        downloaded += chunk.len() as u64;
+
+        print!(
+            "\rDownloading: {} bytes",
+            downloaded.to_formatted_string(&Locale::en)
+        );
+        use std::io::Write;
+        std::io::stdout().flush()?;
+    }
+
+    println!("\nDownload completed successfully.");
+    Ok(())
+}
+
+fn prepare_filename_timepart() -> String {
+    let now = chrono::Utc::now();
+    let year = now.year();
+    let month = now.month().to_string();
+    let day = now.day().to_string();
+    let formatted_month = zero_leading_format(&month);
+    let formatted_day = zero_leading_format(&day);
+    let uuid_substring = &Uuid::new_v4().to_string()[..8].to_uppercase();
+    let filename = format!(
+        "{}-{}-{}_{}",
+        year, formatted_month, formatted_day, uuid_substring
+    );
+
+    filename
+}
+
+fn zero_leading_format(input: &str) -> String {
+    format!("{:0>2}", input)
 }
