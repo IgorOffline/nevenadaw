@@ -1,3 +1,7 @@
+use lalrpop_util::lalrpop_mod;
+
+lalrpop_mod!(cobol);
+
 fn main() {
     println!("<START>");
     println!("<END>");
@@ -5,6 +9,8 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    use super::cobol;
+
     #[test]
     fn test_original_cobol_code_equality() {
         let expected = r#"
@@ -55,6 +61,14 @@ mod tests {
         let actual = std::fs::read_to_string("sum.cob").expect("failed to read sum.cob");
 
         assert_eq!(normalize(expected.as_str()), normalize(&actual));
+    }
+
+    #[test]
+    fn test_pop_init() {
+        let sum_string = "sum";
+        let pop_result = cobol::TermParser::new().parse(sum_string).unwrap();
+        let expected_result = format!("PROGRAM-ID. {}.", sum_string);
+        assert_eq!(pop_result, expected_result);
     }
 
     fn normalize(s: &str) -> String {

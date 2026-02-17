@@ -1,0 +1,7 @@
+grammar;
+
+pub Term: String = {
+    <name:Ident> => format!("PROGRAM-ID. {}.", name),
+};
+
+Ident: String = <s:r"[A-Za-z][A-Za-z0-9-]*"> => s.to_string();
