@@ -1,0 +1,65 @@
+use chrono::Local;
+use num_format::{Locale, ToFormattedString};
+use reqwest::Client;
+use std::env;
+use std::time::Duration;
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
+
+const DEFAULT_URL: &str = "https://picsum.photos/id/96/300/300";
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = env::args().collect();
+    let url = args.get(1).map(|s| s.as_str()).unwrap_or(DEFAULT_URL);
+
+    let timestamp = Local::now().format("%Y%m%d_%H%M%S");
+    let default_filename = format!("thumbnail_{}.jpg", timestamp);
+    let filename = args.get(2).map(|s| s.as_str()).unwrap_or(&default_filename);
+
+    if let Err(e) = download_image(url, filename).await {
+        eprintln!("\nError: {}", e);
+        std::process::exit(1);
+    }
+
+    Ok(())
+}
+
+async fn download_image(url: &str, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let client = Client::builder()
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        .timeout(Duration::from_secs(60))
+        .build()?;
+
+    println!("Target URL: {}", url);
+    println!("Output file: {}", filename);
+
+    let mut response = client.get(url).send().await?.error_for_status()?;
+
+    if let Some(content_length) = response.content_length() {
+        println!(
+            "Content length: {} bytes",
+            content_length.to_formatted_string(&Locale::en)
+        );
+    } else {
+        println!("Content length: Unknown");
+    }
+
+    let mut file = File::create(filename).await?;
+    let mut downloaded: u64 = 0;
+
+    while let Some(chunk) = response.chunk().await? {
+        file.write_all(&chunk).await?;
+        downloaded += chunk.len() as u64;
+
+        print!(
+            "\rDownloading: {} bytes",
+            downloaded.to_formatted_string(&Locale::en)
+        );
+        use std::io::Write;
+        std::io::stdout().flush()?;
+    }
+
+    println!("\nDownload completed successfully.");
+    Ok(())
+}
