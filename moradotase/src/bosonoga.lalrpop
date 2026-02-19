@@ -20,9 +20,8 @@ AppNamePrefixStmt: Option<i32> = {
 };
 
 AppNameStmt: Option<i32> = {
-    "main" => {
-        let main_str = "main";
-        println!("INFO Bosonoga::{}", main_str);
+    <application_name:Ident> => {
+        println!("INFO Bosonoga::{}", application_name);
         None
     },
 };
@@ -50,10 +49,12 @@ NumStmt: Option<i32> = {
     "DI" <n:NumIniThirtyTwo> "DO" => Some(n),
 };
 
-NumIniThirtyTwoAtom: i32 = {
-    <s:r"[0-9]+"> => s.parse::<i32>().unwrap(),
-};
-
 NumIniThirtyTwo: i32 = {
     <ns:NumIniThirtyTwoAtom+> => ns.into_iter().sum(),
+};
+
+Ident: String = <s:r"[a-z]+"> => s.to_string();
+
+NumIniThirtyTwoAtom: i32 = {
+    <s:r"[0-9]+"> => s.parse::<i32>().unwrap(),
 };
