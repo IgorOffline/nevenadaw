@@ -1,20 +1,26 @@
 grammar;
 
-use super::ast::{Program, Stmt, AdaStmt, EkiStmt};
-
-pub Program: Program = {
-    <stmts:Stmt*> => Program::new(stmts),
+pub Program: i32 = {
+    <stmts:Stmt*> => stmts.into_iter().sum(),
 };
 
-Stmt: Stmt = {
-    <a:AdaStmt> => Stmt::AdaStmt(a),
-    <e:EkiStmt> => Stmt::EkiStmt(e),
+Stmt: i32 = {
+    <a:AdaStmt> => a,
+    <e:EkiStmt> => e,
 };
 
-AdaStmt: AdaStmt = {
-    "ADA" "DO" => AdaStmt::new(),
+AdaStmt: i32 = {
+    "ADA" "DI" <n:NumIniThirtyTwo> "DO" => n,
 };
 
-EkiStmt: EkiStmt = {
-    "EKI" "DO" => EkiStmt::new(),
+EkiStmt: i32 = {
+    "EKI" "DO" => 0,
+};
+
+NumIniThirtyTwoAtom: i32 = {
+    <s:r"[0-9]+"> => s.parse::<i32>().unwrap(),
+};
+
+NumIniThirtyTwo: i32 = {
+    <ns:NumIniThirtyTwoAtom+> => ns.into_iter().sum(),
 };
