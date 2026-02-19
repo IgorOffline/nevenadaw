@@ -1,0 +1,20 @@
+grammar;
+
+use super::ast::{Program, Stmt, AdaStmt, EkiStmt};
+
+pub Program: Program = {
+    <stmts:Stmt*> => Program::new(stmts),
+};
+
+Stmt: Stmt = {
+    <a:AdaStmt> => Stmt::AdaStmt(a),
+    <e:EkiStmt> => Stmt::EkiStmt(e),
+};
+
+AdaStmt: AdaStmt = {
+    "ADA" "DO" => AdaStmt::new(),
+};
+
+EkiStmt: EkiStmt = {
+    "EKI" "DO" => EkiStmt::new(),
+};
