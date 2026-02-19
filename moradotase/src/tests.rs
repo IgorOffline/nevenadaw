@@ -2,7 +2,7 @@ use crate::bosonoga::BosonogaParser;
 use pretty_assertions::assert_eq;
 
 #[test]
-fn test_multiple_stmts() {
+fn test_bosonoga() {
     let input = r"
         BOSONOGA main
         DI 2 3 5 DO
