@@ -1,12 +1,13 @@
 grammar;
 
-pub Program: i32 = {
+pub Bosonoga: i32 = {
     <stmts:Stmt*> => stmts.into_iter().sum(),
 };
 
 Stmt: i32 = {
     <a:AdaStmt> => a,
     <e:EkiStmt> => e,
+    <l:LogiStmt> => l,
 };
 
 AdaStmt: i32 = {
@@ -15,6 +16,13 @@ AdaStmt: i32 = {
 
 EkiStmt: i32 = {
     "EKI" "DO" => 0,
+};
+
+LogiStmt: i32 = {
+    "LOGI" => {
+        println!("LOGI!");
+        0
+    }
 };
 
 NumIniThirtyTwoAtom: i32 = {
