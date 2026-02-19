@@ -1,83 +1,12 @@
 use lalrpop_util::lalrpop_mod;
 
-lalrpop_mod!(cobol);
+pub mod ast;
+lalrpop_mod!(pub bosonoga);
+
+#[cfg(test)]
+mod tests;
 
 fn main() {
     println!("<START>");
     println!("<END>");
-}
-
-#[cfg(test)]
-mod tests {
-    use super::cobol;
-
-    #[test]
-    fn test_original_cobol_code_equality() {
-        let expected = r#"
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. sum.
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       01 WS1-FIRST PIC 9999999999 VALUE 200.
-       01 WS2-SECOND PIC 9999999999 VALUE 300.
-       01 WS3-SUM PIC 9999999999 VALUE 0.
-       PROCEDURE DIVISION.
-           DISPLAY WS1-FIRST.
-           DISPLAY WS2-SECOND.
-           ADD WS1-FIRST TO WS3-SUM.
-           ADD WS2-SECOND TO WS3-SUM.
-           DISPLAY WS3-SUM.
-           STOP RUN.
-"#;
-
-        let actual = std::fs::read_to_string("sum.cob").expect("failed to read sum.cob");
-
-        assert_eq!(normalize(expected), normalize(&actual));
-    }
-
-    #[test]
-    fn test_formatted_cobol_code_equality() {
-        let application_name = "sum";
-        let expected = format!(
-            r#"
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. {}.
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       01 WS1-FIRST PIC 9999999999 VALUE 200.
-       01 WS2-SECOND PIC 9999999999 VALUE 300.
-       01 WS3-SUM PIC 9999999999 VALUE 0.
-       PROCEDURE DIVISION.
-           DISPLAY WS1-FIRST.
-           DISPLAY WS2-SECOND.
-           ADD WS1-FIRST TO WS3-SUM.
-           ADD WS2-SECOND TO WS3-SUM.
-           DISPLAY WS3-SUM.
-           STOP RUN.
-"#,
-            application_name
-        );
-
-        let actual = std::fs::read_to_string("sum.cob").expect("failed to read sum.cob");
-
-        assert_eq!(normalize(expected.as_str()), normalize(&actual));
-    }
-
-    #[test]
-    fn test_pop_init() {
-        let sum_string = "sum";
-        let pop_result = cobol::TermParser::new().parse(sum_string).unwrap();
-        let expected_result = format!("PROGRAM-ID. {}.", sum_string);
-        assert_eq!(pop_result, expected_result);
-    }
-
-    fn normalize(s: &str) -> String {
-        s.replace("\r\n", "\n")
-            .lines()
-            .map(|l| l.trim_end())
-            .collect::<Vec<_>>()
-            .join("\n")
-            .trim()
-            .to_string()
-    }
 }
