@@ -1,10 +1,13 @@
 grammar;
 
 pub Bosonoga: i32 = {
-    <stmts:Stmt*> => stmts.into_iter().sum(),
+    <stmts:Stmt*> => {
+        let nums: Vec<i32> = stmts.into_iter().filter_map(|x| x).collect();
+        nums.into_iter().sum()
+    },
 };
 
-Stmt: i32 = {
+Stmt: Option<i32> = {
     AppNameStmt,
     AppNamePrefixStmt,
     DiStmt,
@@ -12,24 +15,39 @@ Stmt: i32 = {
     DoStmt,
 };
 
-AppNamePrefixStmt: i32 = {
-    "BOSONOGA" => 1000,
+AppNamePrefixStmt: Option<i32> = {
+    "BOSONOGA" => Some(1000),
 };
 
-AppNameStmt: i32 = {
-    "main" => 0,
+AppNameStmt: Option<i32> = {
+    "main" => {
+        let main_str = "main";
+        println!("INFO Bosonoga::{}", main_str);
+        None
+    },
 };
 
-DiStmt: i32 = {
-    "DI" => 0,
+DiStmt: Option<i32> = {
+    "DI" => None,
 };
 
-DoStmt: i32 = {
-    "DO" => 0,
+DoStmt: Option<i32> = {
+    "DO" => None,
 };
 
-NumStmt: i32 = {
-    DiStmt <n:NumIniThirtyTwo> DoStmt => n,
+LogiStmt: i32 = {
+    "LOGI" <n:NumIniThirtyTwo> => {
+        match n {
+            1 => println!("LOGI-1"),
+            2 => println!("LOGI-2"),
+            _ => println!("__LOGI__"),
+        }
+        0
+    }
+};
+
+NumStmt: Option<i32> = {
+    "DI" <n:NumIniThirtyTwo> "DO" => Some(n),
 };
 
 NumIniThirtyTwoAtom: i32 = {
