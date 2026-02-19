@@ -44,3 +44,60 @@ pub ProgramIdTerm: String = {
 
 Ident: String = <s:r"[A-Za-z][A-Za-z0-9-]*"> => s.to_string();
 
+
+
+
+
+//
+//
+//
+//
+//
+
+grammar;
+
+pub Bosonoga: i32 = {
+    <stmts:Stmt*> => stmts.into_iter().sum(),
+};
+
+Stmt: i32 = {
+    <a:AdaStmt> => a,
+    <e:EkiStmt> => e,
+    <l:LogiStmt> => l,
+};
+
+AdaStmt: i32 = {
+    "ADA" "DI" <n:NumIniThirtyTwo> "DO" => n,
+};
+
+EkiStmt: i32 = {
+    "EKI" "DO" => 0,
+};
+
+LogiStmt: i32 = {
+    "LOGI" <n:r"[12]"> => {
+        match n {
+            "1" => println!("LOGI-1"),
+            "2" => println!("LOGI-2"),
+            _ => unreachable!(),
+        }
+        0
+    }
+};
+
+NumIniThirtyTwoAtom: i32 = {
+    <s:r"[0-9]+"> => s.parse::<i32>().unwrap(),
+    <s:r"[12]"> => s.parse::<i32>().unwrap(),
+};
+
+NumIniThirtyTwo: i32 = {
+    <ns:NumIniThirtyTwoAtom+> => ns.into_iter().sum(),
+};
+
+match {
+    r"[12]",
+} else {
+    r"[0-9]+",
+    _
+}
+
