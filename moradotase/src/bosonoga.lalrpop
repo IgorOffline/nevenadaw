@@ -6,13 +6,18 @@ pub Bosonoga: i32 = {
 
 Stmt: i32 = {
     AppNameStmt,
+    AppNamePrefixStmt,
     DiStmt,
     NumStmt,
     DoStmt,
 };
 
+AppNamePrefixStmt: i32 = {
+    "BOSONOGA" => 1000,
+};
+
 AppNameStmt: i32 = {
-    "BOSONOGA" "main" => 1000,
+    "main" => 0,
 };
 
 DiStmt: i32 = {
