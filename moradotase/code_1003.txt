@@ -1,0 +1,82 @@
+
+--- grammar
+
+grammar;
+
+pub Bosonoga: i32 = {
+    <stmts:Stmt*> => {
+        let nums: Vec<i32> = stmts.into_iter().filter_map(|x| x).collect();
+        nums.into_iter().sum()
+    },
+};
+
+Stmt: Option<i32> = {
+    AppNameStmt,
+    AppNamePrefixStmt,
+    DiStmt,
+    NumStmt,
+    DoStmt,
+};
+
+AppNamePrefixStmt: Option<i32> = {
+    "BOSONOGA" => Some(1000),
+};
+
+AppNameStmt: Option<i32> = {
+    <application_name:Ident> => {
+        println!("INFO Bosonoga::{}", application_name);
+        None
+    },
+};
+
+DiStmt: Option<i32> = {
+    "DI" => None,
+};
+
+DoStmt: Option<i32> = {
+    "DO" => None,
+};
+
+NumStmt: Option<i32> = {
+    "DI" <n:NumIniThirtyTwo> "DO" => Some(n),
+};
+
+NumIniThirtyTwo: i32 = {
+    <ns:NumIniThirtyTwoAtom+> => ns.into_iter().sum(),
+};
+
+Ident: String = <s:r"[a-z]+"> => s.to_string();
+
+NumIniThirtyTwoAtom: i32 = {
+    <s:r"[0-9]+"> => s.parse::<i32>().unwrap(),
+};
+
+--- tests.rs
+
+use crate::bosonoga::BosonogaParser;
+use pretty_assertions::assert_eq;
+
+#[test]
+fn test_bosonoga() {
+    let input = r"
+        BOSONOGA main
+        DI 2 3 5 DO
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 1010);
+}
+
+--- main.rs
+
+use lalrpop_util::lalrpop_mod;
+
+lalrpop_mod!(pub bosonoga);
+
+#[cfg(test)]
+mod tests;
+
+fn main() {
+    println!("<START>");
+    println!("<END>");
+}
