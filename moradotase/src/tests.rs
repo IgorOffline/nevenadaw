@@ -20,3 +20,17 @@ fn test_bosonoga_multiple_subtractions() {
     let bosonoga = parser.parse(input).unwrap();
     assert_eq!(bosonoga, 210);
 }
+
+#[test]
+fn test_bosonoga_loop() {
+    let input = r"
+        DI
+        VALA-DI 5
+          ADA 10
+        VALA-DO
+        DI
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 250);
+}

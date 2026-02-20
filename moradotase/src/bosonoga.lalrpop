@@ -26,17 +26,22 @@ Value: (String, i32) = {
 
     "DO" => ("DO".to_string(), 1),
 
-    "ADA" <n:Number> => ("SUB".to_string(), n),
+    "ADA" <n:Number> => ("ADA".to_string(), n),
     "SUB" <n:Number> => ("SUB".to_string(), -n),
 
     "ADA-DI" <nums:Number+> "ADA-DO" => {
         let sum: i32 = nums.into_iter().sum();
-            ("SUB".to_string(), sum)
-        },
+            ("ADA".to_string(), sum)
+    },
     "SUB-DI" <nums:Number+> "SUB-DO" => {
         let sum: i32 = nums.into_iter().sum();
             ("SUB".to_string(), -sum)
-        },
+    },
+
+    "VALA-DI" <count:Number> <inner:BosonogaTree> "VALA-DO" => {
+        let inner_sum: i32 = inner.values().copied().sum();
+        ("ADA".to_string(), inner_sum * count)
+    },
 };
 
 Number: i32 = {
