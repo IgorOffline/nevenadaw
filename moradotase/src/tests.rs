@@ -14,9 +14,9 @@ fn test_bosonoga_basic_identifiers() {
 #[test]
 fn test_bosonoga_multiple_subtractions() {
     let input = r"
-        DI   SUB-DI 5 5 SUB-DO   DI
+        DI   ADA-DI 10 10 ADA-DO   SUB-DI 5 5 SUB-DO   DI
     ";
     let parser = BosonogaParser::new();
     let bosonoga = parser.parse(input).unwrap();
-    assert_eq!(bosonoga, 190);
+    assert_eq!(bosonoga, 210);
 }

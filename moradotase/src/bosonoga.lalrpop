@@ -31,7 +31,7 @@ Value: (String, i32) = {
 
     "ADA-DI" <nums:Number+> "ADA-DO" => {
         let sum: i32 = nums.into_iter().sum();
-            ("SUB".to_string(), -sum)
+            ("SUB".to_string(), sum)
         },
     "SUB-DI" <nums:Number+> "SUB-DO" => {
         let sum: i32 = nums.into_iter().sum();
