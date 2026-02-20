@@ -11,8 +11,8 @@ match {
     r"(?i)INAT" => INAT_KW,
     r"(?i)ADA"  => ADA_KW,
 } else {
-    r"[a-z]+"   => ID_TYPE,
-    r"[0-9]+"   => NUM_TYPE,
+    r"[a-z]+"   => ID_NAMA,
+    r"[0-9]+"   => NUM_NAMA,
 }
 
 pub Bosonoga: i32 = {
@@ -53,7 +53,7 @@ BosonogaVariableType: &'input str = {
 };
 
 BosonogaVariableName: &'input str = {
-    ID_TYPE => <>,
+    ID_NAMA => <>,
 };
 
 BosonogaVariableValue: i32 = {
@@ -61,7 +61,7 @@ BosonogaVariableValue: i32 = {
 };
 
 BosonogaNumber: i32 = {
-    NUM_TYPE => <>.parse::<i32>().unwrap()
+    NUM_NAMA => <>.parse::<i32>().unwrap()
 };
 
 BosonogaIdentifier: (String, i32) = {
