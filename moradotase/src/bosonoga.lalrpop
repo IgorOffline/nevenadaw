@@ -1,7 +1,7 @@
+grammar;
+
 use std::collections::BTreeMap;
 use crate::BosonogaItem;
-
-grammar;
 
 pub Bosonoga: i32 = {
     <items:BosonogaItem*> => {
@@ -23,11 +23,35 @@ pub Bosonoga: i32 = {
 };
 
 BosonogaItem: BosonogaItem = {
-    r"(?i)TALI" => BosonogaItem::Tali,
+    Tali => BosonogaItem::Tali,
     <v:BosonogaIdentifier> => BosonogaItem::Add(v.0, v.1),
 };
 
+Tali: () = { r"(?i)TALI" => () };
+Di:   () = { r"(?i)DI"   => () };
+Do:   () = { r"(?i)DO"   => () };
+ValKw:() = { r"(?i)VAL"  => () };
+Inat: () = { r"(?i)INAT" => () };
+
+BosonogaVariableType: &'input str = {
+    Inat => "INAT",
+};
+
+BosonogaVariableName: &'input str = {
+    r"BOS_[a-z]+" => <>,
+};
+
+BosonogaVariableDefaultIntegerValue: i32 = {
+    <n:BosonogaNumber> => n,
+};
+
+BosonogaNumber: i32 = {
+    r"[0-9]+" => <>.parse::<i32>().unwrap()
+};
+
 BosonogaIdentifier: (String, i32) = {
-    r"(?i)DI" => ("DI".to_string(), 100),
-    r"(?i)DO" => ("DO".to_string(), 1),
+    Di  => ("DI".to_string(), 100),
+    Do  => ("DO".to_string(), 1),
+    ValKw <_ty:BosonogaVariableType> <name:BosonogaVariableName> <def:BosonogaVariableDefaultIntegerValue>
+        => (name.to_string(), def),
 };
