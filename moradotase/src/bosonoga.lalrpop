@@ -20,18 +20,25 @@ BosonogaTree: BTreeMap<String, i32> = {
 };
 
 Value: (String, i32) = {
-    <id:Ident> => match id {
-        "DI"   => ("DI".to_string(),   100),
-        "SUB 200" => ("SUB".to_string(), -200),
-        "LOGI" => ("LOGI".to_string(), 10),
-        "DO"   => ("DO".to_string(),   1),
-        _ => unreachable!(),
-    }
+    "DI" => ("DI".to_string(), 100),
+
+    "LOGI" => ("LOGI".to_string(), 10),
+
+    "DO" => ("DO".to_string(), 1),
+
+    "ADA" <n:Number> => ("SUB".to_string(), n),
+    "SUB" <n:Number> => ("SUB".to_string(), -n),
+
+    "ADA-DI" <nums:Number+> "ADA-DO" => {
+        let sum: i32 = nums.into_iter().sum();
+            ("SUB".to_string(), -sum)
+        },
+    "SUB-DI" <nums:Number+> "SUB-DO" => {
+        let sum: i32 = nums.into_iter().sum();
+            ("SUB".to_string(), -sum)
+        },
 };
 
-Ident: &'input str = {
-    "DI"   => "DI",
-    "SUB 200" => "SUB 200",
-    "LOGI" => "LOGI",
-    "DO"   => "DO",
+Number: i32 = {
+    r"[0-9]+" => <>.parse::<i32>().unwrap()
 };
