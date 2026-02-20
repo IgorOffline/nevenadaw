@@ -3,6 +3,17 @@ grammar;
 use std::collections::BTreeMap;
 use crate::BosonogaItem;
 
+match {
+    r"(?i)TALI" => TALI,
+    r"(?i)DI"   => DI,
+    r"(?i)DO"   => DO,
+    r"(?i)VAL"  => VAL_KW,
+    r"(?i)INAT" => INAT_KW,
+} else {
+    r"[a-z]+"   => ID,
+    r"[0-9]+"   => NUM,
+}
+
 pub Bosonoga: i32 = {
     <items:BosonogaItem*> => {
         let mut map: BTreeMap<String, i32> = BTreeMap::new();
@@ -27,18 +38,20 @@ BosonogaItem: BosonogaItem = {
     <v:BosonogaIdentifier> => BosonogaItem::Add(v.0, v.1),
 };
 
-Tali: () = { r"(?i)TALI" => () };
-Di:   () = { r"(?i)DI"   => () };
-Do:   () = { r"(?i)DO"   => () };
-ValKw:() = { r"(?i)VAL"  => () };
-Inat: () = { r"(?i)INAT" => () };
+Tali: () = {
+    TALI => ()
+};
+Di:   () = { DI   => () };
+Do:   () = { DO   => () };
+ValKw:() = { VAL_KW  => () };
+Inat: () = { INAT_KW => () };
 
 BosonogaVariableType: &'input str = {
     Inat => "INAT",
 };
 
 BosonogaVariableName: &'input str = {
-    r"BOS_[a-z]+" => <>,
+    ID => <>,
 };
 
 BosonogaVariableDefaultIntegerValue: i32 = {
@@ -46,7 +59,7 @@ BosonogaVariableDefaultIntegerValue: i32 = {
 };
 
 BosonogaNumber: i32 = {
-    r"[0-9]+" => <>.parse::<i32>().unwrap()
+    NUM => <>.parse::<i32>().unwrap()
 };
 
 BosonogaIdentifier: (String, i32) = {

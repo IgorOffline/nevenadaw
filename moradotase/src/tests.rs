@@ -22,10 +22,10 @@ fn test_bosonoga_bul_inat() {
         DI
         DO
         DI
-        VAL INAT BOS_first 0
+        VAL INAT first 50
         TALI
     ";
     let parser = BosonogaParser::new();
     let bosonoga = parser.parse(input).unwrap();
-    assert_eq!(bosonoga, 201);
+    assert_eq!(bosonoga, 251);
 }
