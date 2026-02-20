@@ -1,0 +1,124 @@
+
+use std::collections::BTreeMap;
+use crate::Item;
+
+grammar;
+
+pub Bosonoga: i32 = {
+    <items:Item*> => {
+        let mut map: BTreeMap<String, i32> = BTreeMap::new();
+
+        for item in items {
+            match item {
+                Item::Add(key, amount) => {
+                    *map.entry(key).or_insert(0) += amount;
+                }
+                Item::Tali => {
+                    println!("{:?}", map);
+                }
+            }
+        }
+
+        map.values().copied().sum()
+    }
+};
+
+Item: Item = {
+    r"(?i)TALI" => Item::Tali,
+    <v:BosonogaIdentifier> => Item::Add(v.0, v.1),
+};
+
+BosonogaIdentifier: (String, i32) = {
+    r"(?i)DI" => ("DI".to_string(), 100),
+    r"(?i)DO" => ("DO".to_string(), 1),
+};
+
+
+
+
+
+
+use lalrpop_util::lalrpop_mod;
+
+lalrpop_mod!(pub bosonoga);
+
+#[derive(Debug)]
+pub enum Item {
+    Add(String, i32),
+    Tali,
+}
+
+#[cfg(test)]
+mod tests;
+
+fn main() {
+    println!("<START>");
+    println!("<END>");
+}
+
+
+
+
+
+
+use crate::bosonoga::BosonogaParser;
+use pretty_assertions::assert_eq;
+
+#[test]
+fn test_bosonoga() {
+    let input = r"
+        DI   DO   DI
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 201);
+}
+
+#[test]
+fn test_bosonoga_tali() {
+    let input = r"
+        DI   TALI   DO
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 101);
+}
+
+#[test]
+fn test_bosonoga_multiple() {
+    let input = r"
+        DI
+        DO
+        DI
+        DO
+        TALI
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 202);
+}
+
+#[test]
+fn test_bosonoga_case_insensitive() {
+    let input = r"
+        di   do   Tali
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 101);
+}
+
+#[test]
+fn test_bosonoga_error() {
+    let input = r"
+        DI   INVALID   DO
+    ";
+    let parser = BosonogaParser::new();
+    let result = parser.parse(input);
+    assert!(result.is_err());
+}
+
+
+
+
+
