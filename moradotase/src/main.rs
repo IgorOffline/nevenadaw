@@ -2,11 +2,7 @@ use lalrpop_util::lalrpop_mod;
 
 lalrpop_mod!(pub bosonoga);
 
-#[derive(Debug)]
-pub enum BosonogaItem {
-    Add(String, i32),
-    Tali,
-}
+mod ast;
 
 #[cfg(test)]
 mod tests;
