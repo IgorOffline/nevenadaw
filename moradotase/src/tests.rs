@@ -23,9 +23,10 @@ fn test_bosonoga_bul_inat() {
         DO
         DI
         VAL INAT first 50
+        ADA first 49
         TALI
     ";
     let parser = BosonogaParser::new();
     let bosonoga = parser.parse(input).unwrap();
-    assert_eq!(bosonoga, 251);
+    assert_eq!(bosonoga, 300);
 }

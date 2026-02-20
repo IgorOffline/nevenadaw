@@ -9,6 +9,7 @@ match {
     r"(?i)DO"   => DO_KW,
     r"(?i)VAL"  => VAL_KW,
     r"(?i)INAT" => INAT_KW,
+    r"(?i)ADA"  => ADA_KW,
 } else {
     r"[a-z]+"   => ID_TYPE,
     r"[0-9]+"   => NUM_TYPE,
@@ -34,8 +35,8 @@ pub Bosonoga: i32 = {
 };
 
 BosonogaItem: BosonogaItem = {
-    Tali                   => BosonogaItem::Tali,
-    <v:BosonogaIdentifier> => BosonogaItem::Add(v.0, v.1),
+    Tali                       => BosonogaItem::Tali,
+    <ident:BosonogaIdentifier> => BosonogaItem::Add(ident.0, ident.1),
 };
 
 Tali: () = {
@@ -45,6 +46,7 @@ DiKw:   () = { DI_KW   => () };
 DoKw:   () = { DO_KW   => () };
 ValKw:  () = { VAL_KW  => () };
 InatKw: () = { INAT_KW => () };
+AdaKw:  () = { ADA_KW  => () };
 
 BosonogaVariableType: &'input str = {
     InatKw => "INAT",
@@ -54,7 +56,7 @@ BosonogaVariableName: &'input str = {
     ID_TYPE => <>,
 };
 
-BosonogaVariableDefaultIntegerValue: i32 = {
+BosonogaVariableValue: i32 = {
     <n:BosonogaNumber> => n,
 };
 
@@ -65,6 +67,8 @@ BosonogaNumber: i32 = {
 BosonogaIdentifier: (String, i32) = {
     DiKw  => ("DI".to_string(), 100),
     DoKw  => ("DO".to_string(), 1),
-    ValKw <_ty:BosonogaVariableType> <name:BosonogaVariableName> <def:BosonogaVariableDefaultIntegerValue>
-        => (name.to_string(), def),
+    ValKw <ty:BosonogaVariableType> <name:BosonogaVariableName> <value:BosonogaVariableValue>
+        => (name.to_string(), value),
+    AdaKw <name:BosonogaVariableName> <value:BosonogaVariableValue>
+        => (name.to_string(), value),
 };
