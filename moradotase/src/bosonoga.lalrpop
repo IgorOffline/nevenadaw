@@ -44,11 +44,8 @@ BosonogaIdentifier: (String, i32) = {
     },
 
     "BATIP" <ty:BosonogaType> => {
-        match ty {
-            "BUL" => ("BUL".to_string(), 0),
-            "INAT" => ("INAT".to_string(), 0),
-            _ => unreachable!(),
-        }
+        println!("{ty}");
+        (ty.to_string(), 0)
     },
 };
 
