@@ -11,8 +11,8 @@ match {
     r"(?i)INAT" => INAT_KW,
     r"(?i)ADA"  => ADA_KW,
 } else {
-    r"[a-z]+"   => ID_TYPE,
-    r"[0-9]+"   => NUM_TYPE,
+    r"[a-z]+"   => ID_NAMA,
+    r"[0-9]+"   => NUM_NAMA,
 }
 
 pub Bosonoga: i32 = {
@@ -21,7 +21,7 @@ pub Bosonoga: i32 = {
 
         for item in items {
             match item {
-                BosonogaItem::Add(key, amount) => {
+                BosonogaItem::Set(key, amount) => {
                     *map.entry(key).or_insert(0) += amount;
                 }
                 BosonogaItem::Tali => {
@@ -36,7 +36,7 @@ pub Bosonoga: i32 = {
 
 BosonogaItem: BosonogaItem = {
     Tali                       => BosonogaItem::Tali,
-    <ident:BosonogaIdentifier> => BosonogaItem::Add(ident.0, ident.1),
+    <ident:BosonogaIdentifier> => BosonogaItem::Set(ident.0, ident.1),
 };
 
 Tali: () = {
@@ -53,7 +53,7 @@ BosonogaVariableType: &'input str = {
 };
 
 BosonogaVariableName: &'input str = {
-    ID_TYPE => <>,
+    ID_NAMA => <>,
 };
 
 BosonogaVariableValue: i32 = {
@@ -61,7 +61,7 @@ BosonogaVariableValue: i32 = {
 };
 
 BosonogaNumber: i32 = {
-    NUM_TYPE => <>.parse::<i32>().unwrap()
+    NUM_NAMA => <>.parse::<i32>().unwrap()
 };
 
 BosonogaIdentifier: (String, i32) = {
