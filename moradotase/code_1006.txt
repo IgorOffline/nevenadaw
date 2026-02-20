@@ -1,3 +1,30 @@
+
+--- main.rs
+
+use lalrpop_util::lalrpop_mod;
+
+lalrpop_mod!(pub bosonoga);
+
+mod ast;
+
+#[cfg(test)]
+mod tests;
+
+fn main() {
+    println!("<START>");
+    println!("<END>");
+}
+
+--- ast.rs
+
+#[derive(Debug)]
+pub enum BosonogaItem {
+    Add(String, i32),
+    Tali,
+}
+
+--- bosonoga.lalrpop
+
 grammar;
 
 use std::collections::BTreeMap;
@@ -68,3 +95,37 @@ BosonogaIdentifier: (String, i32) = {
     ValKw <_ty:BosonogaVariableType> <name:BosonogaVariableName> <def:BosonogaVariableDefaultIntegerValue>
         => (name.to_string(), def),
 };
+
+--- tests.rs
+
+use crate::bosonoga::BosonogaParser;
+use pretty_assertions::assert_eq;
+
+#[test]
+fn test_bosonoga_tali() {
+    let input = r"
+        DI
+        TALI
+        DO
+        TALI
+        DI
+        TALI
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 201);
+}
+
+#[test]
+fn test_bosonoga_bul_inat() {
+    let input = r"
+        DI
+        DO
+        DI
+        VAL INAT first 50
+        TALI
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 251);
+}
