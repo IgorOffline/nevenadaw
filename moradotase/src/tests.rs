@@ -34,3 +34,15 @@ fn test_bosonoga_loop() {
     let bosonoga = parser.parse(input).unwrap();
     assert_eq!(bosonoga, 250);
 }
+
+#[test]
+fn test_bosonoga_types() {
+    let input = r"
+        DI
+        BATIP BUL BATIP INAT
+        DI
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 200);
+}

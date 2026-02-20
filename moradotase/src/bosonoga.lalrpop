@@ -11,7 +11,7 @@ pub Bosonoga: i32 = {
 BosonogaTree: BTreeMap<String, i32> = {
     => BTreeMap::new(),
 
-    <v:Value> <rest:BosonogaTree> => {
+    <v:BosonogaIdentifier> <rest:BosonogaTree> => {
         let (key, amount) = v;
         let mut map = rest;
         *map.entry(key).or_insert(0) += amount;
@@ -19,31 +19,44 @@ BosonogaTree: BTreeMap<String, i32> = {
     }
 };
 
-Value: (String, i32) = {
+BosonogaIdentifier: (String, i32) = {
     "DI" => ("DI".to_string(), 100),
 
     "LOGI" => ("LOGI".to_string(), 10),
 
     "DO" => ("DO".to_string(), 1),
 
-    "ADA" <n:Number> => ("ADA".to_string(), n),
-    "SUB" <n:Number> => ("SUB".to_string(), -n),
+    "ADA" <n:BosonogaNumber> => ("ADA".to_string(), n),
+    "SUB" <n:BosonogaNumber> => ("SUB".to_string(), -n),
 
-    "ADA-DI" <nums:Number+> "ADA-DO" => {
+    "ADA-DI" <nums:BosonogaNumber+> "ADA-DO" => {
         let sum: i32 = nums.into_iter().sum();
             ("ADA".to_string(), sum)
     },
-    "SUB-DI" <nums:Number+> "SUB-DO" => {
+    "SUB-DI" <nums:BosonogaNumber+> "SUB-DO" => {
         let sum: i32 = nums.into_iter().sum();
             ("SUB".to_string(), -sum)
     },
 
-    "VALA-DI" <count:Number> <inner:BosonogaTree> "VALA-DO" => {
+    "VALA-DI" <count:BosonogaNumber> <inner:BosonogaTree> "VALA-DO" => {
         let inner_sum: i32 = inner.values().copied().sum();
         ("ADA".to_string(), inner_sum * count)
     },
+
+    "BATIP" <ty:BosonogaType> => {
+        match ty {
+            "BUL" => ("BUL".to_string(), 0),
+            "INAT" => ("INAT".to_string(), 0),
+            _ => unreachable!(),
+        }
+    },
 };
 
-Number: i32 = {
+BosonogaType: &'input str = {
+    "BUL" => "BUL",
+    "INAT" => "INAT",
+};
+
+BosonogaNumber: i32 = {
     r"[0-9]+" => <>.parse::<i32>().unwrap()
 };
