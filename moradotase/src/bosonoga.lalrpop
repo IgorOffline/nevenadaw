@@ -21,7 +21,7 @@ pub Bosonoga: i32 = {
 
         for item in items {
             match item {
-                BosonogaItem::Add(key, amount) => {
+                BosonogaItem::Set(key, amount) => {
                     *map.entry(key).or_insert(0) += amount;
                 }
                 BosonogaItem::Tali => {
@@ -36,7 +36,7 @@ pub Bosonoga: i32 = {
 
 BosonogaItem: BosonogaItem = {
     Tali                       => BosonogaItem::Tali,
-    <ident:BosonogaIdentifier> => BosonogaItem::Add(ident.0, ident.1),
+    <ident:BosonogaIdentifier> => BosonogaItem::Set(ident.0, ident.1),
 };
 
 Tali: () = {
