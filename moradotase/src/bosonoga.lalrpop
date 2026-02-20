@@ -3,7 +3,9 @@ grammar;
 use std::collections::BTreeMap;
 
 pub Bosonoga: i32 = {
-    <vals:BosonogaTree> => vals.values().copied().sum()
+    <tree:BosonogaTree> => {
+        tree.values().copied().sum()
+    }
 };
 
 BosonogaTree: BTreeMap<String, i32> = {
@@ -11,19 +13,25 @@ BosonogaTree: BTreeMap<String, i32> = {
 
     <v:Value> <rest:BosonogaTree> => {
         let (key, amount) = v;
-
         let mut map = rest;
-
-        let entry = map.entry(key.clone()).or_insert(0);
-        *entry += amount;
-
-        println!("key={} total={}", key, entry);
-
+        *map.entry(key).or_insert(0) += amount;
         map
     }
 };
 
 Value: (String, i32) = {
-    r"(?i)di" => ("DI".to_string(), 100),
-    r"(?i)do" => ("DO".to_string(), 10),
+    <id:Ident> => match id {
+        "DI"   => ("DI".to_string(),   100),
+        "SUB 200" => ("SUB".to_string(), -200),
+        "LOGI" => ("LOGI".to_string(), 10),
+        "DO"   => ("DO".to_string(),   1),
+        _ => unreachable!(),
+    }
+};
+
+Ident: &'input str = {
+    "DI"   => "DI",
+    "SUB 200" => "SUB 200",
+    "LOGI" => "LOGI",
+    "DO"   => "DO",
 };
