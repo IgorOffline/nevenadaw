@@ -39,7 +39,7 @@ fn test_bosonoga_loop() {
 fn test_bosonoga_types() {
     let input = r"
         DI
-        BATIP BUL BATIP INAT
+        BATIP BUL   BATIP INAT
         DI
     ";
     let parser = BosonogaParser::new();
