@@ -1,59 +1,33 @@
+use std::collections::BTreeMap;
+use crate::BosonogaItem;
+
 grammar;
 
-use std::collections::BTreeMap;
-
 pub Bosonoga: i32 = {
-    <tree:BosonogaTree> => {
-        tree.values().copied().sum()
+    <items:BosonogaItem*> => {
+        let mut map: BTreeMap<String, i32> = BTreeMap::new();
+
+        for item in items {
+            match item {
+                BosonogaItem::Add(key, amount) => {
+                    *map.entry(key).or_insert(0) += amount;
+                }
+                BosonogaItem::Tali => {
+                    println!("{:?}", map);
+                }
+            }
+        }
+
+        map.values().copied().sum()
     }
 };
 
-BosonogaTree: BTreeMap<String, i32> = {
-    => BTreeMap::new(),
-
-    <v:BosonogaIdentifier> <rest:BosonogaTree> => {
-        let (key, amount) = v;
-        let mut map = rest;
-        *map.entry(key).or_insert(0) += amount;
-        map
-    }
+BosonogaItem: BosonogaItem = {
+    r"(?i)TALI" => BosonogaItem::Tali,
+    <v:BosonogaIdentifier> => BosonogaItem::Add(v.0, v.1),
 };
 
 BosonogaIdentifier: (String, i32) = {
-    "DI" => ("DI".to_string(), 100),
-
-    "LOGI" => ("LOGI".to_string(), 10),
-
-    "DO" => ("DO".to_string(), 1),
-
-    "ADA" <n:BosonogaNumber> => ("ADA".to_string(), n),
-    "SUB" <n:BosonogaNumber> => ("SUB".to_string(), -n),
-
-    "ADA-DI" <nums:BosonogaNumber+> "ADA-DO" => {
-        let sum: i32 = nums.into_iter().sum();
-            ("ADA".to_string(), sum)
-    },
-    "SUB-DI" <nums:BosonogaNumber+> "SUB-DO" => {
-        let sum: i32 = nums.into_iter().sum();
-            ("SUB".to_string(), -sum)
-    },
-
-    "VALA-DI" <count:BosonogaNumber> <inner:BosonogaTree> "VALA-DO" => {
-        let inner_sum: i32 = inner.values().copied().sum();
-        ("ADA".to_string(), inner_sum * count)
-    },
-
-    "BATIP" <ty:BosonogaType> => {
-        println!("{ty}");
-        (ty.to_string(), 0)
-    },
-};
-
-BosonogaType: &'input str = {
-    "BUL" => "BUL",
-    "INAT" => "INAT",
-};
-
-BosonogaNumber: i32 = {
-    r"[0-9]+" => <>.parse::<i32>().unwrap()
+    r"(?i)DI" => ("DI".to_string(), 100),
+    r"(?i)DO" => ("DO".to_string(), 1),
 };
