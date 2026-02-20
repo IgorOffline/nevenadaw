@@ -1,0 +1,57 @@
+
+grammar;
+
+use std::collections::BTreeMap;
+
+pub Bosonoga: i32 = {
+    <vals:BosonogaTree> => vals.values().copied().sum()
+};
+
+BosonogaTree: BTreeMap<String, i32> = {
+    => BTreeMap::new(),
+
+    <v:Value> <rest:BosonogaTree> => {
+        let (key, amount) = v;
+
+        let mut map = rest;
+
+        let entry = map.entry(key.clone()).or_insert(0);
+        *entry += amount;
+
+        if key == "LOGI" {
+            println!("LOGI");
+        } else if key == "VALfirst" {
+            println!("VALfirst");
+        } else {
+            println!("key={} total={}", key, entry);
+        }
+
+        map
+    }
+};
+
+Value: (String, i32) = {
+    r"(?i)di" => ("DI".to_string(), 100),
+    r"(?i)do" => ("DO".to_string(), 10),
+    r"(?i)valfirst" => ("VALfirst".to_string(), 0),
+    r"(?i)logi" => ("LOGI".to_string(), 0),
+};
+
+
+
+
+
+
+use crate::bosonoga::BosonogaParser;
+use pretty_assertions::assert_eq;
+
+#[test]
+fn test_bosonoga() {
+    let input = r"
+        DI   DO   VALfirst   LOGI   DI
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 210);
+}
+

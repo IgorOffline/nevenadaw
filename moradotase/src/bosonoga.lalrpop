@@ -3,7 +3,9 @@ grammar;
 use std::collections::BTreeMap;
 
 pub Bosonoga: i32 = {
-    <vals:BosonogaTree> => vals.values().copied().sum()
+    <tree:BosonogaTree> => {
+        tree.values().copied().sum()
+    }
 };
 
 BosonogaTree: BTreeMap<String, i32> = {
@@ -11,19 +13,37 @@ BosonogaTree: BTreeMap<String, i32> = {
 
     <v:Value> <rest:BosonogaTree> => {
         let (key, amount) = v;
-
         let mut map = rest;
-
-        let entry = map.entry(key.clone()).or_insert(0);
-        *entry += amount;
-
-        println!("key={} total={}", key, entry);
-
+        *map.entry(key).or_insert(0) += amount;
         map
     }
 };
 
 Value: (String, i32) = {
-    r"(?i)di" => ("DI".to_string(), 100),
-    r"(?i)do" => ("DO".to_string(), 10),
+    "DI" => ("DI".to_string(), 100),
+
+    "LOGI" => ("LOGI".to_string(), 10),
+
+    "DO" => ("DO".to_string(), 1),
+
+    "ADA" <n:Number> => ("ADA".to_string(), n),
+    "SUB" <n:Number> => ("SUB".to_string(), -n),
+
+    "ADA-DI" <nums:Number+> "ADA-DO" => {
+        let sum: i32 = nums.into_iter().sum();
+            ("ADA".to_string(), sum)
+    },
+    "SUB-DI" <nums:Number+> "SUB-DO" => {
+        let sum: i32 = nums.into_iter().sum();
+            ("SUB".to_string(), -sum)
+    },
+
+    "VALA-DI" <count:Number> <inner:BosonogaTree> "VALA-DO" => {
+        let inner_sum: i32 = inner.values().copied().sum();
+        ("ADA".to_string(), inner_sum * count)
+    },
+};
+
+Number: i32 = {
+    r"[0-9]+" => <>.parse::<i32>().unwrap()
 };
