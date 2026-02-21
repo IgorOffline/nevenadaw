@@ -1,5 +1,6 @@
 grammar;
 
+use std::collections::BTreeMap;
 use crate::ast::BosonogaItem;
 
 match {
@@ -11,19 +12,23 @@ match {
 
 pub Bosonoga: i32 = {
     <items:BosonogaItem*> => {
+        let mut map: BTreeMap<String, i32> = BTreeMap::new();
+
         for item in items {
             match item {
                 BosonogaItem::Funak(name) => {
                     println!("Funak::{}", name);
+                    *map.entry(name).or_insert(0) += 1;
                 }
                 BosonogaItem::NeoRaekordio(name) => {
                     println!("NeoRaekordio::{}", name);
+                    *map.entry(name).or_insert(0) += 1;
                 }
             }
         }
-    }
 
-    0
+        0
+    }
 };
 
 BosonogaItem: BosonogaItem = {
