@@ -1,101 +1,12 @@
 grammar;
 
-use std::collections::BTreeMap;
-use crate::ast::BosonogaItem;
-
-match {
-    r"(?i)TALI"  => TALI_KW,
-    r"(?i)DI"    => DI_KW,
-    r"(?i)DO"    => DO_KW,
-    r"(?i)VAL"   => VAL_KW,
-    r"(?i)INAT"  => INAT_KW,
-    r"(?i)ADA"   => ADA_KW,
-    r"(?i)FUNAK" => FUNAK_KW,
-    r"(?i)VEDA"  => VEDA_KW,
-} else {
-    r"[a-z]+"   => ID_NAMA,
-    r"[0-9]+"   => NUM_NAMA,
-}
-
 pub Bosonoga: i32 = {
-    <items:BosonogaItem*> => {
-        let mut map: BTreeMap<String, i32> = BTreeMap::new();
-        let mut functions: BTreeMap<String, BTreeMap<String, i32>> = BTreeMap::new();
-
-        for item in items {
-            match item {
-                BosonogaItem::Set(key, amount) => {
-                    *map.entry(key).or_insert(0) += amount;
-                }
-                BosonogaItem::Tali => {
-                    println!("{:?}", map);
-                }
-                BosonogaItem::Funak(name) => {
-                    functions.insert(name, map.clone());
-                }
-                BosonogaItem::Veda(name, num) => {
-                    if let Some(func_map) = functions.get(&name) {
-                        for _ in 0..num {
-                            println!("{}", name);
-                            for (key, val) in func_map {
-                                *map.entry(key.clone()).or_insert(0) += val;
-                            }
-                        }
-                    } else {
-                        panic!("Undefined function: {}", name);
-                    }
-                }
-            }
-        }
-
-        map.values().copied().sum()
+    => {
+        println!("Bosonoga::0");
+        0
     }
 };
 
-BosonogaItem: BosonogaItem = {
-    Tali => BosonogaItem::Tali,
-
-    FunakKw <name:BosonogaVariableName>
-        => BosonogaItem::Funak(name.to_string()),
-
-    VedaKw <name:BosonogaVariableName> <n:BosonogaNumber>
-        => BosonogaItem::Veda(name.to_string(), n),
-
-    <ident:BosonogaIdentifier> => BosonogaItem::Set(ident.0, ident.1),
-};
-
-Tali: () = {
-    TALI_KW => ()
-};
-DiKw:    () = { DI_KW    => () };
-DoKw:    () = { DO_KW    => () };
-ValKw:   () = { VAL_KW   => () };
-InatKw:  () = { INAT_KW  => () };
-AdaKw:   () = { ADA_KW   => () };
-FunakKw: () = { FUNAK_KW => () };
-VedaKw:  () = { VEDA_KW  => () };
-
-BosonogaVariableType: &'input str = {
-    InatKw => "INAT",
-};
-
-BosonogaVariableName: &'input str = {
-    ID_NAMA => <>,
-};
-
-BosonogaVariableValue: i32 = {
-    <n:BosonogaNumber> => n,
-};
-
-BosonogaNumber: i32 = {
-    NUM_NAMA => <>.parse::<i32>().unwrap()
-};
-
-BosonogaIdentifier: (String, i32) = {
-    DiKw  => ("DI".to_string(), 100),
-    DoKw  => ("DO".to_string(), 1),
-    ValKw <ty:BosonogaVariableType> <name:BosonogaVariableName> <value:BosonogaVariableValue>
-        => (name.to_string(), value),
-    AdaKw <name:BosonogaVariableName> <value:BosonogaVariableValue>
-        => (name.to_string(), value),
+Unused: () = {
+    "unused" => (),
 };
