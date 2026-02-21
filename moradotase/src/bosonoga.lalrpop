@@ -4,12 +4,14 @@ use std::collections::BTreeMap;
 use crate::ast::BosonogaItem;
 
 match {
-    r"(?i)TALI" => TALI_KW,
-    r"(?i)DI"   => DI_KW,
-    r"(?i)DO"   => DO_KW,
-    r"(?i)VAL"  => VAL_KW,
-    r"(?i)INAT" => INAT_KW,
-    r"(?i)ADA"  => ADA_KW,
+    r"(?i)TALI"  => TALI_KW,
+    r"(?i)DI"    => DI_KW,
+    r"(?i)DO"    => DO_KW,
+    r"(?i)VAL"   => VAL_KW,
+    r"(?i)INAT"  => INAT_KW,
+    r"(?i)ADA"   => ADA_KW,
+    r"(?i)FUNAK" => FUNAK_KW,
+    r"(?i)VEDA"  => VEDA_KW,
 } else {
     r"[a-z]+"   => ID_NAMA,
     r"[0-9]+"   => NUM_NAMA,
@@ -18,6 +20,7 @@ match {
 pub Bosonoga: i32 = {
     <items:BosonogaItem*> => {
         let mut map: BTreeMap<String, i32> = BTreeMap::new();
+        let mut functions: BTreeMap<String, BTreeMap<String, i32>> = BTreeMap::new();
 
         for item in items {
             match item {
@@ -27,6 +30,16 @@ pub Bosonoga: i32 = {
                 BosonogaItem::Tali => {
                     println!("{:?}", map);
                 }
+                BosonogaItem::Funak(name) => {
+                    functions.insert(name, map.clone());
+                }
+                BosonogaItem::Veda(name) => {
+                    if functions.contains_key(&name) {
+                        println!("{}", name);
+                    } else {
+                        panic!("Undefined function: {}", name);
+                    }
+                }
             }
         }
 
@@ -35,18 +48,27 @@ pub Bosonoga: i32 = {
 };
 
 BosonogaItem: BosonogaItem = {
-    Tali                       => BosonogaItem::Tali,
+    Tali => BosonogaItem::Tali,
+
+    FunakKw <name:BosonogaVariableName>
+        => BosonogaItem::Funak(name.to_string()),
+
+    VedaKw <name:BosonogaVariableName>
+        => BosonogaItem::Veda(name.to_string()),
+
     <ident:BosonogaIdentifier> => BosonogaItem::Set(ident.0, ident.1),
 };
 
 Tali: () = {
     TALI_KW => ()
 };
-DiKw:   () = { DI_KW   => () };
-DoKw:   () = { DO_KW   => () };
-ValKw:  () = { VAL_KW  => () };
-InatKw: () = { INAT_KW => () };
-AdaKw:  () = { ADA_KW  => () };
+DiKw:    () = { DI_KW    => () };
+DoKw:    () = { DO_KW    => () };
+ValKw:   () = { VAL_KW   => () };
+InatKw:  () = { INAT_KW  => () };
+AdaKw:   () = { ADA_KW   => () };
+FunakKw: () = { FUNAK_KW => () };
+VedaKw:  () = { VEDA_KW  => () };
 
 BosonogaVariableType: &'input str = {
     InatKw => "INAT",
