@@ -34,9 +34,12 @@ pub Bosonoga: i32 = {
                     functions.insert(name, map.clone());
                 }
                 BosonogaItem::Veda(name, num) => {
-                    if functions.contains_key(&name) {
-                        for i in 0..num {
+                    if let Some(func_map) = functions.get(&name) {
+                        for _ in 0..num {
                             println!("{}", name);
+                            for (key, val) in func_map {
+                                *map.entry(key.clone()).or_insert(0) += val;
+                            }
                         }
                     } else {
                         panic!("Undefined function: {}", name);
