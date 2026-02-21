@@ -33,9 +33,11 @@ pub Bosonoga: i32 = {
                 BosonogaItem::Funak(name) => {
                     functions.insert(name, map.clone());
                 }
-                BosonogaItem::Veda(name) => {
+                BosonogaItem::Veda(name, num) => {
                     if functions.contains_key(&name) {
-                        println!("{}", name);
+                        for i in 0..num {
+                            println!("{}", name);
+                        }
                     } else {
                         panic!("Undefined function: {}", name);
                     }
@@ -53,8 +55,8 @@ BosonogaItem: BosonogaItem = {
     FunakKw <name:BosonogaVariableName>
         => BosonogaItem::Funak(name.to_string()),
 
-    VedaKw <name:BosonogaVariableName>
-        => BosonogaItem::Veda(name.to_string()),
+    VedaKw <name:BosonogaVariableName> <n:BosonogaNumber>
+        => BosonogaItem::Veda(name.to_string(), n),
 
     <ident:BosonogaIdentifier> => BosonogaItem::Set(ident.0, ident.1),
 };
