@@ -1,12 +1,34 @@
 grammar;
 
+use crate::ast::BosonogaItem;
+
+match {
+    r"(?i)FUNAK" => FUNAK_KW,
+} else {
+    r"[a-z]+"   => ID_NAMA,
+}
+
 pub Bosonoga: i32 = {
-    => {
-        println!("Bosonoga::0");
-        0
+    <items:BosonogaItem*> => {
+        for item in items {
+            match item {
+                BosonogaItem::Funak(name) => {
+                    println!("Funak::{}", name);
+                }
+            }
+        }
     }
+
+    0
 };
 
-Unused: () = {
-    "unused" => (),
+BosonogaItem: BosonogaItem = {
+    FunakKw <name:BosonogaVariableName>
+        => BosonogaItem::Funak(name.to_string()),
+};
+
+FunakKw: () = { FUNAK_KW => () };
+
+BosonogaVariableName: &'input str = {
+    ID_NAMA => <>,
 };
