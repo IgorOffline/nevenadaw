@@ -6,23 +6,31 @@ use crate::ast::BosonogaItem;
 match {
     r"(?i)FUNAK"         => FUNAK_KW,
     r"(?i)NEO-RAEKORDIO" => NEO_RAEKORDIO_KW,
+    r"(?i)TALI"          => TALI_KW,
 } else {
-    r"[a-z]+"   => ID_NAMA,
+    r"[a-z]+"            => ID_NAMA,
 }
 
 pub Bosonoga: i32 = {
     <items:BosonogaItem*> => {
-        let mut map: BTreeMap<String, i32> = BTreeMap::new();
+        let mut regina: BTreeMap<String, i32> = BTreeMap::new();
 
         for item in items {
             match item {
                 BosonogaItem::Funak(name) => {
                     println!("Funak::{}", name);
-                    *map.entry(name).or_insert(0) += 1;
+                    *regina.entry(name).or_insert(0) += 1;
                 }
                 BosonogaItem::NeoRaekordio(name) => {
                     println!("NeoRaekordio::{}", name);
-                    *map.entry(name).or_insert(0) += 1;
+                    *regina.entry(name).or_insert(0) += 1;
+                }
+                BosonogaItem::Tali(name) => {
+                    println!("Tali::{}", name);
+                    *regina.entry(name).or_insert(0) += 1;
+                    for (name, count) in &regina {
+                        println!("Regina[{}={}]", name, count);
+                    }
                 }
             }
         }
@@ -36,10 +44,13 @@ BosonogaItem: BosonogaItem = {
         => BosonogaItem::Funak(name.to_string()),
     NeoRaekordioKw <name:BosonogaVariableName>
         => BosonogaItem::NeoRaekordio(name.to_string()),
+    TaliKw <name:BosonogaVariableName>
+        => BosonogaItem::Tali(name.to_string()),
 };
 
 FunakKw: ()        = { FUNAK_KW => () };
 NeoRaekordioKw: () = { NEO_RAEKORDIO_KW => () };
+TaliKw: ()         = { TALI_KW => () };
 
 BosonogaVariableName: &'input str = {
     ID_NAMA => <>,
