@@ -9,3 +9,16 @@ fn test_bosonoga() {
     let bosonoga = parser.parse(input).unwrap();
     assert_eq!(bosonoga, 0);
 }
+
+#[test]
+fn test_bosonoga_multiple() {
+    println!("test_bosonoga_multiple");
+    let input = r"
+        FUNAK first
+        FUNAK first
+        FUNAK first
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 0);
+}

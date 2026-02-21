@@ -10,11 +10,16 @@ match {
 
 pub Bosonoga: i32 = {
     <items:BosonogaItem*> => {
-        println!("Bosonoga::0");
-        println!("Bosonoga::1");
-        println!("Bosonoga::2");
-        0
+        for item in items {
+            match item {
+                BosonogaItem::Funak(name) => {
+                    println!("Funak::{}", name);
+                }
+            }
+        }
     }
+
+    0
 };
 
 BosonogaItem: BosonogaItem = {
