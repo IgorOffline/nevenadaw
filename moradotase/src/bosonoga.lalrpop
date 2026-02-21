@@ -3,7 +3,8 @@ grammar;
 use crate::ast::BosonogaItem;
 
 match {
-    r"(?i)FUNAK" => FUNAK_KW,
+    r"(?i)FUNAK"         => FUNAK_KW,
+    r"(?i)NEO-RAEKORDIO" => NEO_RAEKORDIO_KW,
 } else {
     r"[a-z]+"   => ID_NAMA,
 }
@@ -15,6 +16,9 @@ pub Bosonoga: i32 = {
                 BosonogaItem::Funak(name) => {
                     println!("Funak::{}", name);
                 }
+                BosonogaItem::NeoRaekordio(name) => {
+                    println!("NeoRaekordio::{}", name);
+                }
             }
         }
     }
@@ -25,9 +29,12 @@ pub Bosonoga: i32 = {
 BosonogaItem: BosonogaItem = {
     FunakKw <name:BosonogaVariableName>
         => BosonogaItem::Funak(name.to_string()),
+    NeoRaekordioKw <name:BosonogaVariableName>
+        => BosonogaItem::NeoRaekordio(name.to_string()),
 };
 
-FunakKw: () = { FUNAK_KW => () };
+FunakKw: ()        = { FUNAK_KW => () };
+NeoRaekordioKw: () = { NEO_RAEKORDIO_KW => () };
 
 BosonogaVariableName: &'input str = {
     ID_NAMA => <>,

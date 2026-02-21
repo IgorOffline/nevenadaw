@@ -16,6 +16,7 @@ fn test_bosonoga_multiple() {
     let input = r"
         FUNAK first
         FUNAK first
+        NEO-RAEKORDIO second
         FUNAK first
     ";
     let parser = BosonogaParser::new();
