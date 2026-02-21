@@ -38,7 +38,7 @@ fn test_funak_veda() {
         DI
         FUNAK fnfirst
         DO
-        VEDA fnfirst
+        VEDA fnfirst 3
         DI
         TALI
     ";

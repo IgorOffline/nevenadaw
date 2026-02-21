@@ -1,3 +1,6 @@
+
+--- grammar
+
 grammar;
 
 use std::collections::BTreeMap;
@@ -33,11 +36,9 @@ pub Bosonoga: i32 = {
                 BosonogaItem::Funak(name) => {
                     functions.insert(name, map.clone());
                 }
-                BosonogaItem::Veda(name, num) => {
+                BosonogaItem::Veda(name) => {
                     if functions.contains_key(&name) {
-                        for i in 0..num {
-                            println!("{}", name);
-                        }
+                        println!("{}", name);
                     } else {
                         panic!("Undefined function: {}", name);
                     }
@@ -55,8 +56,8 @@ BosonogaItem: BosonogaItem = {
     FunakKw <name:BosonogaVariableName>
         => BosonogaItem::Funak(name.to_string()),
 
-    VedaKw <name:BosonogaVariableName> <n:BosonogaNumber>
-        => BosonogaItem::Veda(name.to_string(), n),
+    VedaKw <name:BosonogaVariableName>
+        => BosonogaItem::Veda(name.to_string()),
 
     <ident:BosonogaIdentifier> => BosonogaItem::Set(ident.0, ident.1),
 };
@@ -96,3 +97,80 @@ BosonogaIdentifier: (String, i32) = {
     AdaKw <name:BosonogaVariableName> <value:BosonogaVariableValue>
         => (name.to_string(), value),
 };
+
+--- tests
+
+use crate::bosonoga::BosonogaParser;
+use pretty_assertions::assert_eq;
+
+#[test]
+fn test_bosonoga_tali() {
+    println!("test_bosonoga_tali");
+    let input = r"
+        DI
+        DO
+        DI
+        TALI
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 201);
+}
+
+#[test]
+fn test_bosonoga_bul_inat() {
+    println!("test_bosonoga_inat TODO bul");
+    let input = r"
+        DI
+        DO
+        DI
+        VAL INAT first 50
+        ADA first 49
+        TALI
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 300);
+}
+
+#[test]
+fn test_funak_veda() {
+    println!("test_funak_veda");
+    let input = r"
+        DI
+        FUNAK fnfirst
+        DO
+        VEDA fnfirst
+        DI
+        TALI
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 201);
+}
+
+--- ast
+
+#[derive(Debug)]
+pub enum BosonogaItem {
+    Set(String, i32),
+    Tali,
+    Funak(String),
+    Veda(String),
+}
+
+--- main
+
+use lalrpop_util::lalrpop_mod;
+
+lalrpop_mod!(pub bosonoga);
+
+mod ast;
+
+#[cfg(test)]
+mod tests;
+
+fn main() {
+    println!("<START>");
+    println!("<END>");
+}
