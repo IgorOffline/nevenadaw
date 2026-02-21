@@ -44,5 +44,19 @@ fn test_funak_veda() {
     ";
     let parser = BosonogaParser::new();
     let bosonoga = parser.parse(input).unwrap();
-    assert_eq!(bosonoga, 201);
+    assert_eq!(bosonoga, 501);
+}
+
+#[test]
+fn test_veda_execution() {
+    println!("test_veda_execution");
+    let input = r"
+        DI
+        FUNAK foo
+        VEDA foo 2
+        TALI
+    ";
+    let parser = BosonogaParser::new();
+    let bosonoga = parser.parse(input).unwrap();
+    assert_eq!(bosonoga, 300);
 }
