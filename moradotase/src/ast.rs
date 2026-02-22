@@ -1,6 +1,6 @@
 #[derive(Debug, PartialEq)]
 pub enum BosonogaCommand {
-    Funak(String, i32),
+    Set(String, i32),
     Tali,
 }
 
