@@ -2,8 +2,14 @@ use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
+pub enum BosonogaValue {
+    Bul(bool),
+    Inat(i32),
+}
+
+#[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
 pub enum BosonogaCommand {
-    Set(BosonogaType, String, i32),
+    Set(BosonogaType, String, BosonogaValue),
     Tali,
 }
 
@@ -23,7 +29,7 @@ pub enum BosonogaElement {
 pub struct BosonogaVariable {
     pub name: String,
     pub bosonoga_type: BosonogaType,
-    pub value: i32,
+    pub value: BosonogaValue,
 }
 
 impl BosonogaVariable {
@@ -31,7 +37,7 @@ impl BosonogaVariable {
         Self {
             name: name.into(),
             bosonoga_type: BosonogaType::Inat,
-            value,
+            value: BosonogaValue::Inat(value),
         }
     }
 
@@ -39,7 +45,7 @@ impl BosonogaVariable {
         Self {
             name: name.into(),
             bosonoga_type: BosonogaType::Bul,
-            value: if value { 1 } else { 0 },
+            value: BosonogaValue::Bul(value),
         }
     }
 }
