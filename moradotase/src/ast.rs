@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
 pub enum BosonogaCommand {
-    Set(String, i32),
+    Set(BosonogaType, String, i32),
     Tali,
 }
 
@@ -32,6 +32,14 @@ impl BosonogaVariable {
             name: name.into(),
             bosonoga_type: BosonogaType::Inat,
             value,
+        }
+    }
+
+    pub fn new_bool(name: impl Into<String>, value: bool) -> Self {
+        Self {
+            name: name.into(),
+            bosonoga_type: BosonogaType::Bul,
+            value: if value { 1 } else { 0 },
         }
     }
 }
