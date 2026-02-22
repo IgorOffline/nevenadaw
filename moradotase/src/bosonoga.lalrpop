@@ -1,4 +1,5 @@
 use crate::ast::{BosonogaCommand, BosonogaElement, BosonogaType};
+use std::collections::BTreeMap;
 
 grammar;
 
@@ -13,6 +14,25 @@ match {
 
 pub Bosonoga: Vec<BosonogaElement> = {
     <elements:BosonogaElement*> => elements,
+};
+
+pub BosonogaBTree: BTreeMap<String, i32> = {
+    <elements:BosonogaElement*> => {
+        let mut btree = BTreeMap::new();
+        for element in elements {
+            if let BosonogaElement::Command(command) = element {
+                match command {
+                    BosonogaCommand::Funak(name) => {
+                        btree.insert(name, 10);
+                    }
+                    BosonogaCommand::Tali(name) => {
+                        btree.insert(name, 20);
+                    }
+                }
+            }
+        }
+        btree
+    }
 };
 
 BosonogaElement: BosonogaElement = {
