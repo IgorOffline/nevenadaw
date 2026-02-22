@@ -22,17 +22,31 @@ BosonogaElement: BosonogaElement = {
 
 BosonogaCommand: BosonogaCommand = {
     FunakKw <name:BosonogaVariableName>
-        => BosonogaCommand::Funak(name.to_string()),
+        => {
+            println!("{}", name);
+            BosonogaCommand::Funak(name.to_string())
+        },
     TaliKw <name:BosonogaVariableName>
-        => BosonogaCommand::Tali(name.to_string()),
+        => {
+            println!("{}", name);
+            BosonogaCommand::Tali(name.to_string())
+        },
 };
 
 FunakKw: () = { FUNAK_KW => () };
 TaliKw:  () = { TALI_KW  => () };
 
 BosonogaType: BosonogaType = {
-    BulKw  => BosonogaType::Bul,
-    InatKw => BosonogaType::Inat,
+    BulKw
+        => {
+            println!("BUL");
+            BosonogaType::Bul
+        },
+    InatKw
+        => {
+            println!("INAT");
+            BosonogaType::Inat
+        },
 };
 
 BulKw:  () = { BUL_KW  => () };
