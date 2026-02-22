@@ -1,33 +1,63 @@
-#[derive(Debug, PartialEq)]
+use std::cmp::Ordering;
+use std::hash::{Hash, Hasher};
+
+#[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
 pub enum BosonogaCommand {
     Set(String, i32),
     Tali,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
 pub enum BosonogaType {
     Bul,
     Inat,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
 pub enum BosonogaElement {
     Command(BosonogaCommand),
     Type(BosonogaType),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct BosonogaVariable {
     pub name: String,
     pub bosonoga_type: BosonogaType,
     pub value: i32,
 }
 
-pub fn new_variable_i32(name: String, value: i32) -> BosonogaVariable {
-    let bosonoga_type = BosonogaType::Inat;
-    BosonogaVariable {
-        name,
-        bosonoga_type,
-        value,
+impl BosonogaVariable {
+    pub fn new_i32(name: impl Into<String>, value: i32) -> Self {
+        Self {
+            name: name.into(),
+            bosonoga_type: BosonogaType::Inat,
+            value,
+        }
+    }
+}
+
+impl PartialEq for BosonogaVariable {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+
+impl Eq for BosonogaVariable {}
+
+impl Hash for BosonogaVariable {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+    }
+}
+
+impl PartialOrd for BosonogaVariable {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for BosonogaVariable {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.name.cmp(&other.name)
     }
 }
