@@ -10,6 +10,7 @@ match {
     r"(?i)INAT"  => INAT_KW,
     r"(?i)TRUE"  => TRUE_KW,
     r"(?i)FALSE" => FALSE_KW,
+    r"(?i)GAME"  => GAME_KW,
 } else {
     r"[a-z]+"    => ID_NAMA,
     r"[0-9]+"    => NUM_NAMA,
@@ -38,6 +39,9 @@ pub BosonogaBTree: BTreeSet<BosonogaVariable> = {
                     BosonogaCommand::Tali => {
                         println!("TALI[{:?}]", regina);
                     }
+                    BosonogaCommand::Game(window_width, window_height) => {
+                        crate::ast::game_launch(window_width as u32, window_height as u32);
+                    }
                 }
             } else if let BosonogaElement::Type(bosonoga_type) = element {
                 match bosonoga_type {
@@ -58,6 +62,7 @@ BosonogaElement: BosonogaElement = {
 BosonogaCommand: BosonogaCommand = {
     SET_KW <t:BosonogaType> <name:BosonogaString> <val:BosonogaValue> => BosonogaCommand::Set(t, name.to_string(), val),
     TALI_KW => BosonogaCommand::Tali,
+    GAME_KW <window_width:BosonogaNumber> <window_height:BosonogaNumber> => BosonogaCommand::Game(window_width, window_height),
 };
 
 BosonogaValue: BosonogaValue = {
@@ -67,12 +72,9 @@ BosonogaValue: BosonogaValue = {
 };
 
 BosonogaType: BosonogaType = {
-    BulKw  => BosonogaType::Bul,
-    InatKw => BosonogaType::Inat,
+    BUL_KW  => BosonogaType::Bul,
+    INAT_KW => BosonogaType::Inat,
 };
-
-BulKw:  () = { BUL_KW  => () };
-InatKw: () = { INAT_KW => () };
 
 BosonogaString: &'input str = {
     ID_NAMA => <>,
