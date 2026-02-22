@@ -1,10 +1,12 @@
 use bevy::color::Srgba;
 use bevy::prelude::{
-    default, App, Camera2d, ClearColor, Commands, PluginGroup, Sprite, Startup, Transform, Vec2,
-    Window, WindowPlugin,
+    default, App, Camera2d, ClearColor, Commands, PluginGroup, Query, Res, ResMut, Resource,
+    Sprite, Startup, Transform, Update, Vec2, Window, WindowPlugin,
 };
+use bevy::time::{Time, Timer, TimerMode};
 use bevy::window::WindowResolution;
 use bevy::DefaultPlugins;
+use rand::RngExt;
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
@@ -84,6 +86,10 @@ impl Ord for BosonogaVariable {
     }
 }
 
+const SPAWN_INTERVAL_SECONDS: f32 = 2.0;
+const RECTANGLE_COLOR: &str = "#512DA8";
+const RECTANGLE_SIZE: Vec2 = Vec2::new(50.0, 50.0);
+
 pub fn game_launch(
     window_width: u32,
     window_height: u32,
@@ -92,6 +98,10 @@ pub fn game_launch(
 ) {
     App::new()
         .insert_resource(ClearColor(Srgba::hex(window_hex_color).unwrap().into()))
+        .insert_resource(SpawnTimer(Timer::from_seconds(
+            SPAWN_INTERVAL_SECONDS,
+            TimerMode::Repeating,
+        )))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 resolution: WindowResolution::new(window_width, window_height),
@@ -100,18 +110,41 @@ pub fn game_launch(
             }),
             ..default()
         }))
-        .add_systems(Startup, setup)
+        .add_systems(Startup, game_launch_setup)
+        .add_systems(Update, spawn_rectangle_system)
         .run();
 }
 
-fn setup(mut commands: Commands) {
+#[derive(Resource)]
+struct SpawnTimer(Timer);
+
+fn spawn_rectangle_system(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut timer: ResMut<SpawnTimer>,
+    window: Query<&Window>,
+) {
+    if timer.0.tick(time.delta()).just_finished() {
+        if let Ok(window) = window.single() {
+            let width = window.width();
+            let height = window.height();
+
+            let mut rng = rand::rng();
+            let x = rng.random_range(-(width / 2.0)..(width / 2.0));
+            let y = rng.random_range(-(height / 2.0)..(height / 2.0));
+
+            commands.spawn((
+                Sprite {
+                    color: Srgba::hex(RECTANGLE_COLOR).unwrap().into(),
+                    custom_size: Some(RECTANGLE_SIZE),
+                    ..default()
+                },
+                Transform::from_xyz(x, y, 0.0),
+            ));
+        }
+    }
+}
+
+fn game_launch_setup(mut commands: Commands) {
     commands.spawn(Camera2d::default());
-    commands.spawn((
-        Sprite {
-            color: Srgba::hex("#512DA8").unwrap().into(),
-            custom_size: Some(Vec2::new(50.0, 50.0)),
-            ..default()
-        },
-        Transform::default(),
-    ));
 }
