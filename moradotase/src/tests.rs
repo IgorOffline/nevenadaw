@@ -1,3 +1,4 @@
+use crate::ast::{new_variable_i32, BosonogaVariable};
 use crate::bosonoga::BosonogaBTreeParser;
 use pretty_assertions::assert_eq;
 use std::collections::BTreeMap;
@@ -14,9 +15,11 @@ fn test_bosonoga_init() {
     ";
     let parser = BosonogaBTreeParser::new();
     let btree = parser.parse(input).unwrap();
-    let mut expected_btree = BTreeMap::new();
-    expected_btree.insert("first".to_string(), 10);
-    expected_btree.insert("second".to_string(), 20);
+    let first_var = new_variable_i32("first".to_string(), 10);
+    let second_var = new_variable_i32("second".to_string(), 20);
+    let mut expected_btree: BTreeMap<String, BosonogaVariable> = BTreeMap::new();
+    expected_btree.insert("first".to_string(), first_var);
+    expected_btree.insert("second".to_string(), second_var);
     assert_eq!(btree, expected_btree);
 }
 
@@ -34,8 +37,10 @@ fn test_bosonoga_multiset() {
     ";
     let parser = BosonogaBTreeParser::new();
     let btree = parser.parse(input).unwrap();
-    let mut expected_btree = BTreeMap::new();
-    expected_btree.insert("first".to_string(), 30);
-    expected_btree.insert("second".to_string(), 40);
+    let first_var = new_variable_i32("first".to_string(), 30);
+    let second_var = new_variable_i32("second".to_string(), 40);
+    let mut expected_btree: BTreeMap<String, BosonogaVariable> = BTreeMap::new();
+    expected_btree.insert("first".to_string(), first_var);
+    expected_btree.insert("second".to_string(), second_var);
     assert_eq!(btree, expected_btree);
 }

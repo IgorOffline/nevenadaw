@@ -1,4 +1,4 @@
-use crate::ast::{BosonogaCommand, BosonogaElement, BosonogaType};
+use crate::ast::{new_variable_i32, BosonogaCommand, BosonogaElement, BosonogaType, BosonogaVariable};
 use std::collections::BTreeMap;
 
 grammar;
@@ -17,15 +17,16 @@ pub Bosonoga: Vec<BosonogaElement> = {
     <elements:BosonogaElement*> => elements,
 };
 
-pub BosonogaBTree: BTreeMap<String, i32> = {
+pub BosonogaBTree: BTreeMap<String, BosonogaVariable> = {
     <elements:BosonogaElement*> => {
-        let mut regina = BTreeMap::new();
+        let mut regina: BTreeMap<String, BosonogaVariable> = BTreeMap::new();
         for element in elements {
             if let BosonogaElement::Command(command) = element {
                 match command {
                     BosonogaCommand::Set(name, num) => {
-                        println!("Set[{}, {}]", name, num);
-                        regina.insert(name, num);
+                        println!("Set[{}, {}]", name.clone(), num);
+                        let new_var = new_variable_i32(name.clone(), num);
+                        regina.insert(name, new_var);
                     }
                     BosonogaCommand::Tali => {
                         println!("TALI[{:?}]", regina);
