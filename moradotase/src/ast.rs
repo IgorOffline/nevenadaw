@@ -1,4 +1,5 @@
 #[derive(Debug, PartialEq)]
-pub enum BosonogaItem {
+pub enum BosonogaCommand {
     Funak(String),
+    Tali(String),
 }
