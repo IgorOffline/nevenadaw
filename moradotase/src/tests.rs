@@ -25,4 +25,13 @@ fn test_bosonoga() {
     expected_btree.insert(second_var);
     expected_btree.insert(third_var);
     assert_eq!(btree, expected_btree);
+
+    for var in &btree {
+        let expected_var = expected_btree.get(var).unwrap();
+        assert_eq!(
+            var.value, expected_var.value,
+            "Value mismatch for variable {}",
+            var.name
+        );
+    }
 }

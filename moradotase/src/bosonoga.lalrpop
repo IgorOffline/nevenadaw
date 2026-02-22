@@ -1,4 +1,4 @@
-use crate::ast::{BosonogaCommand, BosonogaElement, BosonogaType, BosonogaVariable};
+use crate::ast::{BosonogaCommand, BosonogaElement, BosonogaType, BosonogaVariable, BosonogaValue};
 use std::collections::BTreeSet;
 
 grammar;
@@ -26,10 +26,12 @@ pub BosonogaBTree: BTreeSet<BosonogaVariable> = {
             if let BosonogaElement::Command(command) = element {
                 match command {
                     BosonogaCommand::Set(bosonoga_type, name, val) => {
-                        println!("Set[{:?}, {}, {}]", bosonoga_type, name.clone(), val);
-                        let new_var = match bosonoga_type {
-                            BosonogaType::Bul => BosonogaVariable::new_bool(name.clone(), val != 0),
-                            BosonogaType::Inat => BosonogaVariable::new_i32(name.clone(), val),
+                        println!("Set[{:?}, {}, {:?}]", bosonoga_type, name.clone(), val);
+                        let new_var = match (bosonoga_type, val) {
+                            (BosonogaType::Bul, BosonogaValue::Bul(b)) => BosonogaVariable::new_bool(name.clone(), b),
+                            (BosonogaType::Bul, BosonogaValue::Inat(i)) => BosonogaVariable::new_bool(name.clone(), i != 0),
+                            (BosonogaType::Inat, BosonogaValue::Bul(b)) => BosonogaVariable::new_i32(name.clone(), if b { 1 } else { 0 }),
+                            (BosonogaType::Inat, BosonogaValue::Inat(i)) => BosonogaVariable::new_i32(name.clone(), i),
                         };
                         regina.replace(new_var);
                     }
@@ -58,10 +60,10 @@ BosonogaCommand: BosonogaCommand = {
     TALI_KW => BosonogaCommand::Tali,
 };
 
-BosonogaValue: i32 = {
-    BosonogaNumber => <>,
-    TRUE_KW => 1,
-    FALSE_KW => 0,
+BosonogaValue: BosonogaValue = {
+    BosonogaNumber => BosonogaValue::Inat(<>),
+    TRUE_KW => BosonogaValue::Bul(true),
+    FALSE_KW => BosonogaValue::Bul(false),
 };
 
 BosonogaType: BosonogaType = {
