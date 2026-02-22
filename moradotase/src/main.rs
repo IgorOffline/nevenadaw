@@ -12,7 +12,7 @@ mod tests;
 fn main() {
     println!("test_bosonoga");
     let input = r"
-        GAME 640 360
+        GAME WINDOW-SIZE 640 360 WINDOW-COLOR #607D8B
     ";
     let parser = BosonogaBTreeParser::new();
     let _ = parser.parse(input).unwrap();
