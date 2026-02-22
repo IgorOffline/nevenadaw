@@ -1,6 +1,7 @@
 use crate::ast::{BosonogaCommand, BosonogaElement, BosonogaType};
-use crate::bosonoga::BosonogaParser;
+use crate::bosonoga::{BosonogaBTreeParser, BosonogaParser};
 use pretty_assertions::assert_eq;
+use std::collections::BTreeMap;
 
 #[test]
 fn test_bosonoga() {
@@ -24,4 +25,19 @@ fn test_bosonoga() {
         BosonogaElement::Command(BosonogaCommand::Tali("second".to_string()))
     );
     assert_eq!(bosonoga[3], BosonogaElement::Type(BosonogaType::Inat));
+}
+
+#[test]
+fn test_bosonoga_btree() {
+    println!("test_bosonoga_btree");
+    let input = r"
+        FUNAK first
+        TALI second
+    ";
+    let parser = BosonogaBTreeParser::new();
+    let btree = parser.parse(input).unwrap();
+    let mut expected_btree = BTreeMap::new();
+    expected_btree.insert("first".to_string(), 10);
+    expected_btree.insert("second".to_string(), 20);
+    assert_eq!(btree, expected_btree);
 }
