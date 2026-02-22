@@ -1,16 +1,23 @@
-use crate::ast::BosonogaCommand;
+use crate::ast::{BosonogaCommand, BosonogaElement, BosonogaType};
 
 grammar;
 
 match {
     r"(?i)FUNAK" => FUNAK_KW,
     r"(?i)TALI"  => TALI_KW,
+    r"(?i)BUL"   => BUL_KW,
+    r"(?i)INAT"  => INAT_KW,
 } else {
-    r"[a-z]+"   => ID_NAMA,
+    r"[a-z]+"    => ID_NAMA,
 }
 
-pub Bosonoga: Vec<BosonogaCommand> = {
-    <items:BosonogaCommand*> => items,
+pub Bosonoga: Vec<BosonogaElement> = {
+    <elements:BosonogaElement*> => elements,
+};
+
+BosonogaElement: BosonogaElement = {
+    BosonogaCommand => BosonogaElement::Command(<>),
+    BosonogaType    => BosonogaElement::Type(<>),
 };
 
 BosonogaCommand: BosonogaCommand = {
@@ -22,6 +29,14 @@ BosonogaCommand: BosonogaCommand = {
 
 FunakKw: () = { FUNAK_KW => () };
 TaliKw:  () = { TALI_KW  => () };
+
+BosonogaType: BosonogaType = {
+    BulKw  => BosonogaType::Bul,
+    InatKw => BosonogaType::Inat,
+};
+
+BulKw:  () = { BUL_KW  => () };
+InatKw: () = { INAT_KW => () };
 
 BosonogaVariableName: &'input str = {
     ID_NAMA => <>,
