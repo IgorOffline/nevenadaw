@@ -18,7 +18,7 @@ pub enum BosonogaValue {
 pub enum BosonogaCommand {
     Set(BosonogaType, String, BosonogaValue),
     Tali,
-    Game(i32, i32, String),
+    Game(i32, i32, String, String),
 }
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
@@ -84,13 +84,18 @@ impl Ord for BosonogaVariable {
     }
 }
 
-pub fn game_launch(window_width: u32, window_height: u32, window_hex_color: String) {
+pub fn game_launch(
+    window_width: u32,
+    window_height: u32,
+    window_title: String,
+    window_hex_color: String,
+) {
     App::new()
         .insert_resource(ClearColor(Srgba::hex(window_hex_color).unwrap().into()))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 resolution: WindowResolution::new(window_width, window_height),
-                title: "Bosonoga".to_string(),
+                title: window_title,
                 ..default()
             }),
             ..default()
