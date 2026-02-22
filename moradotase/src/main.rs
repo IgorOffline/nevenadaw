@@ -1,4 +1,5 @@
 use crate::bosonoga::BosonogaBTreeParser;
+use std::fs;
 
 use lalrpop_util::lalrpop_mod;
 
@@ -11,9 +12,7 @@ mod tests;
 
 fn main() {
     println!("test_bosonoga");
-    let input = r"
-        GAME WINDOW-SIZE 640 360 WINDOW-TITLE Bosonoga WINDOW-COLOR #607D8B
-    ";
+    let input = fs::read_to_string("bosonoga-input.txt").expect("Unable to read file");
     let parser = BosonogaBTreeParser::new();
-    let _ = parser.parse(input).unwrap();
+    let _ = parser.parse(&input).unwrap();
 }
