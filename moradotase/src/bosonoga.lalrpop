@@ -12,11 +12,13 @@ match {
     r"(?i)FALSE"        => FALSE_KW,
     r"(?i)GAME"         => GAME_KW,
     r"(?i)WINDOW-SIZE"  => WINDOW_SIZE_KW,
+    r"(?i)WINDOW-TITLE" => WINDOW_TITLE_KW,
     r"(?i)WINDOW-COLOR" => WINDOW_COLOR_KW,
 } else {
     r"[a-z]+"           => ID_NAMA,
     r"[0-9]+"           => NUM_NAMA,
     r"#[0-9A-Fa-f]{6}"  => HEX_COLOR,
+    r"[A-Z]+[a-z0-9_]*" => TITLE_NAMA,
 }
 
 pub Bosonoga: Vec<BosonogaElement> = {
@@ -42,9 +44,9 @@ pub BosonogaBTree: BTreeSet<BosonogaVariable> = {
                     BosonogaCommand::Tali => {
                         println!("TALI[{:?}]", regina);
                     }
-                    BosonogaCommand::Game(window_width, window_height, window_hex_color) => {
-                        println!("GAME WINDOW-SIZE {} {} WINDOW-COLOR {}", window_width, window_height, window_hex_color);
-                        crate::ast::game_launch(window_width as u32, window_height as u32, window_hex_color);
+                    BosonogaCommand::Game(window_width, window_height, window_title, window_hex_color) => {
+                        println!("GAME WINDOW-SIZE {} {} WINDOW-TITLE {} WINDOW-COLOR {}", window_width, window_height, window_title, window_hex_color);
+                        crate::ast::game_launch(window_width as u32, window_height as u32, window_title, window_hex_color);
                     }
                 }
             } else if let BosonogaElement::Type(bosonoga_type) = element {
@@ -66,7 +68,7 @@ BosonogaElement: BosonogaElement = {
 BosonogaCommand: BosonogaCommand = {
     SET_KW <t:BosonogaType> <name:BosonogaString> <val:BosonogaValue> => BosonogaCommand::Set(t, name.to_string(), val),
     TALI_KW => BosonogaCommand::Tali,
-    GAME_KW WINDOW_SIZE_KW <window_width:BosonogaNumber> <window_height:BosonogaNumber> WINDOW_COLOR_KW <window_hex_color:BosonogaHexColor> => BosonogaCommand::Game(window_width, window_height, window_hex_color.to_string()),
+    GAME_KW WINDOW_SIZE_KW <window_width:BosonogaNumber> <window_height:BosonogaNumber> WINDOW_TITLE_KW <window_title:BosonogaTitleString> WINDOW_COLOR_KW <window_hex_color:BosonogaHexColor> => BosonogaCommand::Game(window_width, window_height, window_title.to_string(), window_hex_color.to_string()),
 };
 
 BosonogaValue: BosonogaValue = {
@@ -82,6 +84,10 @@ BosonogaType: BosonogaType = {
 
 BosonogaString: &'input str = {
     ID_NAMA => <>,
+};
+
+BosonogaTitleString: &'input str = {
+    TITLE_NAMA => <>,
 };
 
 BosonogaNumber: i32 = {
