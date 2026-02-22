@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 grammar;
 
 match {
-    r"(?i)FUNAK" => FUNAK_KW,
+    r"(?i)SET"   => SET_KW,
     r"(?i)TALI"  => TALI_KW,
     r"(?i)BUL"   => BUL_KW,
     r"(?i)INAT"  => INAT_KW,
@@ -19,16 +19,16 @@ pub Bosonoga: Vec<BosonogaElement> = {
 
 pub BosonogaBTree: BTreeMap<String, i32> = {
     <elements:BosonogaElement*> => {
-        let mut btree = BTreeMap::new();
+        let mut regina = BTreeMap::new();
         for element in elements {
             if let BosonogaElement::Command(command) = element {
                 match command {
-                    BosonogaCommand::Funak(name, num) => {
-                        println!("Funak[{}, {}]", name, num);
-                        btree.insert(name, num);
+                    BosonogaCommand::Set(name, num) => {
+                        println!("Set[{}, {}]", name, num);
+                        regina.insert(name, num);
                     }
                     BosonogaCommand::Tali => {
-                        println!("---TALI---");
+                        println!("TALI[{:?}]", regina);
                     }
                 }
             } else if let BosonogaElement::Type(bosonoga_type) = element {
@@ -38,7 +38,7 @@ pub BosonogaBTree: BTreeMap<String, i32> = {
                 }
             }
         }
-        btree
+        regina
     }
 };
 
@@ -48,11 +48,11 @@ BosonogaElement: BosonogaElement = {
 };
 
 BosonogaCommand: BosonogaCommand = {
-    FunakKw <name:BosonogaString> <num:BosonogaNumber> => BosonogaCommand::Funak(name.to_string(), num),
+    SetKw <name:BosonogaString> <num:BosonogaNumber> => BosonogaCommand::Set(name.to_string(), num),
     TaliKw => BosonogaCommand::Tali,
 };
 
-FunakKw: () = { FUNAK_KW => () };
+SetKw:   () = { SET_KW   => () };
 TaliKw:  () = { TALI_KW  => () };
 
 BosonogaType: BosonogaType = {

@@ -6,8 +6,8 @@ use std::collections::BTreeMap;
 fn test_bosonoga_btree() {
     println!("test_bosonoga_btree");
     let input = r"
-        FUNAK first 10
-        FUNAK second 20
+        SET first 10
+        SET second 20
         BUL
         INAT
         TALI
