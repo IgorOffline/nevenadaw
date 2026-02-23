@@ -1,7 +1,7 @@
 use bevy::color::Srgba;
 use bevy::prelude::{
-    default, App, ButtonInput, Camera2d, ClearColor, Commands, KeyCode, PluginGroup, Query,
-    Res, Resource, Sprite, Startup, Transform, Update, Vec2, Window, WindowPlugin,
+    default, App, ButtonInput, Camera2d, ClearColor, Commands, KeyCode, PluginGroup, Query, Res,
+    Resource, Sprite, Startup, Transform, Update, Vec2, Window, WindowPlugin,
 };
 use bevy::window::WindowResolution;
 use bevy::DefaultPlugins;
@@ -149,15 +149,20 @@ fn spawn_rectangle_system(
 }
 
 fn ui_main_layout_system(mut contexts: EguiContexts, variables: Res<BosonogaVariables>) {
-    egui::Window::new("Bosonoga Variables").show(contexts.ctx_mut().unwrap(), |ui| {
-        for var in &variables.0 {
-            ui.horizontal(|ui| {
-                ui.label(format!("{}:", var.name));
-                match &var.value {
-                    BosonogaValue::Bul(b) => ui.label(format!("{}", b)),
-                    BosonogaValue::Inat(i) => ui.label(format!("{}", i)),
-                };
-            });
-        }
-    });
+    let ctx = contexts.ctx_mut().unwrap();
+    let mut style = (*ctx.style()).clone();
+    style.visuals.window_fill = style.visuals.window_fill.linear_multiply(0.6);
+    egui::Window::new("Bosonoga Variables")
+        .frame(egui::Frame::window(&style))
+        .show(ctx, |ui| {
+            for var in &variables.0 {
+                ui.horizontal(|ui| {
+                    ui.label(format!("{}:", var.name));
+                    match &var.value {
+                        BosonogaValue::Bul(b) => ui.label(format!("{}", b)),
+                        BosonogaValue::Inat(i) => ui.label(format!("{}", i)),
+                    };
+                });
+            }
+        });
 }
