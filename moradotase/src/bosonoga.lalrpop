@@ -32,27 +32,15 @@ pub BosonogaBTree: BTreeSet<BosonogaVariable> = {
             if let BosonogaElement::Command(command) = element {
                 match command {
                     BosonogaCommand::Set(bosonoga_type, name, val) => {
-                        println!("Set[{:?}, {}, {:?}]", bosonoga_type, name.clone(), val);
                         let new_var = match (bosonoga_type, val) {
-                            (BosonogaType::Bul, BosonogaValue::Bul(b)) => BosonogaVariable::new_bool(name.clone(), b),
-                            (BosonogaType::Bul, BosonogaValue::Inat(i)) => BosonogaVariable::new_bool(name.clone(), i != 0),
-                            (BosonogaType::Inat, BosonogaValue::Bul(b)) => BosonogaVariable::new_i32(name.clone(), if b { 1 } else { 0 }),
-                            (BosonogaType::Inat, BosonogaValue::Inat(i)) => BosonogaVariable::new_i32(name.clone(), i),
+                            (BosonogaType::Bul, BosonogaValue::Bul(b)) => BosonogaVariable::new_bool(name, b),
+                            (BosonogaType::Bul, BosonogaValue::Inat(i)) => BosonogaVariable::new_bool(name, i != 0),
+                            (BosonogaType::Inat, BosonogaValue::Bul(b)) => BosonogaVariable::new_i32(name, if b { 1 } else { 0 }),
+                            (BosonogaType::Inat, BosonogaValue::Inat(i)) => BosonogaVariable::new_i32(name, i),
                         };
                         regina.replace(new_var);
                     }
-                    BosonogaCommand::Tali => {
-                        println!("TALI[{:?}]", regina);
-                    }
-                    BosonogaCommand::Game(window_width, window_height, window_title, window_hex_color) => {
-                        println!("GAME WINDOW-SIZE {} {} WINDOW-TITLE {} WINDOW-COLOR {}", window_width, window_height, window_title, window_hex_color);
-                        crate::ast::game_launch(window_width as u32, window_height as u32, window_title, window_hex_color);
-                    }
-                }
-            } else if let BosonogaElement::Type(bosonoga_type) = element {
-                match bosonoga_type {
-                    BosonogaType::Bul => println!("BUL"),
-                    BosonogaType::Inat => println!("INAT"),
+                    _ => {}
                 }
             }
         }
