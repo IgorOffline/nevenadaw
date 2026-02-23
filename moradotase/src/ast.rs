@@ -1,11 +1,11 @@
 use bevy::color::Srgba;
 use bevy::prelude::{
-    default, App, ButtonInput, Camera2d, ClearColor, Commands, Entity, KeyCode, PluginGroup, Query,
-    Res, Resource, Sprite, Startup, Transform, Update, Vec2, Window, WindowPlugin, With,
+    default, App, ButtonInput, Camera2d, ClearColor, Commands, KeyCode, PluginGroup, Query,
+    Res, Resource, Sprite, Startup, Transform, Update, Vec2, Window, WindowPlugin,
 };
-use bevy::window::{PrimaryWindow, WindowResolution};
+use bevy::window::WindowResolution;
 use bevy::DefaultPlugins;
-use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 use rand::RngExt;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -114,7 +114,7 @@ pub fn game_launch(
         .add_plugins(EguiPlugin::default())
         .add_systems(Startup, game_launch_setup)
         .add_systems(Update, spawn_rectangle_system)
-        .add_systems(Update, ui_main_layout_system)
+        .add_systems(EguiPrimaryContextPass, ui_main_layout_system)
         .run();
 }
 
@@ -148,21 +148,8 @@ fn spawn_rectangle_system(
     }
 }
 
-fn ui_main_layout_system(
-    mut contexts: EguiContexts,
-    window_query: Query<(Entity, &Window), With<PrimaryWindow>>,
-    variables: Res<BosonogaVariables>,
-) {
-    let Ok((window_entity, _window)) = window_query.single() else {
-        return;
-    };
-
-    let ctx = match contexts.ctx_for_entity_mut(window_entity) {
-        Ok(ctx) => ctx,
-        Err(_) => return,
-    };
-
-    egui::Window::new("Bosonoga Variables").show(ctx, |ui| {
+fn ui_main_layout_system(mut contexts: EguiContexts, variables: Res<BosonogaVariables>) {
+    egui::Window::new("Bosonoga Variables").show(contexts.ctx_mut().unwrap(), |ui| {
         for var in &variables.0 {
             ui.horizontal(|ui| {
                 ui.label(format!("{}:", var.name));
