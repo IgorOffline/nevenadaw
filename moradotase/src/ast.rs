@@ -1,13 +1,14 @@
 use bevy::color::Srgba;
 use bevy::prelude::{
     default, App, ButtonInput, Camera2d, ClearColor, Commands, Entity, KeyCode, PluginGroup, Query,
-    Res, Sprite, Startup, Transform, Update, Vec2, Window, WindowPlugin, With,
+    Res, Resource, Sprite, Startup, Transform, Update, Vec2, Window, WindowPlugin, With,
 };
 use bevy::window::{PrimaryWindow, WindowResolution};
 use bevy::DefaultPlugins;
-use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
+use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use rand::RngExt;
 use std::cmp::Ordering;
+use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
@@ -89,13 +90,18 @@ impl Ord for BosonogaVariable {
 const RECTANGLE_COLOR: &str = "#512DA8";
 const RECTANGLE_SIZE: Vec2 = Vec2::new(50.0, 50.0);
 
+#[derive(Resource)]
+pub struct BosonogaVariables(pub BTreeSet<BosonogaVariable>);
+
 pub fn game_launch(
     window_width: u32,
     window_height: u32,
     window_title: String,
     window_hex_color: String,
+    variables: BTreeSet<BosonogaVariable>,
 ) {
     App::new()
+        .insert_resource(BosonogaVariables(variables))
         .insert_resource(ClearColor(Srgba::hex(window_hex_color).unwrap().into()))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
@@ -108,7 +114,7 @@ pub fn game_launch(
         .add_plugins(EguiPlugin::default())
         .add_systems(Startup, game_launch_setup)
         .add_systems(Update, spawn_rectangle_system)
-        .add_systems(EguiPrimaryContextPass, ui_main_layout_system)
+        .add_systems(Update, ui_main_layout_system)
         .run();
 }
 
@@ -145,6 +151,7 @@ fn spawn_rectangle_system(
 fn ui_main_layout_system(
     mut contexts: EguiContexts,
     window_query: Query<(Entity, &Window), With<PrimaryWindow>>,
+    variables: Res<BosonogaVariables>,
 ) {
     let Ok((window_entity, _window)) = window_query.single() else {
         return;
@@ -155,7 +162,15 @@ fn ui_main_layout_system(
         Err(_) => return,
     };
 
-    egui::CentralPanel::default().show(ctx, |ui| {
-        ui.label("Lorem UI Ipsum");
+    egui::Window::new("Bosonoga Variables").show(ctx, |ui| {
+        for var in &variables.0 {
+            ui.horizontal(|ui| {
+                ui.label(format!("{}:", var.name));
+                match &var.value {
+                    BosonogaValue::Bul(b) => ui.label(format!("{}", b)),
+                    BosonogaValue::Inat(i) => ui.label(format!("{}", i)),
+                };
+            });
+        }
     });
 }

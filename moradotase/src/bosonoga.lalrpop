@@ -46,7 +46,7 @@ pub BosonogaBTree: BTreeSet<BosonogaVariable> = {
                     }
                     BosonogaCommand::Game(window_width, window_height, window_title, window_hex_color) => {
                         println!("BOSONOGA-GAME BOSONOGA-GAME-WINDOW-SIZE {} {} BOSONOGA-GAME-WINDOW-TITLE {} BOSONOGA-GAME-WINDOW-COLOR {}", window_width, window_height, window_title, window_hex_color);
-                        crate::ast::game_launch(window_width as u32, window_height as u32, window_title, window_hex_color);
+                        crate::ast::game_launch(window_width as u32, window_height as u32, window_title, window_hex_color, regina.clone());
                     }
                 }
             } else if let BosonogaElement::Type(bosonoga_type) = element {
