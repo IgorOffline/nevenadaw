@@ -15,7 +15,7 @@ match {
     r"(?i)BOSONOGA-GAME-WINDOW-TITLE" => WINDOW_TITLE_KW,
     r"(?i)BOSONOGA-GAME-WINDOW-COLOR" => WINDOW_COLOR_KW,
 } else {
-    r"[a-z]+"           => ID_NAMA,
+    r"[a-z_]+"          => ID_NAMA,
     r"[0-9]+"           => NUM_NAMA,
     r"#[0-9A-Fa-f]{6}"  => HEX_COLOR,
     r"[A-Z]+[a-z0-9_]*" => TITLE_NAMA,
