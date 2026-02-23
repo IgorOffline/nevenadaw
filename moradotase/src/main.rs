@@ -12,7 +12,7 @@ mod tests;
 
 fn main() {
     println!("test_bosonoga");
-    let input = fs::read_to_string("bosonoga-input.txt").expect("Unable to read file");
+    let input = fs::read_to_string("input.bosonoga").expect("Unable to read file");
     let parser = BosonogaBTreeParser::new();
     let _ = parser.parse(&input).unwrap();
 }
