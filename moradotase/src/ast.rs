@@ -1,11 +1,11 @@
+use bevy::DefaultPlugins;
 use bevy::color::Srgba;
 use bevy::prelude::{
-    default, App, ButtonInput, Camera2d, ClearColor, Commands, KeyCode, PluginGroup, Query, Res,
-    ResMut, Resource, Sprite, Startup, Transform, Update, Vec2, Window, WindowPlugin,
+    App, ButtonInput, Camera2d, ClearColor, Commands, KeyCode, PluginGroup, Query, Res, ResMut,
+    Resource, Sprite, Startup, Transform, Update, Vec2, Window, WindowPlugin, default,
 };
 use bevy::window::WindowResolution;
-use bevy::DefaultPlugins;
-use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
+use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
 use rand::RngExt;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -22,6 +22,7 @@ pub enum BosonogaCommand {
     Set(BosonogaType, String, BosonogaValue),
     Tali,
     Game(i32, i32, String, String),
+    SpawnRectangle,
 }
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
@@ -93,15 +94,20 @@ const RECTANGLE_SIZE: Vec2 = Vec2::new(50.0, 50.0);
 #[derive(Resource)]
 pub struct BosonogaVariables(pub BTreeSet<BosonogaVariable>);
 
+#[derive(Resource)]
+pub struct PendingRectSpawns(pub u32);
+
 pub fn game_launch(
     window_width: u32,
     window_height: u32,
     window_title: String,
     window_hex_color: String,
     variables: BTreeSet<BosonogaVariable>,
+    pending_rect_spawns: u32,
 ) {
     App::new()
         .insert_resource(BosonogaVariables(variables))
+        .insert_resource(PendingRectSpawns(pending_rect_spawns))
         .insert_resource(ClearColor(Srgba::hex(window_hex_color).unwrap().into()))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
@@ -118,8 +124,52 @@ pub fn game_launch(
         .run();
 }
 
-fn game_launch_setup(mut commands: Commands) {
+fn game_launch_setup(
+    mut commands: Commands,
+    mut variables: ResMut<BosonogaVariables>,
+    pending: Res<PendingRectSpawns>,
+    window: Query<&Window>,
+) {
+    // Always spawn the camera
     commands.spawn(Camera2d::default());
+
+    if pending.0 == 0 {
+        return;
+    }
+
+    if let Ok(window) = window.single() {
+        let width = window.width();
+        let height = window.height();
+
+        for _ in 0..pending.0 {
+            let mut rng = rand::rng();
+            let x = rng.random_range(-(width / 2.0)..(width / 2.0));
+            let y = rng.random_range(-(height / 2.0)..(height / 2.0));
+
+            commands.spawn((
+                Sprite {
+                    color: Srgba::hex(RECTANGLE_COLOR).unwrap().into(),
+                    custom_size: Some(RECTANGLE_SIZE),
+                    ..default()
+                },
+                Transform::from_xyz(x, y, 0.0),
+            ));
+
+            let rectangle_count_inner = BosonogaVariable::new_i32("rectangle_count", 0);
+            let current_count = match variables.0.get(&rectangle_count_inner) {
+                Some(var) => match var.value {
+                    BosonogaValue::Inat(i) => i,
+                    _ => 0,
+                },
+                None => 0,
+            };
+
+            variables.0.replace(BosonogaVariable::new_i32(
+                "rectangle_count",
+                current_count + 1,
+            ));
+        }
+    }
 }
 
 fn spawn_rectangle_system(

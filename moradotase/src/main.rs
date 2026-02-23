@@ -20,6 +20,7 @@ fn main() {
     let commands = parser.parse(&input).unwrap();
 
     let mut variables = BTreeSet::new();
+    let mut pending_rect_spawns: u32 = 0;
 
     for command in commands {
         match command {
@@ -38,10 +39,20 @@ fn main() {
                 variables.replace(BosonogaVariable::new_bool(name, v));
             }
             BosonogaElement::Command(BosonogaCommand::Game(w, h, title, color)) => {
-                game_launch(w as u32, h as u32, title, color, variables.clone());
+                game_launch(
+                    w as u32,
+                    h as u32,
+                    title,
+                    color,
+                    variables.clone(),
+                    pending_rect_spawns,
+                );
             }
             BosonogaElement::Command(BosonogaCommand::Tali) => {
                 println!("TALI[{:?}]", variables);
+            }
+            BosonogaElement::Command(BosonogaCommand::SpawnRectangle) => {
+                pending_rect_spawns = pending_rect_spawns.saturating_add(1);
             }
             _ => {}
         }
