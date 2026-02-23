@@ -1,7 +1,7 @@
 use bevy::color::Srgba;
 use bevy::prelude::{
     default, App, ButtonInput, Camera2d, ClearColor, Commands, KeyCode, PluginGroup, Query, Res,
-    Resource, Sprite, Startup, Transform, Update, Vec2, Window, WindowPlugin,
+    ResMut, Resource, Sprite, Startup, Transform, Update, Vec2, Window, WindowPlugin,
 };
 use bevy::window::WindowResolution;
 use bevy::DefaultPlugins;
@@ -124,6 +124,7 @@ fn game_launch_setup(mut commands: Commands) {
 
 fn spawn_rectangle_system(
     mut commands: Commands,
+    mut variables: ResMut<BosonogaVariables>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     window: Query<&Window>,
 ) {
@@ -143,6 +144,20 @@ fn spawn_rectangle_system(
                     ..default()
                 },
                 Transform::from_xyz(x, y, 0.0),
+            ));
+
+            let rectangle_count_inner = BosonogaVariable::new_i32("rectangle_count", 0);
+            let current_count = match variables.0.get(&rectangle_count_inner) {
+                Some(var) => match var.value {
+                    BosonogaValue::Inat(i) => i,
+                    _ => 0,
+                },
+                None => 0,
+            };
+
+            variables.0.replace(BosonogaVariable::new_i32(
+                "rectangle_count",
+                current_count + 1,
             ));
         }
     }

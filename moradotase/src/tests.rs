@@ -13,6 +13,7 @@ fn test_bosonoga() {
         SET INAT second 40
         SET BUL third false
         SET BUL third true
+        SET INAT rectangle_count 5
         TALI
     ";
     let parser = BosonogaBTreeParser::new();
@@ -20,10 +21,12 @@ fn test_bosonoga() {
     let first_var = BosonogaVariable::new_i32("first".to_string(), 30);
     let second_var = BosonogaVariable::new_i32("second".to_string(), 40);
     let third_var = BosonogaVariable::new_bool("third".to_string(), true);
+    let rectangle_count_var = BosonogaVariable::new_i32("rectangle_count".to_string(), 5);
     let mut expected_btree: BTreeSet<BosonogaVariable> = BTreeSet::new();
     expected_btree.insert(first_var);
     expected_btree.insert(second_var);
     expected_btree.insert(third_var);
+    expected_btree.insert(rectangle_count_var);
     assert_eq!(btree, expected_btree);
 
     for var in &btree {
