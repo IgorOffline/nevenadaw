@@ -1,11 +1,11 @@
 use bevy::color::Srgba;
 use bevy::prelude::{
-    default, App, Camera2d, ClearColor, Commands, PluginGroup, Query, Res, ResMut, Resource,
-    Sprite, Startup, Transform, Update, Vec2, Window, WindowPlugin,
+    default, App, ButtonInput, Camera2d, ClearColor, Commands, Entity, KeyCode, PluginGroup, Query,
+    Res, Sprite, Startup, Transform, Update, Vec2, Window, WindowPlugin, With,
 };
-use bevy::time::{Time, Timer, TimerMode};
-use bevy::window::WindowResolution;
+use bevy::window::{PrimaryWindow, WindowResolution};
 use bevy::DefaultPlugins;
+use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 use rand::RngExt;
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
@@ -86,7 +86,6 @@ impl Ord for BosonogaVariable {
     }
 }
 
-const SPAWN_INTERVAL_SECONDS: f32 = 2.0;
 const RECTANGLE_COLOR: &str = "#512DA8";
 const RECTANGLE_SIZE: Vec2 = Vec2::new(50.0, 50.0);
 
@@ -98,10 +97,6 @@ pub fn game_launch(
 ) {
     App::new()
         .insert_resource(ClearColor(Srgba::hex(window_hex_color).unwrap().into()))
-        .insert_resource(SpawnTimer(Timer::from_seconds(
-            SPAWN_INTERVAL_SECONDS,
-            TimerMode::Repeating,
-        )))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 resolution: WindowResolution::new(window_width, window_height),
@@ -110,21 +105,23 @@ pub fn game_launch(
             }),
             ..default()
         }))
+        .add_plugins(EguiPlugin::default())
         .add_systems(Startup, game_launch_setup)
         .add_systems(Update, spawn_rectangle_system)
+        .add_systems(EguiPrimaryContextPass, ui_main_layout_system)
         .run();
 }
 
-#[derive(Resource)]
-struct SpawnTimer(Timer);
+fn game_launch_setup(mut commands: Commands) {
+    commands.spawn(Camera2d::default());
+}
 
 fn spawn_rectangle_system(
     mut commands: Commands,
-    time: Res<Time>,
-    mut timer: ResMut<SpawnTimer>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     window: Query<&Window>,
 ) {
-    if timer.0.tick(time.delta()).just_finished() {
+    if keyboard_input.just_pressed(KeyCode::KeyR) {
         if let Ok(window) = window.single() {
             let width = window.width();
             let height = window.height();
@@ -145,6 +142,20 @@ fn spawn_rectangle_system(
     }
 }
 
-fn game_launch_setup(mut commands: Commands) {
-    commands.spawn(Camera2d::default());
+fn ui_main_layout_system(
+    mut contexts: EguiContexts,
+    window_query: Query<(Entity, &Window), With<PrimaryWindow>>,
+) {
+    let Ok((window_entity, _window)) = window_query.single() else {
+        return;
+    };
+
+    let ctx = match contexts.ctx_for_entity_mut(window_entity) {
+        Ok(ctx) => ctx,
+        Err(_) => return,
+    };
+
+    egui::CentralPanel::default().show(ctx, |ui| {
+        ui.label("Lorem UI Ipsum");
+    });
 }
