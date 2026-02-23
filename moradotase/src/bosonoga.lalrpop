@@ -4,16 +4,16 @@ use std::collections::BTreeSet;
 grammar;
 
 match {
-    r"(?i)SET"          => SET_KW,
-    r"(?i)TALI"         => TALI_KW,
-    r"(?i)BUL"          => BUL_KW,
-    r"(?i)INAT"         => INAT_KW,
-    r"(?i)TRUE"         => TRUE_KW,
-    r"(?i)FALSE"        => FALSE_KW,
-    r"(?i)GAME"         => GAME_KW,
-    r"(?i)WINDOW-SIZE"  => WINDOW_SIZE_KW,
-    r"(?i)WINDOW-TITLE" => WINDOW_TITLE_KW,
-    r"(?i)WINDOW-COLOR" => WINDOW_COLOR_KW,
+    r"(?i)SET"                        => SET_KW,
+    r"(?i)TALI"                       => TALI_KW,
+    r"(?i)BUL"                        => BUL_KW,
+    r"(?i)INAT"                       => INAT_KW,
+    r"(?i)TRUE"                       => TRUE_KW,
+    r"(?i)FALSE"                      => FALSE_KW,
+    r"(?i)BOSONOGA-GAME"              => GAME_KW,
+    r"(?i)BOSONOGA-GAME-WINDOW-SIZE"  => WINDOW_SIZE_KW,
+    r"(?i)BOSONOGA-GAME-WINDOW-TITLE" => WINDOW_TITLE_KW,
+    r"(?i)BOSONOGA-GAME-WINDOW-COLOR" => WINDOW_COLOR_KW,
 } else {
     r"[a-z]+"           => ID_NAMA,
     r"[0-9]+"           => NUM_NAMA,
