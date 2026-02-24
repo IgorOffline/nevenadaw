@@ -8,87 +8,12 @@ use bevy::window::WindowResolution;
 use bevy::DefaultPlugins;
 use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 use rand::RngExt;
-use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::fs;
-use std::hash::{Hash, Hasher};
 
-#[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
-pub enum BosonogaValue {
-    Bul(bool),
-    Inat(i32),
-}
-
-#[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
-pub enum BosonogaCommand {
-    Set(BosonogaType, String, BosonogaValue),
-    Tali,
-    Game(i32, i32, String, String),
-    SpawnRectangle,
-}
-
-#[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
-pub enum BosonogaType {
-    Bul,
-    Inat,
-}
-
-#[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
-pub enum BosonogaElement {
-    Command(BosonogaCommand),
-    Type(BosonogaType),
-}
-
-#[derive(Debug, Clone)]
-pub struct BosonogaVariable {
-    pub name: String,
-    pub bosonoga_type: BosonogaType,
-    pub value: BosonogaValue,
-}
-
-impl BosonogaVariable {
-    pub fn new_i32(name: impl Into<String>, value: i32) -> Self {
-        Self {
-            name: name.into(),
-            bosonoga_type: BosonogaType::Inat,
-            value: BosonogaValue::Inat(value),
-        }
-    }
-
-    pub fn new_bool(name: impl Into<String>, value: bool) -> Self {
-        Self {
-            name: name.into(),
-            bosonoga_type: BosonogaType::Bul,
-            value: BosonogaValue::Bul(value),
-        }
-    }
-}
-
-impl PartialEq for BosonogaVariable {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
-
-impl Eq for BosonogaVariable {}
-
-impl Hash for BosonogaVariable {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.name.hash(state);
-    }
-}
-
-impl PartialOrd for BosonogaVariable {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for BosonogaVariable {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.name.cmp(&other.name)
-    }
-}
+use super::types::{
+    BosonogaCommand, BosonogaElement, BosonogaType, BosonogaValue, BosonogaVariable,
+};
 
 const RECTANGLE_COLOR: &str = "#512DA8";
 const RECTANGLE_SIZE: Vec2 = Vec2::new(50.0, 50.0);
@@ -133,7 +58,6 @@ fn game_launch_setup(
     pending: Res<PendingRectSpawns>,
     window: Query<&Window>,
 ) {
-    // Always spawn the camera
     commands.spawn(Camera2d::default());
 
     if pending.0 == 0 {
@@ -307,9 +231,6 @@ fn runtime_input_system(
                         current_count + 1,
                     ));
                 }
-            }
-            BosonogaElement::Command(BosonogaCommand::Game(_, _, _, _)) => {
-                // Ignore Game command during runtime execution
             }
             _ => {}
         }

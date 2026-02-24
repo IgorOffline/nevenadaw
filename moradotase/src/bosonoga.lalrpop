@@ -1,4 +1,7 @@
-use crate::ast::{BosonogaCommand, BosonogaElement, BosonogaType, BosonogaVariable, BosonogaValue};
+use crate::ast::{
+    extract_variables, BosonogaCommand, BosonogaElement, BosonogaType, BosonogaValue,
+    BosonogaVariable,
+};
 use std::collections::BTreeSet;
 
 grammar;
@@ -27,26 +30,7 @@ pub Bosonoga: Vec<BosonogaElement> = {
 };
 
 pub BosonogaBTree: BTreeSet<BosonogaVariable> = {
-    <elements:BosonogaElement*> => {
-        let mut regina: BTreeSet<BosonogaVariable> = BTreeSet::new();
-        for element in elements {
-            if let BosonogaElement::Command(command) = element {
-                match command {
-                    BosonogaCommand::Set(bosonoga_type, name, val) => {
-                        let new_var = match (bosonoga_type, val) {
-                            (BosonogaType::Bul, BosonogaValue::Bul(b)) => BosonogaVariable::new_bool(name, b),
-                            (BosonogaType::Bul, BosonogaValue::Inat(i)) => BosonogaVariable::new_bool(name, i != 0),
-                            (BosonogaType::Inat, BosonogaValue::Bul(b)) => BosonogaVariable::new_i32(name, if b { 1 } else { 0 }),
-                            (BosonogaType::Inat, BosonogaValue::Inat(i)) => BosonogaVariable::new_i32(name, i),
-                        };
-                        regina.replace(new_var);
-                    }
-                    _ => {}
-                }
-            }
-        }
-        regina
-    }
+    <elements:BosonogaElement*> => extract_variables(elements),
 };
 
 BosonogaElement: BosonogaElement = {
