@@ -14,6 +14,7 @@ pub enum BosonogaCommand {
     Tali,
     Game(i32, i32, String, String),
     SpawnRectangle(i32, i32),
+    SpawnRectangles(i32, i32),
 }
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
@@ -92,9 +93,26 @@ impl Ord for BosonogaVariable {
 
 pub fn extract_variables(elements: Vec<BosonogaElement>) -> BTreeSet<BosonogaVariable> {
     let mut variables = BTreeSet::new();
+    let mut current_count = 0;
     for element in elements {
-        if let BosonogaElement::Command(BosonogaCommand::Set(t, n, v)) = element {
-            variables.replace(BosonogaVariable::from_set(t, n, v));
+        match element {
+            BosonogaElement::Command(BosonogaCommand::Set(t, n, v)) => {
+                if n == "rectangle_count" {
+                    if let BosonogaValue::Inat(val) = v {
+                        current_count = val;
+                    }
+                }
+                variables.replace(BosonogaVariable::from_set(t, n, v));
+            }
+            BosonogaElement::Command(BosonogaCommand::SpawnRectangle(_, _)) => {
+                current_count += 1;
+                variables.replace(BosonogaVariable::new_i32("rectangle_count", current_count));
+            }
+            BosonogaElement::Command(BosonogaCommand::SpawnRectangles(count, _)) => {
+                current_count += count;
+                variables.replace(BosonogaVariable::new_i32("rectangle_count", current_count));
+            }
+            _ => {}
         }
     }
     variables
