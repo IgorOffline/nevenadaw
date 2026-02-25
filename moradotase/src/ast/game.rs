@@ -1,8 +1,9 @@
 use crate::bosonoga::BosonogaParser;
 use bevy::color::Srgba;
 use bevy::prelude::{
-    default, App, ButtonInput, Camera2d, ClearColor, Commands, KeyCode, PluginGroup, Query, Res,
-    ResMut, Resource, Sprite, Startup, Transform, Update, Vec2, Window, WindowPlugin,
+    default, App, ButtonInput, Camera2d, ClearColor, Click, Commands, Component, EntityEvent, KeyCode,
+    On, Pickable, PluginGroup, Pointer, Query, Res, ResMut, Resource, Sprite, Startup,
+    Transform, Update, Vec2, Window, WindowPlugin,
 };
 use bevy::window::WindowResolution;
 use bevy::DefaultPlugins;
@@ -20,6 +21,12 @@ const RECTANGLE_SIZE: Vec2 = Vec2::new(50.0, 50.0);
 #[derive(Resource)]
 pub struct BosonogaVariables(pub BTreeSet<BosonogaVariable>);
 
+#[derive(Resource, Default)]
+struct RectangleCounter(i32);
+
+#[derive(Component)]
+struct RectangleId(i32);
+
 pub fn game_launch(
     window_width: u32,
     window_height: u32,
@@ -29,6 +36,7 @@ pub fn game_launch(
 ) {
     App::new()
         .insert_resource(BosonogaVariables(variables))
+        .insert_resource(RectangleCounter::default())
         .insert_resource(ClearColor(Srgba::hex(window_hex_color).unwrap().into()))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
@@ -71,6 +79,7 @@ fn ui_main_layout_system(mut contexts: EguiContexts, variables: Res<BosonogaVari
 fn runtime_input_system(
     mut commands: Commands,
     mut variables: ResMut<BosonogaVariables>,
+    mut rectangle_counter: ResMut<RectangleCounter>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     _window: Query<&Window>,
 ) {
@@ -109,31 +118,32 @@ fn runtime_input_system(
                 println!("TALI[{:#?}]", variables.0);
             }
             BosonogaElement::Command(BosonogaCommand::SpawnRectangle(x_i, y_i)) => {
+                rectangle_counter.0 += 1;
+                let id = rectangle_counter.0;
+
                 let x = x_i as f32;
                 let y = y_i as f32;
 
-                commands.spawn((
-                    Sprite {
-                        color: Srgba::hex(RECTANGLE_COLOR).unwrap().into(),
-                        custom_size: Some(RECTANGLE_SIZE),
-                        ..default()
-                    },
-                    Transform::from_xyz(x, y, 0.0),
-                ));
+                commands
+                    .spawn((
+                        Sprite {
+                            color: Srgba::hex(RECTANGLE_COLOR).unwrap().into(),
+                            custom_size: Some(RECTANGLE_SIZE),
+                            ..default()
+                        },
+                        Transform::from_xyz(x, y, 0.0),
+                        Pickable::default(),
+                        RectangleId(id),
+                    ))
+                    .observe(|ev: On<Pointer<Click>>, query: Query<&RectangleId>| {
+                        if let Ok(rectangle_id) = query.get(ev.event_target()) {
+                            println!("Rectangle picked at: {}", rectangle_id.0);
+                        }
+                    });
 
-                let rectangle_count_inner = BosonogaVariable::new_i32("rectangle_count", 0);
-                let current_count = match variables.0.get(&rectangle_count_inner) {
-                    Some(var) => match var.value {
-                        BosonogaValue::Inat(i) => i,
-                        _ => 0,
-                    },
-                    None => 0,
-                };
-
-                variables.0.replace(BosonogaVariable::new_i32(
-                    "rectangle_count",
-                    current_count + 1,
-                ));
+                variables
+                    .0
+                    .replace(BosonogaVariable::new_i32("rectangle_count", id));
             }
             _ => {}
         }
