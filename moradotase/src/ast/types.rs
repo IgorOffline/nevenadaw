@@ -13,7 +13,7 @@ pub enum BosonogaCommand {
     Set(BosonogaType, String, BosonogaValue),
     Tali,
     Game(i32, i32, String, String),
-    SpawnRectangle,
+    SpawnRectangle(i32, i32),
 }
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]

@@ -9,9 +9,9 @@ fn test_bosonoga() {
     let input = r"
         SET INAT first 10
         SET INAT second 20
+        SET BUL third false
         SET INAT first 30
         SET INAT second 40
-        SET BUL third false
         SET BUL third true
         SET INAT rectangle_count 5
         TALI
