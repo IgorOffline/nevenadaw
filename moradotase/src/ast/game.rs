@@ -1,9 +1,9 @@
 use crate::bosonoga::BosonogaParser;
 use bevy::color::Srgba;
 use bevy::prelude::{
-    default, App, ButtonInput, Camera2d, ClearColor, Click, Commands, Component, Entity, EntityEvent, KeyCode,
-    On, Pickable, PluginGroup, Pointer, Query, Res, ResMut, Resource, Sprite, Startup,
-    Transform, Update, Vec2, Window, WindowPlugin, With,
+    default, App, ButtonInput, Camera2d, ClearColor, Click, Commands, Component, Entity,
+    EntityEvent, KeyCode, On, Pickable, PluginGroup, Pointer, Query, Res, ResMut, Resource, Sprite,
+    Startup, Transform, Update, Vec2, Window, WindowPlugin, With,
 };
 use bevy::window::WindowResolution;
 use bevy::DefaultPlugins;
@@ -158,17 +158,17 @@ fn runtime_input_system(
                         }
                     });
 
-                    variables
+                variables
                     .0
                     .replace(BosonogaVariable::new_i32("rectangle_count", current_count));
             }
-            BosonogaElement::Command(BosonogaCommand::SpawnRectangles(count, y_i)) => {
+            BosonogaElement::Command(BosonogaCommand::SpawnRectangles(count, x_start, y_i)) => {
                 for i in 0..count {
                     rectangle_counter.0 += 1;
                     let id = rectangle_counter.0;
                     current_count += 1;
 
-                    let x = (i * 100) as f32;
+                    let x = (x_start + i * 100) as f32;
                     let y = y_i as f32;
 
                     commands
