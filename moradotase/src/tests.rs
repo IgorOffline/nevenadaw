@@ -1,4 +1,4 @@
-use crate::ast::{BosonogaCommand, BosonogaElement, BosonogaVariable};
+use crate::ast::{BosonogaCommand, BosonogaElement, BosonogaValue, BosonogaVariable};
 use crate::bosonoga::{BosonogaBTreeParser, BosonogaParser};
 use pretty_assertions::assert_eq;
 use std::collections::BTreeSet;
@@ -55,4 +55,32 @@ fn test_neo_reket_di() {
         }
         _ => panic!("Expected SpawnRectangles command"),
     }
+}
+
+#[test]
+fn test_negative_numbers() {
+    println!("test_negative_numbers");
+    let input = "NEO-REKET-DI 3 4 NEO-REKET-X -20 NEO-REKET-Y 10";
+    let parser = BosonogaParser::new();
+    let result = parser.parse(input).unwrap();
+    assert_eq!(result.len(), 1);
+    match &result[0] {
+        BosonogaElement::Command(BosonogaCommand::SpawnRectangles(count_x, count_y, x, y)) => {
+            assert_eq!(*count_x, 3);
+            assert_eq!(*count_y, 4);
+            assert_eq!(*x, -20);
+            assert_eq!(*y, 10);
+        }
+        _ => panic!("Expected SpawnRectangles command"),
+    }
+
+    let input_set = "SET INAT my_var -100";
+    let btree_parser = BosonogaBTreeParser::new();
+    let btree = btree_parser.parse(input_set).unwrap();
+    let expected_var = BosonogaVariable::new_i32("my_var".to_string(), -100);
+    assert!(btree.contains(&expected_var));
+    assert_eq!(
+        btree.get(&expected_var).unwrap().value,
+        BosonogaValue::Inat(-100)
+    );
 }
