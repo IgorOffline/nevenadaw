@@ -1,161 +1,154 @@
-use std::f32::consts::PI;
-
-use bevy::{color::palettes::tailwind::*, picking::pointer::PointerInteraction, prelude::*};
+use bevy::{prelude::*, sprite::Anchor};
+use std::fmt::Debug;
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, MeshPickingPlugin))
-        .add_systems(Startup, setup_scene)
-        .add_systems(Update, (draw_mesh_intersections, rotate))
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .add_systems(Startup, (setup, setup_atlas))
+        .add_systems(Update, (move_sprite, animate_sprite))
         .run();
 }
 
-#[derive(Component)]
-struct Shape;
-
-const SHAPES_X_EXTENT: f32 = 14.0;
-const EXTRUSION_X_EXTENT: f32 = 16.0;
-const Z_EXTENT: f32 = 5.0;
-
-fn setup_scene(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+fn move_sprite(
+    time: Res<Time>,
+    mut sprite: Query<&mut Transform, (Without<Sprite>, With<Children>)>,
 ) {
-    let white_matl = materials.add(Color::WHITE);
-    let ground_matl = materials.add(Color::from(GRAY_300));
-    let hover_matl = materials.add(Color::from(CYAN_300));
-    let pressed_matl = materials.add(Color::from(YELLOW_300));
-
-    let shapes = [
-        meshes.add(Cuboid::default()),
-        meshes.add(Tetrahedron::default()),
-        meshes.add(Capsule3d::default()),
-        meshes.add(Torus::default()),
-        meshes.add(Cylinder::default()),
-        meshes.add(Cone::default()),
-        meshes.add(ConicalFrustum::default()),
-        meshes.add(Sphere::default().mesh().ico(5).unwrap()),
-        meshes.add(Sphere::default().mesh().uv(32, 18)),
-    ];
-
-    let extrusions = [
-        meshes.add(Extrusion::new(Rectangle::default(), 1.)),
-        meshes.add(Extrusion::new(Capsule2d::default(), 1.)),
-        meshes.add(Extrusion::new(Annulus::default(), 1.)),
-        meshes.add(Extrusion::new(Circle::default(), 1.)),
-        meshes.add(Extrusion::new(Ellipse::default(), 1.)),
-        meshes.add(Extrusion::new(RegularPolygon::default(), 1.)),
-        meshes.add(Extrusion::new(Triangle2d::default(), 1.)),
-    ];
-
-    let num_shapes = shapes.len();
-
-    for (i, shape) in shapes.into_iter().enumerate() {
-        commands
-            .spawn((
-                Mesh3d(shape),
-                MeshMaterial3d(white_matl.clone()),
-                Transform::from_xyz(
-                    -SHAPES_X_EXTENT / 2. + i as f32 / (num_shapes - 1) as f32 * SHAPES_X_EXTENT,
-                    2.0,
-                    Z_EXTENT / 2.,
-                )
-                .with_rotation(Quat::from_rotation_x(-PI / 4.)),
-                Shape,
-            ))
-            .observe(update_material_on::<Pointer<Over>>(hover_matl.clone()))
-            .observe(update_material_on::<Pointer<Out>>(white_matl.clone()))
-            .observe(update_material_on::<Pointer<Press>>(pressed_matl.clone()))
-            .observe(update_material_on::<Pointer<Release>>(hover_matl.clone()))
-            .observe(rotate_on_drag);
+    let t = time.elapsed_secs() * 0.1;
+    for mut transform in &mut sprite {
+        let new = Vec2 {
+            x: 50.0 * ops::sin(t),
+            y: 50.0 * ops::sin(t * 2.0),
+        };
+        transform.translation.x = new.x;
+        transform.translation.y = new.y;
     }
-
-    let num_extrusions = extrusions.len();
-
-    for (i, shape) in extrusions.into_iter().enumerate() {
-        commands
-            .spawn((
-                Mesh3d(shape),
-                MeshMaterial3d(white_matl.clone()),
-                Transform::from_xyz(
-                    -EXTRUSION_X_EXTENT / 2.
-                        + i as f32 / (num_extrusions - 1) as f32 * EXTRUSION_X_EXTENT,
-                    2.0,
-                    -Z_EXTENT / 2.,
-                )
-                .with_rotation(Quat::from_rotation_x(-PI / 4.)),
-                Shape,
-            ))
-            .observe(update_material_on::<Pointer<Over>>(hover_matl.clone()))
-            .observe(update_material_on::<Pointer<Out>>(white_matl.clone()))
-            .observe(update_material_on::<Pointer<Press>>(pressed_matl.clone()))
-            .observe(update_material_on::<Pointer<Release>>(hover_matl.clone()))
-            .observe(rotate_on_drag);
-    }
-
-    commands.spawn((
-        Mesh3d(meshes.add(Plane3d::default().mesh().size(50.0, 50.0).subdivisions(10))),
-        MeshMaterial3d(ground_matl.clone()),
-        Pickable::IGNORE,
-    ));
-
-    commands.spawn((
-        PointLight {
-            shadows_enabled: true,
-            intensity: 10_000_000.,
-            range: 100.0,
-            shadow_depth_bias: 0.2,
-            ..default()
-        },
-        Transform::from_xyz(8.0, 16.0, 8.0),
-    ));
-
-    commands.spawn((
-        Camera3d::default(),
-        Transform::from_xyz(0.0, 7., 14.0).looking_at(Vec3::new(0., 1., 0.), Vec3::Y),
-    ));
-
-    commands.spawn((
-        Text::new("Hover over the shapes to pick them\nDrag to rotate"),
-        Node {
-            position_type: PositionType::Absolute,
-            top: px(12),
-            left: px(12),
-            ..default()
-        },
-    ));
 }
 
-fn update_material_on<E: EntityEvent>(
-    new_material: Handle<StandardMaterial>,
-) -> impl Fn(On<E>, Query<&mut MeshMaterial3d<StandardMaterial>>) {
-    move |event, mut query| {
-        if let Ok(mut material) = query.get_mut(event.event_target()) {
-            material.0 = new_material.clone();
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn(Camera2d);
+
+    let len = 128.0;
+    let sprite_size = Vec2::splat(len / 2.0);
+
+    commands
+        .spawn((Transform::default(), Visibility::default()))
+        .with_children(|commands| {
+            for (anchor_index, anchor) in [
+                Anchor::TOP_LEFT,
+                Anchor::TOP_CENTER,
+                Anchor::TOP_RIGHT,
+                Anchor::CENTER_LEFT,
+                Anchor::CENTER,
+                Anchor::CENTER_RIGHT,
+                Anchor::BOTTOM_LEFT,
+                Anchor::BOTTOM_CENTER,
+                Anchor::BOTTOM_RIGHT,
+            ]
+            .iter()
+            .enumerate()
+            {
+                let i = (anchor_index % 3) as f32;
+                let j = (anchor_index / 3) as f32;
+
+                commands
+                    .spawn((
+                        Sprite::from_color(Color::BLACK, sprite_size),
+                        Transform::from_xyz(i * len - len, j * len - len, -1.0),
+                        Pickable::default(),
+                    ))
+                    .observe(recolor_on::<Pointer<Over>>(Color::srgb(0.0, 1.0, 1.0)))
+                    .observe(recolor_on::<Pointer<Out>>(Color::BLACK))
+                    .observe(recolor_on::<Pointer<Press>>(Color::srgb(1.0, 1.0, 0.0)))
+                    .observe(recolor_on::<Pointer<Release>>(Color::srgb(0.0, 1.0, 1.0)));
+
+                commands
+                    .spawn((
+                        Sprite {
+                            image: asset_server.load("branding/bevy_bird_dark.png"),
+                            custom_size: Some(sprite_size),
+                            color: Color::srgb(1.0, 0.0, 0.0),
+                            ..default()
+                        },
+                        anchor.to_owned(),
+                        Transform::from_xyz(i * len - len, j * len - len, 0.0)
+                            .with_scale(Vec3::splat(1.0 + (i - 1.0) * 0.2))
+                            .with_rotation(Quat::from_rotation_z((j - 1.0) * 0.2)),
+                        Pickable::default(),
+                    ))
+                    .observe(recolor_on::<Pointer<Over>>(Color::srgb(0.0, 1.0, 0.0)))
+                    .observe(recolor_on::<Pointer<Out>>(Color::srgb(1.0, 0.0, 0.0)))
+                    .observe(recolor_on::<Pointer<Press>>(Color::srgb(0.0, 0.0, 1.0)))
+                    .observe(recolor_on::<Pointer<Release>>(Color::srgb(0.0, 1.0, 0.0)));
+            }
+        });
+}
+
+#[derive(Component)]
+struct AnimationIndices {
+    first: usize,
+    last: usize,
+}
+
+#[derive(Component, Deref, DerefMut)]
+struct AnimationTimer(Timer);
+
+fn animate_sprite(
+    time: Res<Time>,
+    mut query: Query<(&AnimationIndices, &mut AnimationTimer, &mut Sprite)>,
+) {
+    for (indices, mut timer, mut sprite) in &mut query {
+        let Some(texture_atlas) = &mut sprite.texture_atlas else {
+            continue;
+        };
+
+        timer.tick(time.delta());
+
+        if timer.just_finished() {
+            texture_atlas.index = if texture_atlas.index == indices.last {
+                indices.first
+            } else {
+                texture_atlas.index + 1
+            };
         }
     }
 }
 
-fn draw_mesh_intersections(pointers: Query<&PointerInteraction>, mut gizmos: Gizmos) {
-    for (point, normal) in pointers
-        .iter()
-        .filter_map(|interaction| interaction.get_nearest_hit())
-        .filter_map(|(_entity, hit)| hit.position.zip(hit.normal))
-    {
-        gizmos.sphere(point, 0.05, RED_500);
-        gizmos.arrow(point, point + normal.normalize() * 0.5, PINK_100);
-    }
+fn setup_atlas(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    let texture_handle = asset_server.load("textures/rpg/chars/gabe/gabe-idle-run.png");
+    let layout = TextureAtlasLayout::from_grid(UVec2::new(24, 24), 7, 1, None, None);
+    let texture_atlas_layout_handle = texture_atlas_layouts.add(layout);
+    let animation_indices = AnimationIndices { first: 1, last: 6 };
+    commands
+        .spawn((
+            Sprite::from_atlas_image(
+                texture_handle,
+                TextureAtlas {
+                    layout: texture_atlas_layout_handle,
+                    index: animation_indices.first,
+                },
+            ),
+            Transform::from_xyz(300.0, 0.0, 0.0).with_scale(Vec3::splat(6.0)),
+            animation_indices,
+            AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+            Pickable::default(),
+        ))
+        .observe(recolor_on::<Pointer<Over>>(Color::srgb(0.0, 1.0, 1.0)))
+        .observe(recolor_on::<Pointer<Out>>(Color::srgb(1.0, 1.0, 1.0)))
+        .observe(recolor_on::<Pointer<Press>>(Color::srgb(1.0, 1.0, 0.0)))
+        .observe(recolor_on::<Pointer<Release>>(Color::srgb(0.0, 1.0, 1.0)));
 }
 
-fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
-    for mut transform in &mut query {
-        transform.rotate_y(time.delta_secs() / 2.);
+fn recolor_on<E: EntityEvent + Debug + Clone + Reflect>(
+    color: Color,
+) -> impl Fn(On<E>, Query<&mut Sprite>) {
+    move |ev, mut sprites| {
+        let Ok(mut sprite) = sprites.get_mut(ev.event_target()) else {
+            return;
+        };
+        sprite.color = color;
     }
-}
-
-fn rotate_on_drag(drag: On<Pointer<Drag>>, mut transforms: Query<&mut Transform>) {
-    let mut transform = transforms.get_mut(drag.entity).unwrap();
-    transform.rotate_y(drag.delta.x * 0.02);
-    transform.rotate_x(drag.delta.y * 0.02);
 }
