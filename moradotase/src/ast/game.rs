@@ -165,6 +165,7 @@ fn runtime_input_system(
             BosonogaElement::Command(BosonogaCommand::SpawnRectangles(
                 count_x,
                 count_y,
+                offset,
                 x_start,
                 y_start,
             )) => {
@@ -174,8 +175,8 @@ fn runtime_input_system(
                         let id = rectangle_counter.0;
                         current_count += 1;
 
-                        let x = (x_start + i * 100) as f32;
-                        let y = (y_start + j * 100) as f32;
+                        let x = (x_start + i * offset) as f32;
+                        let y = (y_start + j * offset) as f32;
 
                         commands
                             .spawn((
