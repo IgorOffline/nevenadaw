@@ -1,9 +1,9 @@
 use crate::bosonoga::BosonogaParser;
 use bevy::color::Srgba;
 use bevy::prelude::{
-    default, App, ButtonInput, Camera2d, ClearColor, Click, Commands, Component, EntityEvent, KeyCode,
+    default, App, ButtonInput, Camera2d, ClearColor, Click, Commands, Component, Entity, EntityEvent, KeyCode,
     On, Pickable, PluginGroup, Pointer, Query, Res, ResMut, Resource, Sprite, Startup,
-    Transform, Update, Vec2, Window, WindowPlugin,
+    Transform, Update, Vec2, Window, WindowPlugin, With,
 };
 use bevy::window::WindowResolution;
 use bevy::DefaultPlugins;
@@ -82,7 +82,20 @@ fn runtime_input_system(
     mut rectangle_counter: ResMut<RectangleCounter>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     _window: Query<&Window>,
+    rectangles: Query<Entity, With<RectangleId>>,
 ) {
+    let mut current_count = rectangles.iter().count() as i32;
+
+    if keyboard_input.just_pressed(KeyCode::Digit0) {
+        for entity in &rectangles {
+            commands.entity(entity).despawn();
+        }
+        current_count = 0;
+        variables
+            .0
+            .replace(BosonogaVariable::new_i32("rectangle_count", 0));
+    }
+
     if !keyboard_input.just_pressed(KeyCode::KeyT) {
         return;
     }
@@ -105,6 +118,9 @@ fn runtime_input_system(
                 name,
                 BosonogaValue::Inat(v),
             )) => {
+                if name == "rectangle_count" {
+                    current_count = v;
+                }
                 variables.0.replace(BosonogaVariable::new_i32(name, v));
             }
             BosonogaElement::Command(BosonogaCommand::Set(
@@ -120,6 +136,7 @@ fn runtime_input_system(
             BosonogaElement::Command(BosonogaCommand::SpawnRectangle(x_i, y_i)) => {
                 rectangle_counter.0 += 1;
                 let id = rectangle_counter.0;
+                current_count += 1;
 
                 let x = x_i as f32;
                 let y = y_i as f32;
@@ -143,7 +160,7 @@ fn runtime_input_system(
 
                 variables
                     .0
-                    .replace(BosonogaVariable::new_i32("rectangle_count", id));
+                    .replace(BosonogaVariable::new_i32("rectangle_count", current_count));
             }
             _ => {}
         }
