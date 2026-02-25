@@ -162,31 +162,38 @@ fn runtime_input_system(
                     .0
                     .replace(BosonogaVariable::new_i32("rectangle_count", current_count));
             }
-            BosonogaElement::Command(BosonogaCommand::SpawnRectangles(count, x_start, y_i)) => {
-                for i in 0..count {
-                    rectangle_counter.0 += 1;
-                    let id = rectangle_counter.0;
-                    current_count += 1;
+            BosonogaElement::Command(BosonogaCommand::SpawnRectangles(
+                count_x,
+                count_y,
+                x_start,
+                y_start,
+            )) => {
+                for i in 0..count_x {
+                    for j in 0..count_y {
+                        rectangle_counter.0 += 1;
+                        let id = rectangle_counter.0;
+                        current_count += 1;
 
-                    let x = (x_start + i * 100) as f32;
-                    let y = y_i as f32;
+                        let x = (x_start + i * 100) as f32;
+                        let y = (y_start + j * 100) as f32;
 
-                    commands
-                        .spawn((
-                            Sprite {
-                                color: Srgba::hex(RECTANGLE_COLOR).unwrap().into(),
-                                custom_size: Some(RECTANGLE_SIZE),
-                                ..default()
-                            },
-                            Transform::from_xyz(x, y, 0.0),
-                            Pickable::default(),
-                            RectangleId(id),
-                        ))
-                        .observe(|ev: On<Pointer<Click>>, query: Query<&RectangleId>| {
-                            if let Ok(rectangle_id) = query.get(ev.event_target()) {
-                                println!("Rectangle picked at: {}", rectangle_id.0);
-                            }
-                        });
+                        commands
+                            .spawn((
+                                Sprite {
+                                    color: Srgba::hex(RECTANGLE_COLOR).unwrap().into(),
+                                    custom_size: Some(RECTANGLE_SIZE),
+                                    ..default()
+                                },
+                                Transform::from_xyz(x, y, 0.0),
+                                Pickable::default(),
+                                RectangleId(id),
+                            ))
+                            .observe(|ev: On<Pointer<Click>>, query: Query<&RectangleId>| {
+                                if let Ok(rectangle_id) = query.get(ev.event_target()) {
+                                    println!("Rectangle picked at: {}", rectangle_id.0);
+                                }
+                            });
+                    }
                 }
 
                 variables

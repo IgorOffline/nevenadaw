@@ -42,13 +42,14 @@ fn test_bosonoga_commands() {
 #[test]
 fn test_neo_reket_di() {
     println!("test_neo_reket_di");
-    let input = "NEO-REKET-DI 5 NEO-REKET-X 20 NEO-REKET-Y 100";
+    let input = "NEO-REKET-DI 3 4 NEO-REKET-X 20 NEO-REKET-Y 100";
     let parser = BosonogaParser::new();
     let result = parser.parse(input).unwrap();
     assert_eq!(result.len(), 1);
     match &result[0] {
-        BosonogaElement::Command(BosonogaCommand::SpawnRectangles(count, x, y)) => {
-            assert_eq!(*count, 5);
+        BosonogaElement::Command(BosonogaCommand::SpawnRectangles(count_x, count_y, x, y)) => {
+            assert_eq!(*count_x, 3);
+            assert_eq!(*count_y, 4);
             assert_eq!(*x, 20);
             assert_eq!(*y, 100);
         }
