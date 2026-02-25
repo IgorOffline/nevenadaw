@@ -23,7 +23,7 @@ match {
     r"(?i)BOSONOGA-GAME-WINDOW-COLOR" => WINDOW_COLOR_KW,
 } else {
     r"[a-z_]+"          => ID_NAMA,
-    r"[0-9]+"           => NUM_NAMA,
+    r"-?[0-9]+"         => NUM_NAMA,
     r"#[0-9A-Fa-f]{6}"  => HEX_COLOR,
     r"[A-Z]+[a-z0-9_]*" => TITLE_NAMA,
 }
@@ -45,7 +45,7 @@ BosonogaCommand: BosonogaCommand = {
     SET_KW <t:BosonogaType> <name:BosonogaString> <val:BosonogaValue> => BosonogaCommand::Set(t, name.to_string(), val),
     TALI_KW => BosonogaCommand::Tali,
     NEO_REKET_KW NEO_REKET_X_KW <x:BosonogaNumber> NEO_REKET_Y_KW <y:BosonogaNumber> => BosonogaCommand::SpawnRectangle(x, y),
-    NEO_REKET_DI_KW <count:BosonogaNumber> NEO_REKET_X_KW <x:BosonogaNumber> NEO_REKET_Y_KW <y:BosonogaNumber> => BosonogaCommand::SpawnRectangles(count, x, y),
+    NEO_REKET_DI_KW <count1:BosonogaNumber> <count2:BosonogaNumber> <offset:BosonogaNumber> NEO_REKET_X_KW <x:BosonogaNumber> NEO_REKET_Y_KW <y:BosonogaNumber> => BosonogaCommand::SpawnRectangles(count1, count2, offset, x, y),
     GAME_KW WINDOW_SIZE_KW <window_width:BosonogaNumber> <window_height:BosonogaNumber> WINDOW_TITLE_KW <window_title:BosonogaTitleString> WINDOW_COLOR_KW <window_hex_color:BosonogaHexColor> => BosonogaCommand::Game(window_width, window_height, window_title.to_string(), window_hex_color.to_string()),
 };
 

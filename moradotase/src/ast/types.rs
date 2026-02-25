@@ -14,7 +14,7 @@ pub enum BosonogaCommand {
     Tali,
     Game(i32, i32, String, String),
     SpawnRectangle(i32, i32),
-    SpawnRectangles(i32, i32, i32),
+    SpawnRectangles(i32, i32, i32, i32, i32),
 }
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
@@ -108,8 +108,14 @@ pub fn extract_variables(elements: Vec<BosonogaElement>) -> BTreeSet<BosonogaVar
                 current_count += 1;
                 variables.replace(BosonogaVariable::new_i32("rectangle_count", current_count));
             }
-            BosonogaElement::Command(BosonogaCommand::SpawnRectangles(count, _, _)) => {
-                current_count += count;
+            BosonogaElement::Command(BosonogaCommand::SpawnRectangles(
+                count_x,
+                count_y,
+                _,
+                _,
+                _,
+            )) => {
+                current_count += count_x * count_y;
                 variables.replace(BosonogaVariable::new_i32("rectangle_count", current_count));
             }
             _ => {}
