@@ -158,6 +158,37 @@ fn runtime_input_system(
                         }
                     });
 
+                    variables
+                    .0
+                    .replace(BosonogaVariable::new_i32("rectangle_count", current_count));
+            }
+            BosonogaElement::Command(BosonogaCommand::SpawnRectangles(count, y_i)) => {
+                for i in 0..count {
+                    rectangle_counter.0 += 1;
+                    let id = rectangle_counter.0;
+                    current_count += 1;
+
+                    let x = (i * 100) as f32;
+                    let y = y_i as f32;
+
+                    commands
+                        .spawn((
+                            Sprite {
+                                color: Srgba::hex(RECTANGLE_COLOR).unwrap().into(),
+                                custom_size: Some(RECTANGLE_SIZE),
+                                ..default()
+                            },
+                            Transform::from_xyz(x, y, 0.0),
+                            Pickable::default(),
+                            RectangleId(id),
+                        ))
+                        .observe(|ev: On<Pointer<Click>>, query: Query<&RectangleId>| {
+                            if let Ok(rectangle_id) = query.get(ev.event_target()) {
+                                println!("Rectangle picked at: {}", rectangle_id.0);
+                            }
+                        });
+                }
+
                 variables
                     .0
                     .replace(BosonogaVariable::new_i32("rectangle_count", current_count));

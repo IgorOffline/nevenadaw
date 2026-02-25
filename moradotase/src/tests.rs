@@ -1,11 +1,11 @@
-use crate::ast::BosonogaVariable;
-use crate::bosonoga::BosonogaBTreeParser;
+use crate::ast::{BosonogaCommand, BosonogaElement, BosonogaVariable};
+use crate::bosonoga::{BosonogaBTreeParser, BosonogaParser};
 use pretty_assertions::assert_eq;
 use std::collections::BTreeSet;
 
 #[test]
-fn test_bosonoga() {
-    println!("test_bosonoga");
+fn test_bosonoga_commands() {
+    println!("test_bosonoga_commands");
     let input = r"
         SET INAT first 10
         SET INAT second 20
@@ -36,5 +36,21 @@ fn test_bosonoga() {
             "Value mismatch for variable {}",
             var.name
         );
+    }
+}
+
+#[test]
+fn test_neo_reket_di() {
+    println!("test_neo_reket_di");
+    let input = "NEO-REKET-DI 5 NEO-REKET-Y 100";
+    let parser = BosonogaParser::new();
+    let result = parser.parse(input).unwrap();
+    assert_eq!(result.len(), 1);
+    match &result[0] {
+        BosonogaElement::Command(BosonogaCommand::SpawnRectangles(count, y)) => {
+            assert_eq!(*count, 5);
+            assert_eq!(*y, 100);
+        }
+        _ => panic!("Expected SpawnRectangles command"),
     }
 }
