@@ -1,0 +1,11 @@
+[package]
+name = "axumfebruary"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.8.8"
+rand = "0.10.0"
+serde = { version = "1.0.228", features = ["derive"] }
+tokio = { version = "1.49.0", features = ["full"] }
+tower-http = { version = "0.6.2", features = ["fs"] }
