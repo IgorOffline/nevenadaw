@@ -50,9 +50,21 @@
         }
         app.stage.addChild(g);
         div.appendChild(app.canvas);
-        const texture = await PIXI.Assets.load('crofavicon.png');
-        const sprite = new PIXI.Sprite(texture);
-        app.stage.addChild(sprite);
+        const texture_green = await PIXI.Assets.load('alice1a_green.png');
+        const sprite_green = new PIXI.Sprite(texture_green);
+        app.stage.addChild(sprite_green);
+        sprite_green.position.set(50, 50);
+        sprite_green.scale.set(0.15);
+        const texture_blue = await PIXI.Assets.load('alice1a_blue.png');
+        const sprite_blue = new PIXI.Sprite(texture_blue);
+        app.stage.addChild(sprite_blue);
+        sprite_blue.position.set(50, 300);
+        sprite_blue.scale.set(0.15);
+        const texture_red = await PIXI.Assets.load('alice1a_red.png');
+        const sprite_red = new PIXI.Sprite(texture_red);
+        app.stage.addChild(sprite_red);
+        sprite_red.position.set(300, 300);
+        sprite_red.scale.set(0.15);
         app.ticker.add((time) => {
             //
         })
@@ -97,19 +109,19 @@
         function buttonClicked(btn) {
             switch (btn) {
                 case 'H':
-                    sprite.x -= 10;
+                    sprite_green.x -= 10;
                     break;
                 case 'J':
-                    sprite.y += 10;
+                    sprite_green.y += 10;
                     break;
                 case 'K':
-                    sprite.y -= 10;
+                    sprite_green.y -= 10;
                     break;
                 case 'L':
-                    sprite.x += 10;
+                    sprite_green.x += 10;
                     break;
             }
-            console.log(`[ ${btn} ${sprite.x} ${sprite.y} ] ${crypto.randomUUID()}`);
+            console.log(`[ ${btn} ${sprite_green.x} ${sprite_green.y} ] ${crypto.randomUUID()}`);
         }
     })();
 </script>
