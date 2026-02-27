@@ -14,8 +14,8 @@
         }
 
         #pixijsfebruary {
-            width: 700px;
-            height: 500px;
+            width: 800px;
+            height: 600px;
             margin: auto;
             border: 1px solid black;
             aspect-ratio: 4/3;
@@ -32,21 +32,23 @@
             background: '#455A64',
             resizeTo: div
         });
-        const g = new PIXI.Graphics();
-        for (let ix = 0; ix < 69; ix++) {
-            for (let jy = 0; jy < 69; jy++) {
-                g.rect(-100 + ix * 30, -100 + jy * 30, 10, 10);
-                g.fill(0x757575);
-                g.stroke({color: 0x212121, width: 1.2});
-            }
-        }
+        g = new PIXI.Graphics();
         app.stage.addChild(g);
         div.appendChild(app.canvas);
         const texture = await PIXI.Assets.load('crofavicon.png');
         const sprite = new PIXI.Sprite(texture);
         app.stage.addChild(sprite);
+        const initX = 25;
+        sprite.x = initX;
+        sprite.y = 225;
+        let finishLineReachedCount = 0;
         app.ticker.add((time) => {
-            //
+            sprite.x += 4 * time.deltaTime;
+            if (sprite.x > 525) {
+                ++finishLineReachedCount;
+                sprite.x = initX;
+                console.log(finishLineReachedCount);
+            }
         })
     })();
 </script>
