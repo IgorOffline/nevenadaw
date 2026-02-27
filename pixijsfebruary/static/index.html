@@ -7,6 +7,8 @@
     <meta content="ie=edge" http-equiv="X-UA-Compatible">
     <script src="pixi-8-13-2.min.js"></script>
     <link crossorigin="anonymous" href="https://igordurbek.b-cdn.net/crofavicon.png" rel="icon">
+    <link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+          integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" rel="stylesheet">
     <title>Pixijsfebruary</title>
     <style>
         body {
@@ -24,6 +26,14 @@
 </head>
 <body>
 <div id="pixijsfebruary" role="main"></div>
+<div class="d-flex flex-column align-items-center mt-3" id="buttons">
+    <button class="btn btn-primary mb-2" id="btn-w">[ W ]</button>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" id="btn-a">[ A ]</button>
+        <button class="btn btn-primary" id="btn-s">[ S ]</button>
+        <button class="btn btn-primary" id="btn-d">[ D ]</button>
+    </div>
+</div>
 <script>
     (async () => {
         const div = document.getElementById('pixijsfebruary');
@@ -48,7 +58,51 @@
         app.ticker.add((time) => {
             //
         })
+
+        const buttonW = document.getElementById('btn-w');
+        buttonW.addEventListener('click', () => {
+            buttonClicked('W');
+        });
+
+        const buttonA = document.getElementById('btn-a');
+        buttonA.addEventListener('click', () => {
+            buttonClicked('A');
+        });
+
+        const buttonS = document.getElementById('btn-s');
+        buttonS.addEventListener('click', () => {
+            buttonClicked('S');
+        });
+
+        const buttonD = document.getElementById('btn-d');
+        buttonD.addEventListener('click', () => {
+            buttonClicked('D');
+        });
+
+        window.addEventListener('keydown', (event) => {
+            switch (event.key.toLowerCase()) {
+                case 'w':
+                    buttonClicked('W');
+                    break;
+                case 'a':
+                    buttonClicked('A');
+                    break;
+                case 's':
+                    buttonClicked('S');
+                    break;
+                case 'd':
+                    buttonClicked('D');
+                    break;
+            }
+        });
+
+        function buttonClicked(btn) {
+            console.log(`[ ${btn} ] ${crypto.randomUUID()}`);
+        }
     })();
 </script>
+<script crossorigin="anonymous"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
