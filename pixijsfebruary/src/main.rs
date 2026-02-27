@@ -23,6 +23,7 @@ async fn hello_world() -> Json<HelloResponse> {
 async fn main() {
     let app = Router::new()
         .route("/api", get(hello_world))
+        .nest_service("/dist", ServeDir::new("dist"))
         .fallback_service(ServeDir::new("static"));
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
