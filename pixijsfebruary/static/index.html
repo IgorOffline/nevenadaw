@@ -26,13 +26,11 @@
 </head>
 <body>
 <div id="pixijsfebruary" role="main"></div>
-<div class="d-flex flex-column align-items-center mt-3" id="buttons">
-    <button class="btn btn-primary mb-2" id="btn-w">[ W ]</button>
-    <div class="d-flex gap-2">
-        <button class="btn btn-primary" id="btn-a">[ A ]</button>
-        <button class="btn btn-primary" id="btn-s">[ S ]</button>
-        <button class="btn btn-primary" id="btn-d">[ D ]</button>
-    </div>
+<div class="d-flex flex-row justify-content-center gap-2 mt-3" id="buttons">
+    <button class="btn btn-primary" id="btn-h">[ H ]</button>
+    <button class="btn btn-primary" id="btn-j">[ J ]</button>
+    <button class="btn btn-primary" id="btn-k">[ K ]</button>
+    <button class="btn btn-primary" id="btn-l">[ L ]</button>
 </div>
 <script>
     (async () => {
@@ -59,45 +57,59 @@
             //
         })
 
-        const buttonW = document.getElementById('btn-w');
-        buttonW.addEventListener('click', () => {
-            buttonClicked('W');
+        const buttonH = document.getElementById('btn-h');
+        buttonH.addEventListener('click', () => {
+            buttonClicked('H');
         });
 
-        const buttonA = document.getElementById('btn-a');
-        buttonA.addEventListener('click', () => {
-            buttonClicked('A');
+        const buttonJ = document.getElementById('btn-j');
+        buttonJ.addEventListener('click', () => {
+            buttonClicked('J');
         });
 
-        const buttonS = document.getElementById('btn-s');
-        buttonS.addEventListener('click', () => {
-            buttonClicked('S');
+        const buttonK = document.getElementById('btn-k');
+        buttonK.addEventListener('click', () => {
+            buttonClicked('K');
         });
 
-        const buttonD = document.getElementById('btn-d');
-        buttonD.addEventListener('click', () => {
-            buttonClicked('D');
+        const buttonL = document.getElementById('btn-l');
+        buttonL.addEventListener('click', () => {
+            buttonClicked('L');
         });
 
         window.addEventListener('keydown', (event) => {
             switch (event.key.toLowerCase()) {
-                case 'w':
-                    buttonClicked('W');
+                case 'h':
+                    buttonClicked('H');
                     break;
-                case 'a':
-                    buttonClicked('A');
+                case 'j':
+                    buttonClicked('J');
                     break;
-                case 's':
-                    buttonClicked('S');
+                case 'k':
+                    buttonClicked('K');
                     break;
-                case 'd':
-                    buttonClicked('D');
+                case 'l':
+                    buttonClicked('L');
                     break;
             }
         });
 
         function buttonClicked(btn) {
-            console.log(`[ ${btn} ] ${crypto.randomUUID()}`);
+            switch (btn) {
+                case 'H':
+                    sprite.x -= 10;
+                    break;
+                case 'J':
+                    sprite.y += 10;
+                    break;
+                case 'K':
+                    sprite.y -= 10;
+                    break;
+                case 'L':
+                    sprite.x += 10;
+                    break;
+            }
+            console.log(`[ ${btn} ${sprite.x} ${sprite.y} ] ${crypto.randomUUID()}`);
         }
     })();
 </script>
