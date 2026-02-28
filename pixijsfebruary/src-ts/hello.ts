@@ -156,21 +156,21 @@ async function loadMyFont() {
     const texture_green = await PIXI.Assets.load(Regina.sprites.green.texture);
     const sprite_green = new PIXI.Sprite(texture_green);
     Regina.sprites.green.sprite = sprite_green;
-    sprite_green.position.set(Regina.texture.default.topLeft, Regina.texture.default.topLeft);
+    Regina.sprites.green.setPosition(Regina.texture.default.topLeft, Regina.texture.default.topLeft);
     sprite_green.scale.set(Regina.texture.default.scale);
     app.stage.addChild(sprite_green);
 
     const texture_blue = await PIXI.Assets.load(Regina.sprites.blue.texture);
     const sprite_blue = new PIXI.Sprite(texture_blue);
     Regina.sprites.blue.sprite = sprite_blue;
-    sprite_blue.position.set(Regina.texture.default.topLeft, Regina.texture.default.bottomRight);
+    Regina.sprites.blue.setPosition(Regina.texture.default.topLeft, Regina.texture.default.bottomRight);
     sprite_blue.scale.set(Regina.texture.default.scale);
     app.stage.addChild(sprite_blue);
 
     const texture_red = await PIXI.Assets.load(Regina.sprites.red.texture);
     const sprite_red = new PIXI.Sprite(texture_red);
     Regina.sprites.red.sprite = sprite_red;
-    sprite_red.position.set(Regina.texture.default.bottomRight, Regina.texture.default.bottomRight);
+    Regina.sprites.red.setPosition(Regina.texture.default.bottomRight, Regina.texture.default.bottomRight);
     sprite_red.scale.set(Regina.texture.default.scale);
     app.stage.addChild(sprite_red);
 
