@@ -1,5 +1,25 @@
 declare const PIXI: any;
 
+class FebruarySprite {
+    texture: string;
+    sprite: any;
+    x: number;
+    y: number;
+
+    constructor(texture: string) {
+        this.texture = texture;
+        this.sprite = null;
+        this.x = 0;
+        this.y = 0;
+    }
+
+    setPosition(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+        this.sprite.position.set(x, y);
+    }
+}
+
 class FebruaryButton {
     physicalLower: string;
     physicalUpper: string;
@@ -15,6 +35,14 @@ class FebruaryButton {
 enum FebruaryLogLevel {
     Trace = 0,
     Info = 1,
+}
+
+class FebruaryString {
+    str: string;
+
+    constructor(str: string) {
+        this.str = str;
+    }
 }
 
 export const Regina = {
@@ -35,83 +63,126 @@ export const Regina = {
         url: 'https://igordurbek.b-cdn.net/IosevkaTerm-Regular.ttf',
         size: 72,
     },
-    textures: {
-        green: 'alice1a_green.png',
-        blue: 'alice1a_blue.png',
-        red: 'alice1a_red.png',
+    sprites: {
+        green: new FebruarySprite('alice1a_green.png'),
+        blue: new FebruarySprite('alice1a_blue.png'),
+        red: new FebruarySprite('alice1a_red.png'),
     },
-    textureDefaultTopLeft: 50,
-    textureDefaultBottomRight: 300,
-    textureScale: 0.15,
+    texture: {
+        default: {
+            topLeft: 50,
+            bottomRight: 300,
+            scale: 0.15,
+        }
+    },
+    label: {
+        positionX: 15,
+        positionY: 395,
+        text: '123456789',
+        color: 0x9C27B0,
+    },
+    app: {
+        div: 'pixijsfebruary',
+        backgroundColorString: '#455A64'
+    },
+    grid: {
+        stroke: {color: 0x212121, width: 1.2},
+        fillColor: 0x757575,
+    },
+
+    getElementById: (id: FebruaryString) => document.getElementById(id.str) as HTMLElement,
+    logTrace: (message: FebruaryString) => {
+        if (Regina.logLevel === FebruaryLogLevel.Trace || Regina.logLevel === FebruaryLogLevel.Info) {
+            console.log(message.str);
+        }
+    },
+    logInfo: (message: FebruaryString) => {
+        if (Regina.logLevel === FebruaryLogLevel.Info) {
+            console.log(message.str);
+        }
+    },
+} as const;
+
+export const Majic = {
+    grid: {
+        size: 69,
+        rect: {size: 10, offset: 30},
+    },
+    fontSource: (fontUrl: string) => `url(${fontUrl})`,
+    documentFontsLoad: (fontSize: any, fontName: any) => `${fontSize}px "${fontName}`,
+    documentFontLoaded: (fontName: any) => `Font loaded: ${fontName}`,
+    getButtonClickedMessage: (btn: FebruaryString, sprite: FebruarySprite): FebruaryString =>
+        new FebruaryString(`[ ${btn} ${sprite.x} ${sprite.y} ] ${crypto.randomUUID()}`),
 } as const;
 
 async function loadMyFont() {
     const font = new FontFace(
         Regina.font.name,
-        `url(${Regina.font.url})`
+        `${Majic.fontSource(Regina.font.url)}`
     );
 
     const loaded = await font.load();
     (document.fonts as unknown as FontFaceSet).add(loaded);
 
-    await document.fonts.load(
-        `${Regina.font.size}px "${Regina.font.name}"`
-    );
+    await document.fonts.load(Majic.documentFontsLoad(Regina.font.size, Regina.font.name));
 
-    console.log(`Font loaded: ${Regina.font.name}`);
+    Regina.logTrace(new FebruaryString(Majic.documentFontLoaded(Regina.font.name)));
 }
 
 (async () => {
-    const div = document.getElementById('pixijsfebruary');
+    const div = Regina.getElementById(new FebruaryString(Regina.app.div));
     if (!div) return;
 
     await loadMyFont();
 
     const app = new PIXI.Application();
     await app.init({
-        background: '#455A64',
+        background: Regina.app.backgroundColorString,
         resizeTo: div,
     });
 
     const g = new PIXI.Graphics();
-    for (let ix = 0; ix < 69; ix++) {
-        for (let jy = 0; jy < 69; jy++) {
-            g.rect(-100 + ix * 30, -100 + jy * 30, 10, 10);
-            g.fill(0x757575);
-            g.stroke({color: 0x212121, width: 1.2});
+    for (let ix = 0; ix < Majic.grid.size; ix++) {
+        for (let jy = 0; jy < Majic.grid.size; jy++) {
+            g.rect(-100 + ix * Majic.grid.rect.offset, -100 + jy * Majic.grid.rect.offset, Majic.grid.rect.size, Majic.grid.rect.size);
+            g.fill(Regina.grid.fillColor);
+            g.stroke({color: Regina.grid.stroke.color, width: Regina.grid.stroke.width});
         }
     }
     app.stage.addChild(g);
 
     div.appendChild(app.canvas);
 
-    const texture_green = await PIXI.Assets.load(Regina.textures.green);
+    const texture_green = await PIXI.Assets.load(Regina.sprites.green.texture);
     const sprite_green = new PIXI.Sprite(texture_green);
-    sprite_green.position.set(Regina.textureDefaultTopLeft, Regina.textureDefaultTopLeft);
-    sprite_green.scale.set(Regina.textureScale);
+    Regina.sprites.green.sprite = sprite_green;
+    sprite_green.position.set(Regina.texture.default.topLeft, Regina.texture.default.topLeft);
+    sprite_green.scale.set(Regina.texture.default.scale);
     app.stage.addChild(sprite_green);
 
-    const texture_blue = await PIXI.Assets.load(Regina.textures.blue);
+    const texture_blue = await PIXI.Assets.load(Regina.sprites.blue.texture);
     const sprite_blue = new PIXI.Sprite(texture_blue);
-    sprite_blue.position.set(Regina.textureDefaultTopLeft, Regina.textureDefaultBottomRight);
-    sprite_blue.scale.set(Regina.textureScale);
+    Regina.sprites.blue.sprite = sprite_blue;
+    sprite_blue.position.set(Regina.texture.default.topLeft, Regina.texture.default.bottomRight);
+    sprite_blue.scale.set(Regina.texture.default.scale);
     app.stage.addChild(sprite_blue);
 
-    const texture_red = await PIXI.Assets.load(Regina.textures.red);
+    const texture_red = await PIXI.Assets.load(Regina.sprites.red.texture);
     const sprite_red = new PIXI.Sprite(texture_red);
-    sprite_red.position.set(Regina.textureDefaultBottomRight, Regina.textureDefaultBottomRight);
-    sprite_red.scale.set(Regina.textureScale);
+    Regina.sprites.red.sprite = sprite_red;
+    sprite_red.position.set(Regina.texture.default.bottomRight, Regina.texture.default.bottomRight);
+    sprite_red.scale.set(Regina.texture.default.scale);
     app.stage.addChild(sprite_red);
 
     const label = new PIXI.Text({
-        text: '123456789',
+        text: Regina.label.text,
         style: {
             fontFamily: Regina.font.name,
             fontSize: Regina.font.size,
-            fill: 0x9C27B0,
+            fill: Regina.label.color,
         },
     });
-    label.position.set(15, 395);
+    label.position.set(Regina.label.positionX, Regina.label.positionY);
     app.stage.addChild(label);
 
     app.ticker.add(() => {
@@ -137,26 +208,23 @@ async function loadMyFont() {
     function buttonClicked(btn: string) {
         switch (btn) {
             case Regina.buttons.H.physicalUpper:
-                sprite_green.x -= Regina.buttonMovementOffset;
+                const newX1 = Regina.sprites.green.x - Regina.buttonMovementOffset
+                Regina.sprites.green.setPosition(newX1, Regina.sprites.green.y);
                 break;
             case Regina.buttons.J.physicalUpper:
-                sprite_green.y += Regina.buttonMovementOffset;
+                const newY2 = Regina.sprites.green.y + Regina.buttonMovementOffset;
+                Regina.sprites.green.setPosition(Regina.sprites.green.x, newY2);
                 break;
             case Regina.buttons.K.physicalUpper:
-                sprite_green.y -= Regina.buttonMovementOffset;
+                const newY3 = Regina.sprites.green.y - Regina.buttonMovementOffset;
+                Regina.sprites.green.setPosition(Regina.sprites.green.x, newY3);
                 break;
             case Regina.buttons.L.physicalUpper:
-                sprite_green.x += Regina.buttonMovementOffset;
+                const newX4 = Regina.sprites.green.x + Regina.buttonMovementOffset;
+                Regina.sprites.green.setPosition(newX4, Regina.sprites.green.y);
                 break;
         }
 
-        const message = `[ ${btn} ${sprite_green.x} ${sprite_green.y} ] ${crypto.randomUUID()}`;
-        logInfo(message);
-    }
-
-    function logInfo(message: string) {
-        if (Regina.logLevel === FebruaryLogLevel.Info) {
-            console.log(message);
-        }
+        Regina.logInfo(Majic.getButtonClickedMessage(new FebruaryString(btn), Regina.sprites.green));
     }
 })();
