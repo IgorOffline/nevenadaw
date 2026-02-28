@@ -1,22 +1,78 @@
 declare const PIXI: any;
 
+class FebruaryButton {
+    physicalLower: string;
+    physicalUpper: string;
+    visualId: string;
+
+    constructor(physicalLower: string, physicalUpper: string) {
+        this.physicalLower = physicalLower;
+        this.physicalUpper = physicalUpper;
+        this.visualId = `btn-${physicalLower}`;
+    }
+}
+
 enum FebruaryLogLevel {
     Trace = 0,
     Info = 1,
 }
 
-const logLevel: FebruaryLogLevel = FebruaryLogLevel.Trace;
-const buttonMovementOffset = 10;
+export const Regina = {
+    logLevel: FebruaryLogLevel.Trace as FebruaryLogLevel,
+    buttons: {
+        H: new FebruaryButton('h', 'H'),
+        J: new FebruaryButton('j', 'J'),
+        K: new FebruaryButton('k', 'K'),
+        L: new FebruaryButton('l', 'L'),
+    },
+    buttonMovementOffset: 10,
+    events: {
+        click: 'click',
+        keydown: 'keydown',
+    },
+    font: {
+        name: 'FebruaryTerminalRegular',
+        url: 'https://igordurbek.b-cdn.net/IosevkaTerm-Regular.ttf',
+        size: 72,
+    },
+    textures: {
+        green: 'alice1a_green.png',
+        blue: 'alice1a_blue.png',
+        red: 'alice1a_red.png',
+    },
+    textureDefaultTopLeft: 50,
+    textureDefaultBottomRight: 300,
+    textureScale: 0.15,
+} as const;
+
+async function loadMyFont() {
+    const font = new FontFace(
+        Regina.font.name,
+        `url(${Regina.font.url})`
+    );
+
+    const loaded = await font.load();
+    (document.fonts as unknown as FontFaceSet).add(loaded);
+
+    await document.fonts.load(
+        `${Regina.font.size}px "${Regina.font.name}"`
+    );
+
+    console.log(`Font loaded: ${Regina.font.name}`);
+}
 
 (async () => {
     const div = document.getElementById('pixijsfebruary');
     if (!div) return;
 
+    await loadMyFont();
+
     const app = new PIXI.Application();
     await app.init({
         background: '#455A64',
-        resizeTo: div
+        resizeTo: div,
     });
+
     const g = new PIXI.Graphics();
     for (let ix = 0; ix < 69; ix++) {
         for (let jy = 0; jy < 69; jy++) {
@@ -26,79 +82,71 @@ const buttonMovementOffset = 10;
         }
     }
     app.stage.addChild(g);
+
     div.appendChild(app.canvas);
-    const texture_green = await PIXI.Assets.load('alice1a_green.png');
+
+    const texture_green = await PIXI.Assets.load(Regina.textures.green);
     const sprite_green = new PIXI.Sprite(texture_green);
+    sprite_green.position.set(Regina.textureDefaultTopLeft, Regina.textureDefaultTopLeft);
+    sprite_green.scale.set(Regina.textureScale);
     app.stage.addChild(sprite_green);
-    sprite_green.position.set(50, 50);
-    sprite_green.scale.set(0.15);
 
-    const texture_blue = await PIXI.Assets.load('alice1a_blue.png');
+    const texture_blue = await PIXI.Assets.load(Regina.textures.blue);
     const sprite_blue = new PIXI.Sprite(texture_blue);
+    sprite_blue.position.set(Regina.textureDefaultTopLeft, Regina.textureDefaultBottomRight);
+    sprite_blue.scale.set(Regina.textureScale);
     app.stage.addChild(sprite_blue);
-    sprite_blue.position.set(50, 300);
-    sprite_blue.scale.set(0.15);
 
-    const texture_red = await PIXI.Assets.load('alice1a_red.png');
+    const texture_red = await PIXI.Assets.load(Regina.textures.red);
     const sprite_red = new PIXI.Sprite(texture_red);
+    sprite_red.position.set(Regina.textureDefaultBottomRight, Regina.textureDefaultBottomRight);
+    sprite_red.scale.set(Regina.textureScale);
     app.stage.addChild(sprite_red);
-    sprite_red.position.set(300, 300);
-    sprite_red.scale.set(0.15);
+
+    const label = new PIXI.Text({
+        text: '123456789',
+        style: {
+            fontFamily: Regina.font.name,
+            fontSize: Regina.font.size,
+            fill: 0x9C27B0,
+        },
+    });
+    label.position.set(15, 395);
+    app.stage.addChild(label);
 
     app.ticker.add(() => {
-        //
-    })
-
-    const buttonH = document.getElementById('btn-h');
-    buttonH?.addEventListener('click', () => {
-        buttonClicked('H', buttonMovementOffset);
     });
 
-    const buttonJ = document.getElementById('btn-j');
-    buttonJ?.addEventListener('click', () => {
-        buttonClicked('J', buttonMovementOffset);
+    Object.values(Regina.buttons).forEach((btn) => {
+        const el = document.getElementById(btn.visualId);
+        el?.addEventListener(Regina.events.click, () => {
+            buttonClicked(btn.physicalUpper);
+        });
     });
 
-    const buttonK = document.getElementById('btn-k');
-    buttonK?.addEventListener('click', () => {
-        buttonClicked('K', buttonMovementOffset);
+    window.addEventListener(Regina.events.keydown, (event) => {
+        const key = event.key.toLowerCase();
+
+        const match = Object.values(Regina.buttons).find(
+            (b) => b.physicalLower === key
+        );
+
+        if (match) buttonClicked(match.physicalUpper);
     });
 
-    const buttonL = document.getElementById('btn-l');
-    buttonL?.addEventListener('click', () => {
-        buttonClicked('L', buttonMovementOffset);
-    });
-
-    window.addEventListener('keydown', (event) => {
-        switch (event.key.toLowerCase()) {
-            case 'h':
-                buttonClicked('H', buttonMovementOffset);
-                break;
-            case 'j':
-                buttonClicked('J', buttonMovementOffset);
-                break;
-            case 'k':
-                buttonClicked('K', buttonMovementOffset);
-                break;
-            case 'l':
-                buttonClicked('L', buttonMovementOffset);
-                break;
-        }
-    });
-
-    function buttonClicked(btn: string, movementOffset: number) {
+    function buttonClicked(btn: string) {
         switch (btn) {
-            case 'H':
-                sprite_green.x -= movementOffset;
+            case Regina.buttons.H.physicalUpper:
+                sprite_green.x -= Regina.buttonMovementOffset;
                 break;
-            case 'J':
-                sprite_green.y += movementOffset;
+            case Regina.buttons.J.physicalUpper:
+                sprite_green.y += Regina.buttonMovementOffset;
                 break;
-            case 'K':
-                sprite_green.y -= movementOffset;
+            case Regina.buttons.K.physicalUpper:
+                sprite_green.y -= Regina.buttonMovementOffset;
                 break;
-            case 'L':
-                sprite_green.x += movementOffset;
+            case Regina.buttons.L.physicalUpper:
+                sprite_green.x += Regina.buttonMovementOffset;
                 break;
         }
 
@@ -107,7 +155,7 @@ const buttonMovementOffset = 10;
     }
 
     function logInfo(message: string) {
-        if (logLevel === FebruaryLogLevel.Info) {
+        if (Regina.logLevel === FebruaryLogLevel.Info) {
             console.log(message);
         }
     }
