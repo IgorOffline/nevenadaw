@@ -1,59 +1,29 @@
 declare const PIXI: any;
-
-class HopenanSprite {
-    texture: string;
-    sprite: any;
-    x: number;
-    y: number;
-
-    constructor(texture: string) {
-        this.texture = texture;
-        this.sprite = null;
-        this.x = 0;
-        this.y = 0;
-    }
-
-    setPosition(x: number, y: number) {
-        this.x = x;
-        this.y = y;
-        this.sprite.position.set(x, y);
-    }
-}
-
-class HopenanButton {
-    physicalLower: string;
-    physicalUpper: string;
-    visualId: string;
-
-    constructor(physicalLower: string, physicalUpper: string) {
-        this.physicalLower = physicalLower;
-        this.physicalUpper = physicalUpper;
-        this.visualId = `btn-${physicalLower}`;
-    }
-}
-
-enum HopenanLogLevel {
-    Trace = 0,
-    Info = 1,
-}
-
-class HopenanString {
-    str: string;
-
-    constructor(str: string) {
-        this.str = str;
-    }
-}
+import {HopenanButton, HopenanLogLevel, HopenanSprite, HopenanString} from './element.js';
 
 export const Regina = {
     logLevel: HopenanLogLevel.Trace as HopenanLogLevel,
     buttons: {
-        H: new HopenanButton('h', 'H'),
-        J: new HopenanButton('j', 'J'),
-        K: new HopenanButton('k', 'K'),
-        L: new HopenanButton('l', 'L'),
+        digits: {
+            D1: new HopenanButton('1', '1'),
+            D2: new HopenanButton('2', '2'),
+            D3: new HopenanButton('3', '3'),
+            D4: new HopenanButton('4', '4'),
+            D5: new HopenanButton('5', '5'),
+            D6: new HopenanButton('6', '6'),
+            D7: new HopenanButton('7', '7'),
+            D8: new HopenanButton('8', '8'),
+            D9: new HopenanButton('9', '9'),
+            D0: new HopenanButton('0', '0'),
+        },
+        movement: {
+            H: new HopenanButton('h', 'H'),
+            J: new HopenanButton('j', 'J'),
+            K: new HopenanButton('k', 'K'),
+            L: new HopenanButton('l', 'L'),
+        },
     },
-    buttonMovementOffset: 10,
+    spriteMovementOffset: 10,
     events: {
         click: 'click',
         keydown: 'keydown',
@@ -78,7 +48,6 @@ export const Regina = {
     label: {
         positionX: 15,
         positionY: 395,
-        text: '123456789',
         color: 0x9C27B0,
     },
     app: {
@@ -112,7 +81,7 @@ export const Majic = {
     documentFontsLoad: (fontSize: any, fontName: any) => `${fontSize}px "${fontName}`,
     documentFontLoaded: (fontName: any) => `Font loaded: ${fontName}`,
     getButtonClickedMessage: (btn: HopenanString, sprite: HopenanSprite): HopenanString =>
-        new HopenanString(`[ ${btn} ${sprite.x} ${sprite.y} ] ${crypto.randomUUID()}`),
+        new HopenanString(`[ ${btn.str} ${sprite.x} ${sprite.y} ] ${crypto.randomUUID()}`),
 } as const;
 
 async function loadMyFont() {
@@ -175,7 +144,7 @@ async function loadMyFont() {
     app.stage.addChild(sprite_red);
 
     const label = new PIXI.Text({
-        text: Regina.label.text,
+        text: `(${Regina.spriteMovementOffset})`,
         style: {
             fontFamily: Regina.font.name,
             fontSize: Regina.font.size,
@@ -188,17 +157,20 @@ async function loadMyFont() {
     app.ticker.add(() => {
     });
 
-    Object.values(Regina.buttons).forEach((btn) => {
+    const buttons: readonly HopenanButton[] = Object.values(Regina.buttons).flatMap(
+        (group) => Object.values(group)
+    );
+    for (const btn of buttons) {
         const el = document.getElementById(btn.visualId);
         el?.addEventListener(Regina.events.click, () => {
             buttonClicked(btn.physicalUpper);
         });
-    });
+    }
 
     window.addEventListener(Regina.events.keydown, (event) => {
         const key = event.key.toLowerCase();
 
-        const match = Object.values(Regina.buttons).find(
+        const match = buttons.find(
             (b) => b.physicalLower === key
         );
 
@@ -207,20 +179,50 @@ async function loadMyFont() {
 
     function buttonClicked(btn: string) {
         switch (btn) {
-            case Regina.buttons.H.physicalUpper:
-                const newX1 = Regina.sprites.green.x - Regina.buttonMovementOffset
+            case Regina.buttons.digits.D1.physicalUpper:
+                console.log(`[ ${Regina.buttons.digits.D1.physicalUpper} ]`);
+                break;
+            case Regina.buttons.digits.D2.physicalUpper:
+                console.log(`[ ${Regina.buttons.digits.D2.physicalUpper} ]`);
+                break;
+            case Regina.buttons.digits.D3.physicalUpper:
+                console.log(`[ ${Regina.buttons.digits.D3.physicalUpper} ]`);
+                break;
+            case Regina.buttons.digits.D4.physicalUpper:
+                console.log(`[ ${Regina.buttons.digits.D4.physicalUpper} ]`);
+                break;
+            case Regina.buttons.digits.D5.physicalUpper:
+                console.log(`[ ${Regina.buttons.digits.D5.physicalUpper} ]`);
+                break;
+            case Regina.buttons.digits.D6.physicalUpper:
+                console.log(`[ ${Regina.buttons.digits.D6.physicalUpper} ]`);
+                break;
+            case Regina.buttons.digits.D7.physicalUpper:
+                console.log(`[ ${Regina.buttons.digits.D7.physicalUpper} ]`);
+                break;
+            case Regina.buttons.digits.D8.physicalUpper:
+                console.log(`[ ${Regina.buttons.digits.D8.physicalUpper} ]`);
+                break;
+            case Regina.buttons.digits.D9.physicalUpper:
+                console.log(`[ ${Regina.buttons.digits.D9.physicalUpper} ]`);
+                break;
+            case Regina.buttons.digits.D0.physicalUpper:
+                console.log(`[ ${Regina.buttons.digits.D0.physicalUpper} ]`);
+                break;
+            case Regina.buttons.movement.H.physicalUpper:
+                const newX1 = Regina.sprites.green.x - Regina.spriteMovementOffset
                 Regina.sprites.green.setPosition(newX1, Regina.sprites.green.y);
                 break;
-            case Regina.buttons.J.physicalUpper:
-                const newY2 = Regina.sprites.green.y + Regina.buttonMovementOffset;
+            case Regina.buttons.movement.J.physicalUpper:
+                const newY2 = Regina.sprites.green.y + Regina.spriteMovementOffset;
                 Regina.sprites.green.setPosition(Regina.sprites.green.x, newY2);
                 break;
-            case Regina.buttons.K.physicalUpper:
-                const newY3 = Regina.sprites.green.y - Regina.buttonMovementOffset;
+            case Regina.buttons.movement.K.physicalUpper:
+                const newY3 = Regina.sprites.green.y - Regina.spriteMovementOffset;
                 Regina.sprites.green.setPosition(Regina.sprites.green.x, newY3);
                 break;
-            case Regina.buttons.L.physicalUpper:
-                const newX4 = Regina.sprites.green.x + Regina.buttonMovementOffset;
+            case Regina.buttons.movement.L.physicalUpper:
+                const newX4 = Regina.sprites.green.x + Regina.spriteMovementOffset;
                 Regina.sprites.green.setPosition(newX4, Regina.sprites.green.y);
                 break;
         }
