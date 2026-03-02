@@ -1,4 +1,4 @@
-declare const PIXI: any;
+import * as PIXI from 'pixi.js';
 import {HopenanButton, HopenanLogLevel, HopenanSprite, HopenanString} from './element.js';
 
 export const Regina = {
@@ -78,8 +78,8 @@ export const Majic = {
         rect: {size: 10, offset: 30},
     },
     fontSource: (fontUrl: string) => `url(${fontUrl})`,
-    documentFontsLoad: (fontSize: any, fontName: any) => `${fontSize}px "${fontName}`,
-    documentFontLoaded: (fontName: any) => `Font loaded: ${fontName}`,
+    documentFontsLoad: (fontSize: number | string, fontName: string) => `${fontSize}px "${fontName}`,
+    documentFontLoaded: (fontName: string) => `Font loaded: ${fontName}`,
     getButtonClickedMessage: (btn: HopenanString, sprite: HopenanSprite): HopenanString =>
         new HopenanString(`[ ${btn.str} ${sprite.x} ${sprite.y} ] ${crypto.randomUUID()}`),
 } as const;
