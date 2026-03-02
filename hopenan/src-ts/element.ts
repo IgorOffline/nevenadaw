@@ -1,3 +1,5 @@
+import type {Sprite} from 'pixi.js';
+
 export class HopenanButton {
     physicalLower: string;
     physicalUpper: string;
@@ -17,7 +19,7 @@ export enum HopenanLogLevel {
 
 export class HopenanSprite {
     texture: string;
-    sprite: any;
+    sprite: Sprite | null;
     x: number;
     y: number;
 
@@ -31,7 +33,7 @@ export class HopenanSprite {
     setPosition(x: number, y: number) {
         this.x = x;
         this.y = y;
-        this.sprite.position.set(x, y);
+        this.sprite?.position.set(x, y);
     }
 }
 
