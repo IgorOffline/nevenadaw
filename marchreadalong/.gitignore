@@ -1,0 +1,8 @@
+.idea
+target
+old
+assets/readalong.html
+assets/*.srt
+assets/*.txt
+assets/*.vtt
+assets/*.wav
