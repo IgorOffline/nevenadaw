@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Read-along</title>
+    <style>
+        body {
+            font-family: system-ui, Segoe UI, Arial, sans-serif;
+            line-height: 1.6;
+            margin: 24px;
+            max-width: 900px;
+        }
+
+        .sent {
+            padding: 2px 4px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .active {
+            background: #fff3b0;
+        }
+
+        .toolbar {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .hint {
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div class="toolbar">
+    <audio controls id="a" preload="auto" style="width: 100%;">
+        <source src="/assets/essay.wav">
+        <track default id="t" kind="subtitles" label="Readalong" src="/assets/essay.vtt" srclang="en">
+    </audio>
+    <div class="hint">Highlight follows audio. Click a sentence to jump (approx).</div>
+</div>
+
+<div id="text">
+    <span class="sent" id="s0">Sentence zero.</span> <span
+        class="sent" id="s1">Sentence one.</span>
+</div>
+
+<script>
+    const audio = document.getElementById('a');
+    const spans = [...document.querySelectorAll('.sent')];
+
+    function setActive(idx) {
+        spans.forEach(s => s.classList.remove('active'));
+        const el = document.getElementById('s' + idx);
+        if (el) {
+            el.classList.add('active');
+            el.scrollIntoView({block: 'center', behavior: 'smooth'});
+        }
+    }
+
+    audio.addEventListener('loadedmetadata', () => {
+        const track = audio.textTracks[0];
+        if (!track) return;
+        track.mode = 'hidden';
+
+        track.addEventListener('cuechange', () => {
+            const t = audio.currentTime;
+            const all = track.cues;
+            if (!all) return;
+
+            for (let i = 0; i < all.length; i++) {
+                const c = all[i];
+                if (t >= c.startTime && t <= c.endTime) {
+                    setActive(i);
+                    break;
+                }
+            }
+        });
+    });
+
+    document.getElementById('text').addEventListener('click', (e) => {
+        const target = e.target;
+        if (!target.classList.contains('sent')) return;
+        const idx = parseInt(target.id.slice(1), 10);
+
+        const track = audio.textTracks[0];
+        if (!track || !track.cues || idx >= track.cues.length) return;
+
+        audio.currentTime = Math.max(0, track.cues[idx].startTime);
+        audio.play();
+    });
+</script>
+</body>
+</html>
