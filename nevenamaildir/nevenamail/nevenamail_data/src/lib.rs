@@ -7,7 +7,6 @@ use fjall::{Database, Keyspace, PersistMode};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[allow(dead_code)]
 const CREATED_MESSAGE: &str = "CREATED";
 const DATA_DIR: &str = ".fjall_data";
 const DATA_KEYSPACE: &str = "data";
@@ -21,20 +20,22 @@ const PORT_CONST: &str = "PORT";
 const STARTING_ON_PORT_MESSAGE: &str = "Starting on port";
 const TCP_LISTENER_PREFIX: &str = "0.0.0.0";
 
-#[allow(dead_code)]
-#[derive(Deserialize, Serialize)]
-struct InsertBody {
-    item: Value,
+#[derive(Debug, Deserialize, Serialize)]
+struct Payload {
+    value: i32,
 }
 
-#[allow(dead_code)]
+#[derive(Debug, Deserialize, Serialize)]
+struct InsertBody {
+    item: Payload,
+}
+
 #[derive(Clone)]
 struct State {
     db: Database,
     tree: Keyspace,
 }
 
-#[allow(dead_code)]
 #[tokio::main]
 pub async fn data_main() -> Result<(), Error> {
     env_logger::Builder::new()
@@ -66,14 +67,13 @@ pub async fn data_main() -> Result<(), Error> {
     Ok(())
 }
 
-#[allow(dead_code)]
 async fn insert_item(
     extract::Path(key): extract::Path<String>,
     extract::State(state): extract::State<State>,
     extract::Json(body): extract::Json<InsertBody>,
 ) -> Result<(StatusCode, [(HeaderName, String); 1], &'static str), Error> {
     log::debug!(
-        "{INSERT_ITEM_ROUTE} {key} {:?}",
+        "{INSERT_ITEM_ROUTE} {key} {}",
         serde_json::to_string_pretty(&body.item)?
     );
 
