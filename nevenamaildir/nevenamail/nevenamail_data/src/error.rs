@@ -11,6 +11,12 @@ pub enum Error {
 
     #[error(transparent)]
     Fjall(#[from] fjall::Error),
+
+    #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
+
+    #[error(transparent)]
+    FromUtf8(#[from] std::string::FromUtf8Error),
 }
 
 impl IntoResponse for Error {
