@@ -1,0 +1,2 @@
+curl http://localhost:8000/items
+curl -X POST http://localhost:8000/insert_item/lorem_ipsum -H "Content-Type: application/json" -d '{"item": {"value": 1001}}'
