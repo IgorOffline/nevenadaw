@@ -1,8 +1,0 @@
-CREATE TABLE IF NOT EXISTS pgversion (
-  id SERIAL PRIMARY KEY,
-  version TEXT NOT NULL,
-  ctime TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-INSERT INTO pgversion (version)
-VALUES ('0.1.0');
