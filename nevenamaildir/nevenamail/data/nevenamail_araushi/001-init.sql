@@ -1,0 +1,17 @@
+CREATE TABLE IF NOT EXISTS version (
+  version_id SERIAL PRIMARY KEY,
+  version TEXT NOT NULL,
+  ctime TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS item (
+  item_id BIGSERIAL PRIMARY KEY,
+  value INTEGER NOT NULL,
+  ctime TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO version (version)
+VALUES ('0.1.0-araushi');
+
+INSERT INTO item (value)
+VALUES (0);

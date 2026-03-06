@@ -1,19 +1,19 @@
 services:
   postgres:
     image: docker.io/library/postgres:18.3-trixie
-    container_name: pginit
+    container_name: nevenamail_araushi
     restart: unless-stopped
     environment:
-      POSTGRES_DB: pginit
-      POSTGRES_USER: pgadmin
-      POSTGRES_PASSWORD: super%21S3cret
+      POSTGRES_DB: nevenamail_araushi
+      POSTGRES_USER: nevenamail_araushi_admin
+      POSTGRES_PASSWORD: nevenamail_araushi_secret
     ports:
       - "5432:5432"
     volumes:
       - ./pgdata:/var/lib/postgresql:Z
-      - ./pginit:/docker-entrypoint-initdb.d:Z
+      - ./nevenamail_araushi:/docker-entrypoint-initdb.d:Z
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U pgadmin -d pginit" ]
+      test: [ "CMD-SHELL", "pg_isready -U nevenamail_araushi_admin -d nevenamail_araushi" ]
       interval: 5s
       timeout: 5s
       retries: 10

@@ -1,11 +1,13 @@
 podman-compose down
-rm -rf ./pgdata
+podman unshare rm -rf ./pgdata
 mkdir -p ./pgdata
-podman-compose up -d
-psql postgres://pgadmin:super%21S3cret@localhost:5432/pginit -c "SELECT NOW();"
-psql postgres://pgadmin:super%21S3cret@localhost:5432/pginit -c "SELECT version FROM public.pgversion"
-export DATABASE_URL=postgres://pgadmin:super%21S3cret@localhost:5432/pginit
+podman-compose up
+psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT NOW();"
+psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT version_id, version, ctime FROM public.version ORDER BY version_id;"
+psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT item_id, value, ctime FROM public.item ORDER BY item_id;"
+export DATABASE_URL=postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi
 export PORT=8000
 cargo run
 curl http://localhost:8000/version
+curl http://localhost:8000/item
 TODO curl -X POST http://localhost:8000/insert_item/lorem_ipsum -H "Content-Type: application/json" -d '{"item": {"value": 1001}}'
