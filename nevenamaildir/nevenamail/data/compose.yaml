@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: docker.io/library/postgres:18.3-trixie
+    container_name: pginit
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pginit
+      POSTGRES_USER: pgadmin
+      POSTGRES_PASSWORD: super%21S3cret
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql:Z
+      - ./pginit:/docker-entrypoint-initdb.d:Z
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U pgadmin -d pginit" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10

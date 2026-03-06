@@ -1,43 +1,87 @@
-mod error;
-
-use crate::error::Error;
-use axum::routing::{get, post};
-use axum::{extract, http::header::HeaderName, http::StatusCode, Json, Router};
-use fjall::{Database, Keyspace, PersistMode};
+use axum::extract::State;
+use axum::http::{HeaderName, StatusCode};
+use axum::response::{IntoResponse, Response};
+use axum::routing::get;
+use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use sqlx::{FromRow, PgPool};
+use std::sync::Arc;
 
-const CREATED_MESSAGE: &str = "CREATED";
-const DATA_DIR: &str = ".fjall_data";
-const DATA_KEYSPACE: &str = "data";
 const DEFAULT_PORT: &str = "8000";
 const DURATION_HEADER: &str = "x-took-ms";
 const ERR_PORT: &str = "invalid port";
-const GET_ALL_ROUTE: &str = "/items";
-const INSERT_ITEM_ROUTE: &str = "/insert_item";
-const OPENING_DATABASE_MESSAGE: &str = "Opening database";
+const GET_ALL_ROUTE: &str = "/version";
 const PORT_CONST: &str = "PORT";
+const DATABASE_URL_CONST: &str = "DATABASE_URL";
 const STARTING_ON_PORT_MESSAGE: &str = "Starting on port";
 const TCP_LISTENER_PREFIX: &str = "0.0.0.0";
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize, Serialize)]
 struct Payload {
     value: i32,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize, Serialize)]
 struct InsertBody {
     item: Payload,
 }
 
 #[derive(Clone)]
-struct State {
-    db: Database,
-    tree: Keyspace,
+struct AppState {
+    db: PgPool,
+}
+
+#[derive(Debug, FromRow)]
+struct VersionRow {
+    id: i32,
+    version: String,
+    ctime: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Serialize)]
+struct VersionDto {
+    id: i32,
+    version: String,
+    ctime: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct VersionResponse {
+    version: Vec<VersionDto>,
+}
+
+#[derive(Debug)]
+enum AppError {
+    Db(sqlx::Error),
+}
+
+impl From<sqlx::Error> for AppError {
+    fn from(err: sqlx::Error) -> Self {
+        Self::Db(err)
+    }
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        match self {
+            AppError::Db(err) => {
+                log::error!("database error: {err}");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({
+                        "error": "internal server error"
+                    })),
+                )
+                    .into_response()
+            }
+        }
+    }
 }
 
 #[tokio::main]
-pub async fn data_main() -> Result<(), Error> {
+pub async fn data_main() -> anyhow::Result<()> {
     env_logger::Builder::new()
         .filter_level(log::LevelFilter::Debug)
         .init();
@@ -47,76 +91,50 @@ pub async fn data_main() -> Result<(), Error> {
         .parse::<u16>()
         .expect(ERR_PORT);
 
-    log::info!("{OPENING_DATABASE_MESSAGE}");
+    let database_url = std::env::var(DATABASE_URL_CONST).expect("DATABASE_URL must be set");
 
-    let db = Database::builder(DATA_DIR).open()?;
-    let tree = db.keyspace(DATA_KEYSPACE, fjall::KeyspaceCreateOptions::default)?;
-
-    let state = State { db, tree };
+    let db = PgPool::connect(&database_url).await?;
+    let state = Arc::new(AppState { db });
 
     log::info!("{STARTING_ON_PORT_MESSAGE} {port}");
 
     let app = Router::new()
-        .route(&format!("{INSERT_ITEM_ROUTE}/{{key}}"), post(insert_item))
-        .route(GET_ALL_ROUTE, get(get_all_items))
+        .route(GET_ALL_ROUTE, get(get_all_versions))
         .with_state(state);
 
-    let listener = tokio::net::TcpListener::bind(&format!("{TCP_LISTENER_PREFIX}:{port}")).await?;
+    let listener = tokio::net::TcpListener::bind(format!("{TCP_LISTENER_PREFIX}:{port}")).await?;
     axum::serve(listener, app).await?;
 
     Ok(())
 }
 
-async fn insert_item(
-    extract::Path(key): extract::Path<String>,
-    extract::State(state): extract::State<State>,
-    extract::Json(body): extract::Json<InsertBody>,
-) -> Result<(StatusCode, [(HeaderName, String); 1], &'static str), Error> {
-    log::debug!(
-        "{INSERT_ITEM_ROUTE} {key} {}",
-        serde_json::to_string_pretty(&body.item)?
-    );
-
-    let before = std::time::Instant::now();
-
-    tokio::task::spawn_blocking(move || {
-        state
-            .tree
-            .insert(key, serde_json::to_string(&body.item).unwrap())?;
-
-        state.db.persist(PersistMode::SyncAll)
-    })
-    .await
-    .unwrap()?;
-
-    Ok((
-        StatusCode::CREATED,
-        [(
-            HeaderName::from_static(DURATION_HEADER),
-            before.elapsed().as_millis().to_string(),
-        )],
-        CREATED_MESSAGE,
-    ))
-}
-
-async fn get_all_items(
-    extract::State(state): extract::State<State>,
-) -> Result<(StatusCode, [(HeaderName, String); 1], Json<Value>), Error> {
+async fn get_all_versions(
+    State(state): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, AppError> {
     log::debug!("{GET_ALL_ROUTE}");
 
     let before = std::time::Instant::now();
 
-    let mut items = serde_json::Map::new();
+    let rows: Vec<VersionRow> = sqlx::query_as::<_, VersionRow>(
+        r#"
+        SELECT id, version, ctime
+        FROM pgversion
+        ORDER BY id
+        "#,
+    )
+    .fetch_all(&state.db)
+    .await?;
 
-    for item in state.tree.iter() {
-        let (key_raw, val_raw) = item.into_inner()?;
-        let key = String::from_utf8_lossy(&key_raw).to_string();
-        let val_str = String::from_utf8_lossy(&val_raw);
-        log::info!("{key} :: {val_str}");
+    let versions = rows
+        .into_iter()
+        .map(|row| VersionDto {
+            id: row.id,
+            version: row.version,
+            ctime: row.ctime,
+        })
+        .collect::<Vec<_>>();
 
-        let val_json: Value = serde_json::from_str(&val_str)?;
-        items.insert(key, val_json);
-    }
+    let body = VersionResponse { version: versions };
 
     Ok((
         StatusCode::OK,
@@ -124,6 +142,6 @@ async fn get_all_items(
             HeaderName::from_static(DURATION_HEADER),
             before.elapsed().as_millis().to_string(),
         )],
-        Json(Value::Object(items)),
+        Json(body),
     ))
 }

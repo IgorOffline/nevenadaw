@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "nevenamail_core",
+    "nevenamail_data",
+]
+resolver = "3"
