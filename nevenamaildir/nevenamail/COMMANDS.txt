@@ -1,13 +1,19 @@
+podman container prune
+podman volume prune
+
 podman-compose down
 podman unshare rm -rf ./pgdata
 mkdir -p ./pgdata
 podman-compose up
 psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT NOW();"
-psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT version_id, version, ctime FROM public.version ORDER BY version_id;"
-psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT item_id, value, ctime FROM public.item ORDER BY item_id;"
+psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT table_name FROM information_schema.tables WHERE table_schema='public';"
+psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT id_version, version, ctime FROM public.nm_version ORDER BY id_version;"
+psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT id_item, value, ctime FROM public.nm_item ORDER BY id_item;"
+psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT id_user, email, ctime FROM public.nm_user ORDER BY id_user;"
 export DATABASE_URL=postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi
 export PORT=8000
 cargo run
 curl http://localhost:8000/version
 curl http://localhost:8000/item
-TODO curl -X POST http://localhost:8000/insert_item/lorem_ipsum -H "Content-Type: application/json" -d '{"item": {"value": 1001}}'
+curl http://localhost:8000/user
+MAYBE? curl -X POST http://localhost:8000/insert_item/lorem_ipsum -H "Content-Type: application/json" -d '{"item": {"value": 1001}}'
