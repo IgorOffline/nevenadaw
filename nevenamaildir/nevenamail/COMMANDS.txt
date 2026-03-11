@@ -5,11 +5,25 @@ podman-compose down
 podman unshare rm -rf ./pgdata
 mkdir -p ./pgdata
 podman-compose up
+
+---
+
+export PSQL_PAGER=cat
+
 psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT NOW();"
+
 psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT table_name FROM information_schema.tables WHERE table_schema='public';"
+
 psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT id_version, version, ctime FROM public.nm_version ORDER BY id_version;"
+
 psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT id_item, value, ctime FROM public.nm_item ORDER BY id_item;"
+
 psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT id_user, email, ctime FROM public.nm_user ORDER BY id_user;"
+
+psql postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi -c "SELECT id_message, sender_user_id, subject, body, ctime FROM public.nm_message ORDER BY id_message;"
+
+---
+
 export DATABASE_URL=postgres://nevenamail_araushi_admin:nevenamail_araushi_secret@localhost:5432/nevenamail_araushi
 export PORT=8000
 cargo run
