@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "lib": [
+      "es2020",
+      "dom",
+      "dom.iterable"
+    ],
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "declaration": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "typeRoots": [
+      "node_modules/@types"
+    ]
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "static",
+    "dist"
+  ]
+}
