@@ -1,0 +1,17 @@
+async fn _later() -> anyhow::Result<_AppState> {
+    env_logger::Builder::from_default_env()
+        .filter_level(log::LevelFilter::Debug)
+        .init();
+
+    let db = Builder::new_local(":memory:").build().await?;
+    let conn = db.connect()?;
+
+    conn.execute("CREATE TABLE IF NOT EXISTS version (version TEXT)", ())
+        .await?;
+    conn.execute("INSERT INTO version (version) VALUES ('0.1.0')", ())
+        .await?;
+
+    let state = _AppState { db: Arc::new(db) };
+
+    Ok(state)
+}

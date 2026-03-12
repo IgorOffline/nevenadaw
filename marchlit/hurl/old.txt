@@ -1,3 +1,11 @@
+
+// index.hurl
+
+GET {{host}}/version
+HTTP 200
+
+// api_version.hurl
+
 GET {{host}}/api/version
 HTTP 200
 [Asserts]

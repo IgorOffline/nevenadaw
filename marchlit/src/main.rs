@@ -1,26 +1,25 @@
-use std::{net::SocketAddr, sync::Arc, time::Instant};
+use std::{net::SocketAddr, sync::Arc};
 
 use axum::{
-    extract::State, http::{header::HeaderName, StatusCode},
-    response::{IntoResponse, Response},
+    extract::State, http::StatusCode,
+    response::{Html, IntoResponse, Response},
     routing::get,
     Json,
     Router,
 };
-use serde::Serialize;
 use tower_http::services::ServeDir;
-use turso::{Builder, Database};
 
-const DEFAULT_PORT: u16 = 8000;
 const PORT_ENV: &str = "PORT";
+const DEFAULT_PORT: u16 = 8000;
 
-pub const DURATION_HEADER: &str = "x-took-ms";
-pub const GET_ALL_VERSIONS: &str = "/version";
-pub const API_VERSION: &str = "/api/version";
-pub const API_VERSION_HTML: &str = "/api/version/html";
+#[derive(Clone)]
+struct AppState {
+    index_html: Arc<str>,
+}
 
 #[derive(Debug, thiserror::Error)]
-pub enum AppError {
+#[allow(dead_code)]
+enum AppError {
     #[error("internal server error")]
     Internal,
 }
@@ -28,21 +27,11 @@ pub enum AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let body = Json(serde_json::json!({
-            "error": self.to_string()
+            "error": "internal server error"
         }));
 
         (StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
     }
-}
-
-#[derive(Serialize)]
-struct VersionsResponse {
-    versions: Vec<String>,
-}
-
-#[derive(Clone)]
-struct AppState {
-    db: Arc<Database>,
 }
 
 #[tokio::main]
@@ -51,27 +40,19 @@ async fn main() -> anyhow::Result<()> {
         .filter_level(log::LevelFilter::Debug)
         .init();
 
-    let db = Builder::new_local(":memory:").build().await?;
-    let conn = db.connect()?;
-
-    conn.execute("CREATE TABLE IF NOT EXISTS version (version TEXT)", ())
-        .await?;
-    conn.execute("INSERT INTO version (version) VALUES ('0.1.0')", ())
-        .await?;
-
-    let state = AppState { db: Arc::new(db) };
-
     let port = std::env::var(PORT_ENV)
         .ok()
         .and_then(|value| value.parse::<u16>().ok())
         .unwrap_or(DEFAULT_PORT);
 
+    let state = AppState {
+        index_html: Arc::from(std::fs::read_to_string("static/index.html")?),
+    };
+
     let app = Router::new()
-        .route(GET_ALL_VERSIONS, get(get_all_versions))
-        .route(API_VERSION, get(api_all_versions))
-        .route(API_VERSION_HTML, get(api_all_versions_html))
-        .with_state(state)
-        .nest_service("/static", ServeDir::new("static"));
+        .route("/", get(get_page_index))
+        .nest_service("/static", ServeDir::new("static"))
+        .with_state(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     log::info!("Starting server on http://{addr}");
@@ -82,78 +63,7 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn get_all_versions() -> Result<impl IntoResponse, AppError> {
-    let started_at = Instant::now();
-    log::debug!("GET {GET_ALL_VERSIONS}");
-
-    let index_html =
-        std::fs::read_to_string("static/index.html").map_err(|_| AppError::Internal)?;
-
-    let duration_ms = started_at.elapsed().as_millis().to_string();
-
-    Ok((
-        StatusCode::OK,
-        [(HeaderName::from_static(DURATION_HEADER), duration_ms)],
-        axum::response::Html(index_html),
-    ))
-}
-
-async fn api_all_versions(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
-    let started_at = Instant::now();
-    log::debug!("GET {API_VERSION}");
-
-    let conn = state.db.connect().map_err(|_| AppError::Internal)?;
-    let mut rows = conn
-        .query("SELECT version FROM version", ())
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    let mut versions = Vec::new();
-    while let Some(row) = rows.next().await.map_err(|_| AppError::Internal)? {
-        let version: String = row.get(0).map_err(|_| AppError::Internal)?;
-        versions.push(version);
-    }
-
-    let response = VersionsResponse { versions };
-
-    let duration_ms = started_at.elapsed().as_millis().to_string();
-
-    Ok((
-        StatusCode::OK,
-        [(HeaderName::from_static(DURATION_HEADER), duration_ms)],
-        Json(response),
-    ))
-}
-
-async fn api_all_versions_html(
-    State(state): State<AppState>,
-) -> Result<impl IntoResponse, AppError> {
-    let started_at = Instant::now();
-    log::debug!("GET {API_VERSION_HTML}");
-
-    let conn = state.db.connect().map_err(|_| AppError::Internal)?;
-    let mut rows = conn
-        .query("SELECT version FROM version", ())
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    let mut versions = Vec::new();
-    while let Some(row) = rows.next().await.map_err(|_| AppError::Internal)? {
-        let version: String = row.get(0).map_err(|_| AppError::Internal)?;
-        versions.push(version);
-    }
-
-    let version_str = versions.join(", ");
-    let response_html = format!(
-        r#"<span class="badge badge-secondary badge-outline text-xs">v{}</span>"#,
-        version_str
-    );
-
-    let duration_ms = started_at.elapsed().as_millis().to_string();
-
-    Ok((
-        StatusCode::OK,
-        [(HeaderName::from_static(DURATION_HEADER), duration_ms)],
-        axum::response::Html(response_html),
-    ))
+async fn get_page_index(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
+    log::debug!("get_page_index");
+    Ok(Html(state.index_html.to_string()))
 }
