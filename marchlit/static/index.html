@@ -8,11 +8,15 @@
     <title>March Lit</title>
     <link href="https://igordurbek.b-cdn.net/crofavicon.png" rel="icon" type="image/png">
     <link href="/static/simple-greeting.css" rel="stylesheet">
+    <script src="/static/htmx.min.js"></script>
 </head>
 <body class="p-8 bg-base-200 min-h-screen">
 <div class="card bg-base-100 w-96 shadow-sm border border-base-300">
     <div class="card-body">
-        <h2 class="card-title text-primary">March Lit</h2>
+        <h2 class="card-title text-primary">
+            March Lit
+            <span hx-get="/api/version/html" hx-trigger="load"></span>
+        </h2>
         <div class="card-actions justify-end">
             <simple-greeting name="MARCH-LIT-1"></simple-greeting>
             <simple-greeting></simple-greeting>
@@ -26,17 +30,5 @@
 </div>
 
 <script src="/static/simple-greeting.js" type="module"></script>
-<script>
-    fetch('/api/version')
-        .then(response => response.json())
-        .then(data => {
-
-            if ("{\"versions\":[\"0.1.0\"]}" === JSON.stringify(data)) {
-                console.log("(+)");
-            } else {
-                console.log("(-)");
-            }
-        }).catch(error => console.error('Error fetching version:', error));
-</script>
 </body>
 </html>
