@@ -80,5 +80,15 @@ jsonpath "$.article.favorited" == true
 jsonpath "$.article.favoritesCount" == 1
 jsonpath "$.article.author.username" == "fav_{{uid}}"
 
+DELETE {{host}}/api/articles/{{article_id}}/favorite
+HTTP 200
+[Asserts]
+jsonpath "$.article.title" isString
+jsonpath "$.article.description" isString
+jsonpath "$.article.body" isString
+jsonpath "$.article.favorited" == false
+jsonpath "$.article.favoritesCount" == 0
+jsonpath "$.article.author.username" == "fav_{{uid}}"
+
 DELETE {{host}}/api/articles
 HTTP 204

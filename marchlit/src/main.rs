@@ -193,7 +193,10 @@ async fn main() -> anyhow::Result<()> {
                 .get(get_comments)
                 .delete(delete_comments),
         )
-        .route("/api/articles/{article_id}/favorite", post(post_favorite))
+        .route(
+            "/api/articles/{article_id}/favorite",
+            post(post_favorite).delete(delete_favorite),
+        )
         .nest_service("/static", ServeDir::new("static"))
         .with_state(state);
 
@@ -350,6 +353,37 @@ async fn post_favorite(
             body: article.body,
             favorited: true,
             favorites_count: 1,
+            author: FavoriteArticleAuthor {
+                username: format!("fav_{}", uid),
+            },
+        },
+    };
+
+    Ok(Json(response))
+}
+
+async fn delete_favorite(
+    State(state): State<AppState>,
+    Path(article_id): Path<uuid::Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("delete_favorite for article {}", article_id);
+
+    let articles = state.articles.lock().unwrap();
+    let article = articles
+        .iter()
+        .find(|a| a.id == article_id)
+        .cloned()
+        .ok_or(AppError::Internal)?;
+
+    let uid = state.last_uid.lock().unwrap().clone();
+
+    let response = FavoriteArticleResponse {
+        article: FavoriteArticleInner {
+            title: article.title,
+            description: article.description,
+            body: article.body,
+            favorited: false,
+            favorites_count: 0,
             author: FavoriteArticleAuthor {
                 username: format!("fav_{}", uid),
             },
