@@ -1,9 +1,10 @@
+use serde::{Deserialize, Serialize};
 use std::{net::SocketAddr, sync::Arc};
 
 use axum::{
     extract::State, http::StatusCode,
     response::{Html, IntoResponse, Response},
-    routing::get,
+    routing::{get, post},
     Json,
     Router,
 };
@@ -15,6 +16,44 @@ const DEFAULT_PORT: u16 = 8000;
 #[derive(Clone)]
 struct AppState {
     index_html: Arc<str>,
+    articles: Arc<std::sync::Mutex<Vec<Article>>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct User {
+    username: String,
+    email: String,
+    password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CreateUserRequest {
+    user: User,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct Article {
+    title: String,
+    description: String,
+    body: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CreateArticleRequest {
+    article: Article,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ArticleListItem {
+    title: String,
+    description: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GetArticlesResponse {
+    articles: Vec<ArticleListItem>,
+    #[serde(rename = "articlesCount")]
+    articles_count: usize,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -47,10 +86,22 @@ async fn main() -> anyhow::Result<()> {
 
     let state = AppState {
         index_html: Arc::from(std::fs::read_to_string("static/index.html")?),
+        articles: Arc::new(std::sync::Mutex::new(vec![Article {
+            title: "First Article".to_string(),
+            description: "First description".to_string(),
+            body: "First body".to_string(),
+        }])),
     };
 
     let app = Router::new()
         .route("/", get(get_page_index))
+        .route("/api/users", post(post_users))
+        .route(
+            "/api/articles",
+            post(post_articles)
+                .get(get_articles)
+                .delete(delete_articles),
+        )
         .nest_service("/static", ServeDir::new("static"))
         .with_state(state);
 
@@ -66,4 +117,46 @@ async fn main() -> anyhow::Result<()> {
 async fn get_page_index(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
     log::debug!("get_page_index");
     Ok(Html(state.index_html.to_string()))
+}
+
+async fn post_users(
+    State(_state): State<AppState>,
+    Json(payload): Json<CreateUserRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("post_users: {:?}", payload);
+    Ok((StatusCode::CREATED, Json(payload)))
+}
+
+async fn post_articles(
+    State(state): State<AppState>,
+    Json(payload): Json<CreateArticleRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("post_articles: {:?}", payload);
+    state.articles.lock().unwrap().push(payload.article.clone());
+    Ok((StatusCode::CREATED, Json(payload)))
+}
+
+async fn get_articles(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
+    log::debug!("get_articles");
+    let articles = state.articles.lock().unwrap();
+    let articles_list: Vec<ArticleListItem> = articles
+        .iter()
+        .map(|a| ArticleListItem {
+            title: a.title.clone(),
+            description: a.description.clone(),
+        })
+        .collect();
+
+    let response = GetArticlesResponse {
+        articles_count: articles_list.len(),
+        articles: articles_list,
+    };
+
+    Ok(Json(response))
+}
+
+async fn delete_articles(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
+    log::debug!("delete_articles");
+    state.articles.lock().unwrap().clear();
+    Ok(StatusCode::NO_CONTENT)
 }
