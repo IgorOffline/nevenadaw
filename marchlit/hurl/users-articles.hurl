@@ -1,7 +1,18 @@
+POST {{host}}/api/users
+{
+  "user": {
+    "username": "art_{{uid}}",
+    "email": "art_{{uid}}@test.com",
+    "password": "password123" }
+    }
+HTTP 201
+[Captures]
+user_id: jsonpath "$.user.id"
+
 POST {{host}}/api/articles
 {
   "article": {
-    "author_id": "00000000-0000-0000-0000-000000000001",
+    "author_id": "{{user_id}}",
     "title": "Test Article {{uid}}",
     "description": "Test description",
     "body": "Test body content"
