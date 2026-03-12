@@ -17,6 +17,7 @@ const PORT_ENV: &str = "PORT";
 pub const DURATION_HEADER: &str = "x-took-ms";
 pub const GET_ALL_VERSIONS: &str = "/version";
 pub const API_VERSION: &str = "/api/version";
+pub const API_VERSION_HTML: &str = "/api/version/html";
 
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
@@ -68,6 +69,7 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route(GET_ALL_VERSIONS, get(get_all_versions))
         .route(API_VERSION, get(api_all_versions))
+        .route(API_VERSION_HTML, get(api_all_versions_html))
         .with_state(state)
         .nest_service("/static", ServeDir::new("static"));
 
@@ -120,5 +122,38 @@ async fn api_all_versions(State(state): State<AppState>) -> Result<impl IntoResp
         StatusCode::OK,
         [(HeaderName::from_static(DURATION_HEADER), duration_ms)],
         Json(response),
+    ))
+}
+
+async fn api_all_versions_html(
+    State(state): State<AppState>,
+) -> Result<impl IntoResponse, AppError> {
+    let started_at = Instant::now();
+    log::debug!("GET {API_VERSION_HTML}");
+
+    let conn = state.db.connect().map_err(|_| AppError::Internal)?;
+    let mut rows = conn
+        .query("SELECT version FROM version", ())
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let mut versions = Vec::new();
+    while let Some(row) = rows.next().await.map_err(|_| AppError::Internal)? {
+        let version: String = row.get(0).map_err(|_| AppError::Internal)?;
+        versions.push(version);
+    }
+
+    let version_str = versions.join(", ");
+    let response_html = format!(
+        r#"<span class="badge badge-secondary badge-outline text-xs">v{}</span>"#,
+        version_str
+    );
+
+    let duration_ms = started_at.elapsed().as_millis().to_string();
+
+    Ok((
+        StatusCode::OK,
+        [(HeaderName::from_static(DURATION_HEADER), duration_ms)],
+        axum::response::Html(response_html),
     ))
 }
