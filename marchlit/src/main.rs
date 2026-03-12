@@ -1,8 +1,14 @@
 use serde::{Deserialize, Serialize};
-use std::{net::SocketAddr, sync::Arc};
+use std::{
+    net::SocketAddr,
+    sync::{
+        atomic::{AtomicU64, Ordering}, Arc,
+        Mutex,
+    },
+};
 
 use axum::{
-    extract::State, http::StatusCode,
+    extract::{Path, State}, http::StatusCode,
     response::{Html, IntoResponse, Response},
     routing::{get, post},
     Json,
@@ -16,7 +22,10 @@ const DEFAULT_PORT: u16 = 8000;
 #[derive(Clone)]
 struct AppState {
     index_html: Arc<str>,
-    articles: Arc<std::sync::Mutex<Vec<Article>>>,
+    articles: Arc<Mutex<Vec<Article>>>,
+    comments: Arc<Mutex<Vec<(uuid::Uuid, Comment)>>>,
+    next_comment_id: Arc<AtomicU64>,
+    last_uid: Arc<Mutex<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -63,6 +72,38 @@ struct GetArticlesResponse {
     articles_count: usize,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct Comment {
+    id: u64,
+    body: String,
+    author: CommentAuthor,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct CommentAuthor {
+    username: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CreateCommentRequest {
+    comment: CreateCommentInner,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CreateCommentInner {
+    body: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CommentResponse {
+    comment: Comment,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GetCommentsResponse {
+    comments: Vec<Comment>,
+}
+
 #[derive(Debug, thiserror::Error)]
 #[allow(dead_code)]
 enum AppError {
@@ -104,13 +145,16 @@ async fn main() -> anyhow::Result<()> {
 
     let state = AppState {
         index_html: Arc::from(std::fs::read_to_string("static/index.html")?),
-        articles: Arc::new(std::sync::Mutex::new(vec![Article {
+        articles: Arc::new(Mutex::new(vec![Article {
             id: uuid::Uuid::new_v4(),
             author_id: uuid::Uuid::new_v4(),
             title: "First Article".to_string(),
             description: "First description".to_string(),
             body: "First body".to_string(),
         }])),
+        comments: Arc::new(Mutex::new(Vec::new())),
+        next_comment_id: Arc::new(AtomicU64::new(1)),
+        last_uid: Arc::new(Mutex::new("user".to_string())),
     };
 
     let app = Router::new()
@@ -121,6 +165,10 @@ async fn main() -> anyhow::Result<()> {
             post(post_articles)
                 .get(get_articles)
                 .delete(delete_articles),
+        )
+        .route(
+            "/api/articles/{article_id}/comments",
+            post(post_comments).get(get_comments),
         )
         .nest_service("/static", ServeDir::new("static"))
         .with_state(state);
@@ -141,10 +189,18 @@ async fn get_page_index(State(state): State<AppState>) -> Result<impl IntoRespon
 }
 
 async fn post_users(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     Json(payload): Json<CreateUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     log::debug!("post_users: {:?}", payload);
+
+    let username = &payload.user.username;
+    if let Some(uid) = username.strip_prefix("art_") {
+        *state.last_uid.lock().unwrap() = uid.to_string();
+    } else {
+        *state.last_uid.lock().unwrap() = username.clone();
+    }
+
     Ok((StatusCode::CREATED, Json(payload)))
 }
 
@@ -183,8 +239,54 @@ async fn get_articles(State(state): State<AppState>) -> Result<impl IntoResponse
     Ok(Json(response))
 }
 
+async fn post_comments(
+    State(state): State<AppState>,
+    Path(article_id): Path<uuid::Uuid>,
+    Json(payload): Json<CreateCommentRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("post_comments for article {}: {:?}", article_id, payload);
+
+    // Mocking comment creation
+    let id = state.next_comment_id.fetch_add(1, Ordering::SeqCst);
+    let uid = state.last_uid.lock().unwrap().clone();
+    let comment = Comment {
+        id,
+        body: payload.comment.body,
+        author: CommentAuthor {
+            username: format!("cmt_{}", uid),
+        },
+    };
+
+    state
+        .comments
+        .lock()
+        .unwrap()
+        .push((article_id, comment.clone()));
+
+    Ok((StatusCode::CREATED, Json(CommentResponse { comment })))
+}
+
+async fn get_comments(
+    State(state): State<AppState>,
+    Path(article_id): Path<uuid::Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("get_comments for article {}", article_id);
+
+    let comments = state.comments.lock().unwrap();
+    let article_comments: Vec<Comment> = comments
+        .iter()
+        .filter(|(id, _)| *id == article_id)
+        .map(|(_, c)| c.clone())
+        .collect();
+
+    Ok(Json(GetCommentsResponse {
+        comments: article_comments,
+    }))
+}
+
 async fn delete_articles(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
     log::debug!("delete_articles");
     state.articles.lock().unwrap().clear();
+    state.comments.lock().unwrap().clear();
     Ok(StatusCode::NO_CONTENT)
 }

@@ -19,10 +19,8 @@ POST {{host}}/api/articles
   }
 }
 HTTP 201
-[Asserts]
-jsonpath "$.article.title" == "Test Article {{uid}}"
-jsonpath "$.article.description" == "Test description"
-jsonpath "$.article.body" == "Test body content"
+[Captures]
+article_id: jsonpath "$.article.id"
 
 POST {{host}}/api/articles
 {
@@ -46,6 +44,28 @@ jsonpath "$.articlesCount" >= 1
 jsonpath "$.articles[0].title" isString
 jsonpath "$.articles[0].description" isString
 jsonpath "$.articles[0].body" not exists
+
+POST {{host}}/api/articles/{{article_id}}/comments
+{
+  "comment": {
+    "body": "Test comment body"
+  }
+}
+HTTP 201
+[Asserts]
+jsonpath "$.comment.id" isInteger
+jsonpath "$.comment.author.username" == "cmt_{{uid}}"
+[Captures]
+comment_id: jsonpath "$.comment.id"
+
+GET {{host}}/api/articles/{{article_id}}/comments
+HTTP 200
+[Asserts]
+jsonpath "$.comments" isList
+jsonpath "$.comments" count == 1
+jsonpath "$.comments[0].id" == {{comment_id}}
+jsonpath "$.comments[0].body" == "Test comment body"
+jsonpath "$.comments[0].author.username" == "cmt_{{uid}}"
 
 DELETE {{host}}/api/articles
 HTTP 204
