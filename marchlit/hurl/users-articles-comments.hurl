@@ -67,5 +67,18 @@ jsonpath "$.comments[0].id" == {{comment_id}}
 jsonpath "$.comments[0].body" == "Test comment body"
 jsonpath "$.comments[0].author.username" == "cmt_{{uid}}"
 
+DELETE {{host}}/api/articles/{{article_id}}/comments
+HTTP 204
+
+POST {{host}}/api/articles/{{article_id}}/favorite
+HTTP 200
+[Asserts]
+jsonpath "$.article.title" isString
+jsonpath "$.article.description" isString
+jsonpath "$.article.body" isString
+jsonpath "$.article.favorited" == true
+jsonpath "$.article.favoritesCount" == 1
+jsonpath "$.article.author.username" == "fav_{{uid}}"
+
 DELETE {{host}}/api/articles
 HTTP 204

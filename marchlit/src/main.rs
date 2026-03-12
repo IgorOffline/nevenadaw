@@ -104,6 +104,27 @@ struct GetCommentsResponse {
     comments: Vec<Comment>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct FavoriteArticleResponse {
+    article: FavoriteArticleInner,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct FavoriteArticleInner {
+    title: String,
+    description: String,
+    body: String,
+    favorited: bool,
+    #[serde(rename = "favoritesCount")]
+    favorites_count: u64,
+    author: FavoriteArticleAuthor,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct FavoriteArticleAuthor {
+    username: String,
+}
+
 #[derive(Debug, thiserror::Error)]
 #[allow(dead_code)]
 enum AppError {
@@ -168,8 +189,11 @@ async fn main() -> anyhow::Result<()> {
         )
         .route(
             "/api/articles/{article_id}/comments",
-            post(post_comments).get(get_comments),
+            post(post_comments)
+                .get(get_comments)
+                .delete(delete_comments),
         )
+        .route("/api/articles/{article_id}/favorite", post(post_favorite))
         .nest_service("/static", ServeDir::new("static"))
         .with_state(state);
 
@@ -289,4 +313,48 @@ async fn delete_articles(State(state): State<AppState>) -> Result<impl IntoRespo
     state.articles.lock().unwrap().clear();
     state.comments.lock().unwrap().clear();
     Ok(StatusCode::NO_CONTENT)
+}
+
+async fn delete_comments(
+    State(state): State<AppState>,
+    Path(article_id): Path<uuid::Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("delete_comments for article {}", article_id);
+    state
+        .comments
+        .lock()
+        .unwrap()
+        .retain(|(id, _)| *id != article_id);
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn post_favorite(
+    State(state): State<AppState>,
+    Path(article_id): Path<uuid::Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("post_favorite for article {}", article_id);
+
+    let articles = state.articles.lock().unwrap();
+    let article = articles
+        .iter()
+        .find(|a| a.id == article_id)
+        .cloned()
+        .ok_or(AppError::Internal)?;
+
+    let uid = state.last_uid.lock().unwrap().clone();
+
+    let response = FavoriteArticleResponse {
+        article: FavoriteArticleInner {
+            title: article.title,
+            description: article.description,
+            body: article.body,
+            favorited: true,
+            favorites_count: 1,
+            author: FavoriteArticleAuthor {
+                username: format!("fav_{}", uid),
+            },
+        },
+    };
+
+    Ok(Json(response))
 }
