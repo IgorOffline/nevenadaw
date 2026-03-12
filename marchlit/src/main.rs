@@ -1,48 +1,162 @@
-use std::{net::SocketAddr, sync::Arc, time::Instant};
+use serde::{Deserialize, Serialize};
+use std::{
+    net::SocketAddr,
+    sync::{
+        atomic::{AtomicU64, Ordering}, Arc,
+        Mutex,
+    },
+};
 
 use axum::{
-    extract::State, http::{header::HeaderName, StatusCode},
-    response::{IntoResponse, Response},
-    routing::get,
+    extract::{Path, State}, http::StatusCode,
+    response::{Html, IntoResponse, Response},
+    routing::{get, post},
     Json,
     Router,
 };
-use serde::Serialize;
 use tower_http::services::ServeDir;
-use turso::{Builder, Database};
 
-const DEFAULT_PORT: u16 = 8000;
 const PORT_ENV: &str = "PORT";
+const DEFAULT_PORT: u16 = 8000;
 
-pub const DURATION_HEADER: &str = "x-took-ms";
-pub const GET_ALL_VERSIONS: &str = "/version";
-pub const API_VERSION: &str = "/api/version";
-pub const API_VERSION_HTML: &str = "/api/version/html";
+#[derive(Clone)]
+struct AppState {
+    index_html: Arc<str>,
+    articles: Arc<Mutex<Vec<Article>>>,
+    comments: Arc<Mutex<Vec<(uuid::Uuid, Comment)>>>,
+    next_comment_id: Arc<AtomicU64>,
+    users: Arc<Mutex<Vec<User>>>,
+    mentorships: Arc<Mutex<Vec<(uuid::Uuid, uuid::Uuid)>>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct User {
+    #[serde(default = "uuid::Uuid::new_v4")]
+    id: uuid::Uuid,
+    username: String,
+    email: String,
+    password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CreateUserRequest {
+    user: User,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct Article {
+    #[serde(default = "uuid::Uuid::new_v4")]
+    id: uuid::Uuid,
+    author_id: uuid::Uuid,
+    title: String,
+    description: String,
+    body: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CreateArticleRequest {
+    article: Article,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ArticleListItem {
+    id: uuid::Uuid,
+    author_id: uuid::Uuid,
+    title: String,
+    description: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GetArticlesResponse {
+    articles: Vec<ArticleListItem>,
+    #[serde(rename = "articlesCount")]
+    articles_count: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct Comment {
+    id: u64,
+    body: String,
+    author: CommentAuthor,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct CommentAuthor {
+    username: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CreateCommentRequest {
+    comment: CreateCommentInner,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CreateCommentInner {
+    body: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CommentResponse {
+    comment: Comment,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GetCommentsResponse {
+    comments: Vec<Comment>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GetMentorsResponse {
+    mentors: Vec<User>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct FavoriteArticleResponse {
+    article: FavoriteArticleInner,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct FavoriteArticleInner {
+    title: String,
+    description: String,
+    body: String,
+    favorited: bool,
+    #[serde(rename = "favoritesCount")]
+    favorites_count: u64,
+    author: FavoriteArticleAuthor,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct FavoriteArticleAuthor {
+    username: String,
+}
 
 #[derive(Debug, thiserror::Error)]
-pub enum AppError {
+#[allow(dead_code)]
+enum AppError {
     #[error("internal server error")]
     Internal,
+    #[error("validation error: {0}")]
+    ValidationError(String),
 }
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        let body = Json(serde_json::json!({
-            "error": self.to_string()
-        }));
-
-        (StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
+        match self {
+            AppError::Internal => {
+                let body = Json(serde_json::json!({
+                    "error": "internal server error"
+                }));
+                (StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
+            }
+            AppError::ValidationError(msg) => {
+                let body = Json(serde_json::json!({
+                    "error": msg
+                }));
+                (StatusCode::UNPROCESSABLE_ENTITY, body).into_response()
+            }
+        }
     }
-}
-
-#[derive(Serialize)]
-struct VersionsResponse {
-    versions: Vec<String>,
-}
-
-#[derive(Clone)]
-struct AppState {
-    db: Arc<Database>,
 }
 
 #[tokio::main]
@@ -51,30 +165,56 @@ async fn main() -> anyhow::Result<()> {
         .filter_level(log::LevelFilter::Debug)
         .init();
 
-    let db = Builder::new_local(":memory:").build().await?;
-    let conn = db.connect()?;
-
-    conn.execute("CREATE TABLE IF NOT EXISTS version (version TEXT)", ())
-        .await?;
-    conn.execute("INSERT INTO version (version) VALUES ('0.1.0')", ())
-        .await?;
-
-    let state = AppState { db: Arc::new(db) };
-
     let port = std::env::var(PORT_ENV)
         .ok()
         .and_then(|value| value.parse::<u16>().ok())
         .unwrap_or(DEFAULT_PORT);
 
-    let app = Router::new()
-        .route(GET_ALL_VERSIONS, get(get_all_versions))
-        .route(API_VERSION, get(api_all_versions))
-        .route(API_VERSION_HTML, get(api_all_versions_html))
-        .with_state(state)
-        .nest_service("/static", ServeDir::new("static"));
+    let state = AppState {
+        index_html: Arc::from(std::fs::read_to_string("static/index.html")?),
+        articles: Arc::new(Mutex::new(vec![Article {
+            id: uuid::Uuid::new_v4(),
+            author_id: uuid::Uuid::new_v4(),
+            title: "First Article".to_string(),
+            description: "First description".to_string(),
+            body: "First body".to_string(),
+        }])),
+        comments: Arc::new(Mutex::new(Vec::new())),
+        next_comment_id: Arc::new(AtomicU64::new(1)),
+        users: Arc::new(Mutex::new(Vec::new())),
+        mentorships: Arc::new(Mutex::new(Vec::new())),
+    };
 
+    let app = Router::new()
+        .route("/", get(get_page_index))
+        .route("/api/users", post(post_users).delete(delete_users))
+        .route(
+            "/api/users/{user_id}/mentored-by/{mentor_id}",
+            post(post_mentored_by),
+        )
+        .route("/api/users/{user_id}/mentored-by", get(get_mentored_by))
+        .route(
+            "/api/articles",
+            post(post_articles)
+                .get(get_articles)
+                .delete(delete_articles),
+        )
+        .route(
+            "/api/articles/{article_id}/comments",
+            post(post_comments)
+                .get(get_comments)
+                .delete(delete_comments),
+        )
+        .route(
+            "/api/articles/{article_id}/favorite",
+            post(post_favorite).delete(delete_favorite),
+        )
+        .nest_service("/static", ServeDir::new("static"))
+        .with_state(state);
+
+    let printable_uuid = uuid::Uuid::new_v4();
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    log::info!("Starting server on http://{addr}");
+    log::info!("Starting server on http://{addr} [{printable_uuid}]");
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
@@ -82,78 +222,266 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn get_all_versions() -> Result<impl IntoResponse, AppError> {
-    let started_at = Instant::now();
-    log::debug!("GET {GET_ALL_VERSIONS}");
-
-    let index_html =
-        std::fs::read_to_string("static/index.html").map_err(|_| AppError::Internal)?;
-
-    let duration_ms = started_at.elapsed().as_millis().to_string();
-
-    Ok((
-        StatusCode::OK,
-        [(HeaderName::from_static(DURATION_HEADER), duration_ms)],
-        axum::response::Html(index_html),
-    ))
+async fn get_page_index(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
+    log::debug!("get_page_index");
+    Ok(Html(state.index_html.to_string()))
 }
 
-async fn api_all_versions(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
-    let started_at = Instant::now();
-    log::debug!("GET {API_VERSION}");
-
-    let conn = state.db.connect().map_err(|_| AppError::Internal)?;
-    let mut rows = conn
-        .query("SELECT version FROM version", ())
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    let mut versions = Vec::new();
-    while let Some(row) = rows.next().await.map_err(|_| AppError::Internal)? {
-        let version: String = row.get(0).map_err(|_| AppError::Internal)?;
-        versions.push(version);
-    }
-
-    let response = VersionsResponse { versions };
-
-    let duration_ms = started_at.elapsed().as_millis().to_string();
-
-    Ok((
-        StatusCode::OK,
-        [(HeaderName::from_static(DURATION_HEADER), duration_ms)],
-        Json(response),
-    ))
-}
-
-async fn api_all_versions_html(
+async fn post_users(
     State(state): State<AppState>,
+    Json(payload): Json<CreateUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    let started_at = Instant::now();
-    log::debug!("GET {API_VERSION_HTML}");
+    log::debug!("post_users: {:?}", payload);
 
-    let conn = state.db.connect().map_err(|_| AppError::Internal)?;
-    let mut rows = conn
-        .query("SELECT version FROM version", ())
-        .await
-        .map_err(|_| AppError::Internal)?;
+    state.users.lock().unwrap().push(payload.user.clone());
 
-    let mut versions = Vec::new();
-    while let Some(row) = rows.next().await.map_err(|_| AppError::Internal)? {
-        let version: String = row.get(0).map_err(|_| AppError::Internal)?;
-        versions.push(version);
+    Ok((StatusCode::CREATED, Json(payload)))
+}
+
+async fn delete_users(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
+    log::debug!("delete_users");
+    state.users.lock().unwrap().clear();
+    state.mentorships.lock().unwrap().clear();
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn post_mentored_by(
+    State(state): State<AppState>,
+    Path((user_id, mentor_id)): Path<(uuid::Uuid, uuid::Uuid)>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("post_mentored_by: {} mentored by {}", user_id, mentor_id);
+    state.mentorships.lock().unwrap().push((user_id, mentor_id));
+    Ok(StatusCode::OK)
+}
+
+async fn get_mentored_by(
+    State(state): State<AppState>,
+    Path(user_id): Path<uuid::Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("get_mentored_by for user {}", user_id);
+
+    let mentorships = state.mentorships.lock().unwrap();
+    let mentor_ids: Vec<uuid::Uuid> = mentorships
+        .iter()
+        .filter(|(uid, _)| *uid == user_id)
+        .map(|(_, mid)| *mid)
+        .collect();
+
+    let users = state.users.lock().unwrap();
+    let mentors: Vec<User> = users
+        .iter()
+        .filter(|u| mentor_ids.contains(&u.id))
+        .cloned()
+        .collect();
+
+    Ok(Json(GetMentorsResponse { mentors }))
+}
+
+async fn post_articles(
+    State(state): State<AppState>,
+    Json(payload): Json<CreateArticleRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("post_articles: {:?}", payload);
+    if payload.article.author_id.is_nil() {
+        return Err(AppError::ValidationError(
+            "author_id must not be nil".to_string(),
+        ));
     }
+    state.articles.lock().unwrap().push(payload.article.clone());
+    Ok((StatusCode::CREATED, Json(payload)))
+}
 
-    let version_str = versions.join(", ");
-    let response_html = format!(
-        r#"<span class="badge badge-secondary badge-outline text-xs">v{}</span>"#,
-        version_str
-    );
+async fn get_articles(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
+    log::debug!("get_articles");
+    let articles = state.articles.lock().unwrap();
+    let articles_list: Vec<ArticleListItem> = articles
+        .iter()
+        .map(|a| ArticleListItem {
+            id: a.id,
+            author_id: a.author_id,
+            title: a.title.clone(),
+            description: a.description.clone(),
+        })
+        .collect();
 
-    let duration_ms = started_at.elapsed().as_millis().to_string();
+    let response = GetArticlesResponse {
+        articles_count: articles_list.len(),
+        articles: articles_list,
+    };
 
-    Ok((
-        StatusCode::OK,
-        [(HeaderName::from_static(DURATION_HEADER), duration_ms)],
-        axum::response::Html(response_html),
-    ))
+    Ok(Json(response))
+}
+
+async fn post_comments(
+    State(state): State<AppState>,
+    Path(article_id): Path<uuid::Uuid>,
+    Json(payload): Json<CreateCommentRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("post_comments for article {}: {:?}", article_id, payload);
+
+    let author_id = state
+        .articles
+        .lock()
+        .unwrap()
+        .iter()
+        .find(|a| a.id == article_id)
+        .map(|a| a.author_id)
+        .ok_or(AppError::Internal)?;
+
+    let author_username = state
+        .users
+        .lock()
+        .unwrap()
+        .iter()
+        .find(|u| u.id == author_id)
+        .map(|u| u.username.clone())
+        .ok_or(AppError::Internal)?;
+
+    let uid = author_username
+        .strip_prefix("art_")
+        .unwrap_or(&author_username);
+
+    // Mocking comment creation
+    let id = state.next_comment_id.fetch_add(1, Ordering::SeqCst);
+    let comment = Comment {
+        id,
+        body: payload.comment.body,
+        author: CommentAuthor {
+            username: format!("cmt_{}", uid),
+        },
+    };
+
+    state
+        .comments
+        .lock()
+        .unwrap()
+        .push((article_id, comment.clone()));
+
+    Ok((StatusCode::CREATED, Json(CommentResponse { comment })))
+}
+
+async fn get_comments(
+    State(state): State<AppState>,
+    Path(article_id): Path<uuid::Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("get_comments for article {}", article_id);
+
+    let comments = state.comments.lock().unwrap();
+    let article_comments: Vec<Comment> = comments
+        .iter()
+        .filter(|(id, _)| *id == article_id)
+        .map(|(_, c)| c.clone())
+        .collect();
+
+    Ok(Json(GetCommentsResponse {
+        comments: article_comments,
+    }))
+}
+
+async fn delete_articles(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
+    log::debug!("delete_articles");
+    state.articles.lock().unwrap().clear();
+    state.comments.lock().unwrap().clear();
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn delete_comments(
+    State(state): State<AppState>,
+    Path(article_id): Path<uuid::Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("delete_comments for article {}", article_id);
+    state
+        .comments
+        .lock()
+        .unwrap()
+        .retain(|(id, _)| *id != article_id);
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn post_favorite(
+    State(state): State<AppState>,
+    Path(article_id): Path<uuid::Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("post_favorite for article {}", article_id);
+
+    let article = state
+        .articles
+        .lock()
+        .unwrap()
+        .iter()
+        .find(|a| a.id == article_id)
+        .cloned()
+        .ok_or(AppError::Internal)?;
+
+    let author_username = state
+        .users
+        .lock()
+        .unwrap()
+        .iter()
+        .find(|u| u.id == article.author_id)
+        .map(|u| u.username.clone())
+        .ok_or(AppError::Internal)?;
+
+    let uid = author_username
+        .strip_prefix("art_")
+        .unwrap_or(&author_username);
+
+    let response = FavoriteArticleResponse {
+        article: FavoriteArticleInner {
+            title: article.title,
+            description: article.description,
+            body: article.body,
+            favorited: true,
+            favorites_count: 1,
+            author: FavoriteArticleAuthor {
+                username: format!("fav_{}", uid),
+            },
+        },
+    };
+
+    Ok(Json(response))
+}
+
+async fn delete_favorite(
+    State(state): State<AppState>,
+    Path(article_id): Path<uuid::Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("delete_favorite for article {}", article_id);
+
+    let article = state
+        .articles
+        .lock()
+        .unwrap()
+        .iter()
+        .find(|a| a.id == article_id)
+        .cloned()
+        .ok_or(AppError::Internal)?;
+
+    let author_username = state
+        .users
+        .lock()
+        .unwrap()
+        .iter()
+        .find(|u| u.id == article.author_id)
+        .map(|u| u.username.clone())
+        .ok_or(AppError::Internal)?;
+
+    let uid = author_username
+        .strip_prefix("art_")
+        .unwrap_or(&author_username);
+
+    let response = FavoriteArticleResponse {
+        article: FavoriteArticleInner {
+            title: article.title,
+            description: article.description,
+            body: article.body,
+            favorited: false,
+            favorites_count: 0,
+            author: FavoriteArticleAuthor {
+                username: format!("fav_{}", uid),
+            },
+        },
+    };
+
+    Ok(Json(response))
 }

@@ -7,7 +7,7 @@
     <meta content="ie=edge" http-equiv="X-UA-Compatible">
     <title>March Lit</title>
     <link href="https://igordurbek.b-cdn.net/crofavicon.png" rel="icon" type="image/png">
-    <link href="/static/index.css" rel="stylesheet">
+    <link href="/static/simple-greeting.css" rel="stylesheet">
     <script src="/static/htmx.min.js"></script>
 </head>
 <body class="p-8 bg-base-200 min-h-screen">
@@ -15,11 +15,20 @@
     <div class="card-body">
         <h2 class="card-title text-primary">
             March Lit
-            <span>v0.1.0</span>
+            <span hx-get="/api/version/html" hx-trigger="load"></span>
         </h2>
+        <div class="card-actions justify-end">
+            <simple-greeting name="MARCH-LIT-1"></simple-greeting>
+            <simple-greeting></simple-greeting>
+            <simple-greeting name="MARCH-LIT-3"></simple-greeting>
+            <button class="btn btn-primary btn-sm"
+                    onclick="console.log(crypto.randomUUID())">
+                Daisy UI Button!
+            </button>
+        </div>
     </div>
 </div>
 
-<script src="/static/index.js" type="module"></script>
+<script src="/static/simple-greeting.js" type="module"></script>
 </body>
 </html>
