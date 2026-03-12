@@ -104,6 +104,13 @@ jsonpath "$.article.author.username" == "fav_{{uid}}"
 POST {{host}}/api/users/{{user_id}}/mentored-by/{{mentor_id}}
 HTTP 200
 
+GET {{host}}/api/users/{{user_id}}/mentored-by
+HTTP 200
+[Asserts]
+jsonpath "$.mentors" isList
+jsonpath "$.mentors" count == 1
+jsonpath "$.mentors[0].id" == {{mentor_id}}
+
 DELETE {{host}}/api/articles
 HTTP 204
 

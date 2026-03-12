@@ -106,6 +106,11 @@ struct GetCommentsResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+struct GetMentorsResponse {
+    mentors: Vec<User>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 struct FavoriteArticleResponse {
     article: FavoriteArticleInner,
 }
@@ -187,6 +192,7 @@ async fn main() -> anyhow::Result<()> {
             "/api/users/{user_id}/mentored-by/{mentor_id}",
             post(post_mentored_by),
         )
+        .route("/api/users/{user_id}/mentored-by", get(get_mentored_by))
         .route(
             "/api/articles",
             post(post_articles)
@@ -246,6 +252,29 @@ async fn post_mentored_by(
     log::debug!("post_mentored_by: {} mentored by {}", user_id, mentor_id);
     state.mentorships.lock().unwrap().push((user_id, mentor_id));
     Ok(StatusCode::OK)
+}
+
+async fn get_mentored_by(
+    State(state): State<AppState>,
+    Path(user_id): Path<uuid::Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("get_mentored_by for user {}", user_id);
+
+    let mentorships = state.mentorships.lock().unwrap();
+    let mentor_ids: Vec<uuid::Uuid> = mentorships
+        .iter()
+        .filter(|(uid, _)| *uid == user_id)
+        .map(|(_, mid)| *mid)
+        .collect();
+
+    let users = state.users.lock().unwrap();
+    let mentors: Vec<User> = users
+        .iter()
+        .filter(|u| mentor_ids.contains(&u.id))
+        .cloned()
+        .collect();
+
+    Ok(Json(GetMentorsResponse { mentors }))
 }
 
 async fn post_articles(
