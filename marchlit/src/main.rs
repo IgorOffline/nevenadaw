@@ -1,13 +1,15 @@
-use std::{net::SocketAddr, time::Instant};
+use std::{net::SocketAddr, sync::Arc, time::Instant};
 
 use axum::{
-    http::{header::HeaderName, StatusCode}, response::{IntoResponse, Response},
+    extract::State, http::{header::HeaderName, StatusCode},
+    response::{IntoResponse, Response},
     routing::get,
     Json,
     Router,
 };
 use serde::Serialize;
 use tower_http::services::ServeDir;
+use turso::{Builder, Database};
 
 const DEFAULT_PORT: u16 = 8000;
 const PORT_ENV: &str = "PORT";
@@ -34,7 +36,12 @@ impl IntoResponse for AppError {
 
 #[derive(Serialize)]
 struct VersionsResponse {
-    versions: Vec<&'static str>,
+    versions: Vec<String>,
+}
+
+#[derive(Clone)]
+struct AppState {
+    db: Arc<Database>,
 }
 
 #[tokio::main]
@@ -42,6 +49,16 @@ async fn main() -> anyhow::Result<()> {
     env_logger::Builder::from_default_env()
         .filter_level(log::LevelFilter::Debug)
         .init();
+
+    let db = Builder::new_local(":memory:").build().await?;
+    let conn = db.connect()?;
+
+    conn.execute("CREATE TABLE IF NOT EXISTS version (version TEXT)", ())
+        .await?;
+    conn.execute("INSERT INTO version (version) VALUES ('0.1.0')", ())
+        .await?;
+
+    let state = AppState { db: Arc::new(db) };
 
     let port = std::env::var(PORT_ENV)
         .ok()
@@ -51,6 +68,7 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route(GET_ALL_VERSIONS, get(get_all_versions))
         .route(API_VERSION, get(api_all_versions))
+        .with_state(state)
         .nest_service("/static", ServeDir::new("static"));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
@@ -78,13 +96,23 @@ async fn get_all_versions() -> Result<impl IntoResponse, AppError> {
     ))
 }
 
-async fn api_all_versions() -> Result<impl IntoResponse, AppError> {
+async fn api_all_versions(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
     let started_at = Instant::now();
     log::debug!("GET {API_VERSION}");
 
-    let response = VersionsResponse {
-        versions: vec!["0.1.0"],
-    };
+    let conn = state.db.connect().map_err(|_| AppError::Internal)?;
+    let mut rows = conn
+        .query("SELECT version FROM version", ())
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let mut versions = Vec::new();
+    while let Some(row) = rows.next().await.map_err(|_| AppError::Internal)? {
+        let version: String = row.get(0).map_err(|_| AppError::Internal)?;
+        versions.push(version);
+    }
+
+    let response = VersionsResponse { versions };
 
     let duration_ms = started_at.elapsed().as_millis().to_string();
 

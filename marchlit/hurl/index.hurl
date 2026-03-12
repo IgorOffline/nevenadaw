@@ -1,2 +1,2 @@
-GET http://localhost:8000/version
+GET {{host}}/version
 HTTP 200
