@@ -9,6 +9,17 @@ HTTP 201
 [Captures]
 user_id: jsonpath "$.user.id"
 
+POST {{host}}/api/users
+{
+  "user": {
+    "username": "art_mentor",
+    "email": "art_mentor@test.com",
+    "password": "password123" }
+    }
+HTTP 201
+[Captures]
+mentor_id: jsonpath "$.user.id"
+
 POST {{host}}/api/articles
 {
   "article": {
@@ -90,5 +101,11 @@ jsonpath "$.article.favorited" == false
 jsonpath "$.article.favoritesCount" == 0
 jsonpath "$.article.author.username" == "fav_{{uid}}"
 
+POST {{host}}/api/users/{{user_id}}/mentored-by/{{mentor_id}}
+HTTP 200
+
 DELETE {{host}}/api/articles
+HTTP 204
+
+DELETE {{host}}/api/users
 HTTP 204

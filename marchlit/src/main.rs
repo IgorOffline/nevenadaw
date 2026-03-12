@@ -25,10 +25,11 @@ struct AppState {
     articles: Arc<Mutex<Vec<Article>>>,
     comments: Arc<Mutex<Vec<(uuid::Uuid, Comment)>>>,
     next_comment_id: Arc<AtomicU64>,
-    last_uid: Arc<Mutex<String>>,
+    users: Arc<Mutex<Vec<User>>>,
+    mentorships: Arc<Mutex<Vec<(uuid::Uuid, uuid::Uuid)>>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 struct User {
     #[serde(default = "uuid::Uuid::new_v4")]
     id: uuid::Uuid,
@@ -175,12 +176,17 @@ async fn main() -> anyhow::Result<()> {
         }])),
         comments: Arc::new(Mutex::new(Vec::new())),
         next_comment_id: Arc::new(AtomicU64::new(1)),
-        last_uid: Arc::new(Mutex::new("user".to_string())),
+        users: Arc::new(Mutex::new(Vec::new())),
+        mentorships: Arc::new(Mutex::new(Vec::new())),
     };
 
     let app = Router::new()
         .route("/", get(get_page_index))
-        .route("/api/users", post(post_users))
+        .route("/api/users", post(post_users).delete(delete_users))
+        .route(
+            "/api/users/{user_id}/mentored-by/{mentor_id}",
+            post(post_mentored_by),
+        )
         .route(
             "/api/articles",
             post(post_articles)
@@ -221,14 +227,25 @@ async fn post_users(
 ) -> Result<impl IntoResponse, AppError> {
     log::debug!("post_users: {:?}", payload);
 
-    let username = &payload.user.username;
-    if let Some(uid) = username.strip_prefix("art_") {
-        *state.last_uid.lock().unwrap() = uid.to_string();
-    } else {
-        *state.last_uid.lock().unwrap() = username.clone();
-    }
+    state.users.lock().unwrap().push(payload.user.clone());
 
     Ok((StatusCode::CREATED, Json(payload)))
+}
+
+async fn delete_users(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
+    log::debug!("delete_users");
+    state.users.lock().unwrap().clear();
+    state.mentorships.lock().unwrap().clear();
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn post_mentored_by(
+    State(state): State<AppState>,
+    Path((user_id, mentor_id)): Path<(uuid::Uuid, uuid::Uuid)>,
+) -> Result<impl IntoResponse, AppError> {
+    log::debug!("post_mentored_by: {} mentored by {}", user_id, mentor_id);
+    state.mentorships.lock().unwrap().push((user_id, mentor_id));
+    Ok(StatusCode::OK)
 }
 
 async fn post_articles(
@@ -273,9 +290,30 @@ async fn post_comments(
 ) -> Result<impl IntoResponse, AppError> {
     log::debug!("post_comments for article {}: {:?}", article_id, payload);
 
+    let author_id = state
+        .articles
+        .lock()
+        .unwrap()
+        .iter()
+        .find(|a| a.id == article_id)
+        .map(|a| a.author_id)
+        .ok_or(AppError::Internal)?;
+
+    let author_username = state
+        .users
+        .lock()
+        .unwrap()
+        .iter()
+        .find(|u| u.id == author_id)
+        .map(|u| u.username.clone())
+        .ok_or(AppError::Internal)?;
+
+    let uid = author_username
+        .strip_prefix("art_")
+        .unwrap_or(&author_username);
+
     // Mocking comment creation
     let id = state.next_comment_id.fetch_add(1, Ordering::SeqCst);
-    let uid = state.last_uid.lock().unwrap().clone();
     let comment = Comment {
         id,
         body: payload.comment.body,
@@ -337,14 +375,27 @@ async fn post_favorite(
 ) -> Result<impl IntoResponse, AppError> {
     log::debug!("post_favorite for article {}", article_id);
 
-    let articles = state.articles.lock().unwrap();
-    let article = articles
+    let article = state
+        .articles
+        .lock()
+        .unwrap()
         .iter()
         .find(|a| a.id == article_id)
         .cloned()
         .ok_or(AppError::Internal)?;
 
-    let uid = state.last_uid.lock().unwrap().clone();
+    let author_username = state
+        .users
+        .lock()
+        .unwrap()
+        .iter()
+        .find(|u| u.id == article.author_id)
+        .map(|u| u.username.clone())
+        .ok_or(AppError::Internal)?;
+
+    let uid = author_username
+        .strip_prefix("art_")
+        .unwrap_or(&author_username);
 
     let response = FavoriteArticleResponse {
         article: FavoriteArticleInner {
@@ -368,14 +419,27 @@ async fn delete_favorite(
 ) -> Result<impl IntoResponse, AppError> {
     log::debug!("delete_favorite for article {}", article_id);
 
-    let articles = state.articles.lock().unwrap();
-    let article = articles
+    let article = state
+        .articles
+        .lock()
+        .unwrap()
         .iter()
         .find(|a| a.id == article_id)
         .cloned()
         .ok_or(AppError::Internal)?;
 
-    let uid = state.last_uid.lock().unwrap().clone();
+    let author_username = state
+        .users
+        .lock()
+        .unwrap()
+        .iter()
+        .find(|u| u.id == article.author_id)
+        .map(|u| u.username.clone())
+        .ok_or(AppError::Internal)?;
+
+    let uid = author_username
+        .strip_prefix("art_")
+        .unwrap_or(&author_username);
 
     let response = FavoriteArticleResponse {
         article: FavoriteArticleInner {
