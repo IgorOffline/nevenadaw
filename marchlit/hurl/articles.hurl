@@ -1,6 +1,7 @@
 POST {{host}}/api/articles
 {
   "article": {
+    "author_id": "00000000-0000-0000-0000-000000000001",
     "title": "Test Article {{uid}}",
     "description": "Test description",
     "body": "Test body content"
@@ -11,6 +12,19 @@ HTTP 201
 jsonpath "$.article.title" == "Test Article {{uid}}"
 jsonpath "$.article.description" == "Test description"
 jsonpath "$.article.body" == "Test body content"
+
+POST {{host}}/api/articles
+{
+  "article": {
+    "author_id": "00000000-0000-0000-0000-000000000000",
+    "title": "Bad Article",
+    "description": "Bad",
+    "body": "Bad"
+  }
+}
+HTTP 422
+[Asserts]
+jsonpath "$.error" == "author_id must not be nil"
 
 GET {{host}}/api/articles
 HTTP 200

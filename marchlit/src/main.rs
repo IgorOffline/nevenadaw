@@ -21,6 +21,8 @@ struct AppState {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct User {
+    #[serde(default = "uuid::Uuid::new_v4")]
+    id: uuid::Uuid,
     username: String,
     email: String,
     password: String,
@@ -33,6 +35,9 @@ struct CreateUserRequest {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Article {
+    #[serde(default = "uuid::Uuid::new_v4")]
+    id: uuid::Uuid,
+    author_id: uuid::Uuid,
     title: String,
     description: String,
     body: String,
@@ -45,6 +50,8 @@ struct CreateArticleRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ArticleListItem {
+    id: uuid::Uuid,
+    author_id: uuid::Uuid,
     title: String,
     description: String,
 }
@@ -61,15 +68,26 @@ struct GetArticlesResponse {
 enum AppError {
     #[error("internal server error")]
     Internal,
+    #[error("validation error: {0}")]
+    ValidationError(String),
 }
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        let body = Json(serde_json::json!({
-            "error": "internal server error"
-        }));
-
-        (StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
+        match self {
+            AppError::Internal => {
+                let body = Json(serde_json::json!({
+                    "error": "internal server error"
+                }));
+                (StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
+            }
+            AppError::ValidationError(msg) => {
+                let body = Json(serde_json::json!({
+                    "error": msg
+                }));
+                (StatusCode::UNPROCESSABLE_ENTITY, body).into_response()
+            }
+        }
     }
 }
 
@@ -87,6 +105,8 @@ async fn main() -> anyhow::Result<()> {
     let state = AppState {
         index_html: Arc::from(std::fs::read_to_string("static/index.html")?),
         articles: Arc::new(std::sync::Mutex::new(vec![Article {
+            id: uuid::Uuid::new_v4(),
+            author_id: uuid::Uuid::new_v4(),
             title: "First Article".to_string(),
             description: "First description".to_string(),
             body: "First body".to_string(),
@@ -105,8 +125,9 @@ async fn main() -> anyhow::Result<()> {
         .nest_service("/static", ServeDir::new("static"))
         .with_state(state);
 
+    let printable_uuid = uuid::Uuid::new_v4();
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    log::info!("Starting server on http://{addr}");
+    log::info!("Starting server on http://{addr} [{printable_uuid}]");
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
@@ -132,6 +153,11 @@ async fn post_articles(
     Json(payload): Json<CreateArticleRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     log::debug!("post_articles: {:?}", payload);
+    if payload.article.author_id.is_nil() {
+        return Err(AppError::ValidationError(
+            "author_id must not be nil".to_string(),
+        ));
+    }
     state.articles.lock().unwrap().push(payload.article.clone());
     Ok((StatusCode::CREATED, Json(payload)))
 }
@@ -142,6 +168,8 @@ async fn get_articles(State(state): State<AppState>) -> Result<impl IntoResponse
     let articles_list: Vec<ArticleListItem> = articles
         .iter()
         .map(|a| ArticleListItem {
+            id: a.id,
+            author_id: a.author_id,
             title: a.title.clone(),
             description: a.description.clone(),
         })
