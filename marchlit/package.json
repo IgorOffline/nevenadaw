@@ -10,9 +10,11 @@
   "keywords": [],
   "packageManager": "pnpm@10.32.1",
   "dependencies": {
+    "htmx.org": "^2.0.8",
     "lit": "^3.3.2"
   },
   "devDependencies": {
+    "daisyui": "^5.5.19",
     "esbuild": "^0.27.3",
     "typescript": "^5.9.3"
   }
