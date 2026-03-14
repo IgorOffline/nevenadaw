@@ -11,7 +11,7 @@ use chrono::{DateTime, Utc};
 use rand::RngExt;
 use serde::Serialize;
 use tower_http::trace::TraceLayer;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 use uuid::Uuid;
 
@@ -104,10 +104,12 @@ fn make_mail() -> NevenaMail {
 }
 
 async fn mail_handler() -> Json<NevenaMail> {
+    debug!("Handling request for /");
     Json(make_mail())
 }
 
 async fn health_handler(State(state): State<AppState>) -> Json<HealthResponse> {
+    debug!("Handling request for /healthz");
     Json(HealthResponse {
         status: "ok",
         instance_id: state.instance_id,
@@ -116,6 +118,7 @@ async fn health_handler(State(state): State<AppState>) -> Json<HealthResponse> {
 }
 
 async fn not_found() -> AppError {
+    debug!("Handling unknown route");
     AppError::NotFound
 }
 
@@ -166,7 +169,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::registry()
         .with(
             EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| EnvFilter::new("info,tower_http=info,axum=info")),
+                .unwrap_or_else(|_| EnvFilter::new("debug,tower_http=debug,axum=debug")),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
