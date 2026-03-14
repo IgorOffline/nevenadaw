@@ -12,6 +12,10 @@ All non-code assets [with exceptions] in this repository are licensed under:
 
 > CC0 1.0 Universal. Read: LICENSE-CC0
 
-Exceptions:
+## Exceptions:
 
 If a project/directory/entity has a different license, then that license is assumed, that is to say, it supersedes this [top-level] license
+
+## Contributions:
+
+All contributions shall adhere to any and all of these licenses
