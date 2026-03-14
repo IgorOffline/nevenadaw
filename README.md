@@ -1,6 +1,6 @@
 # Nevenadaw: Not Even A DAW
 
-License:
+## License:
 
 All code [with exceptions] in this repository is dual-licensed under either:
 
