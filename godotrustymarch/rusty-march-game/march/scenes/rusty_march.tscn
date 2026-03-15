@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://ht1b3xy2e3pk"]
+
+[ext_resource type="Texture2D" uid="uid://dv48ro7k5ajba" path="res://icon.svg" id="1_1r73m"]
+[ext_resource type="Script" uid="uid://dajk18uhj4xbd" path="res://march/scripts/RustyMarchMain.cs" id="1_ryix6"]
+
+[node name="RustyMarch" type="Node2D" unique_id=874468175]
+script = ExtResource("1_ryix6")
+
+[node name="Icon" type="Sprite2D" parent="." unique_id=1966111001]
+position = Vector2(125, 125)
+texture = ExtResource("1_1r73m")
