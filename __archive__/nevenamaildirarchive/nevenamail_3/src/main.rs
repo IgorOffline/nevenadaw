@@ -6,6 +6,7 @@ use std::{
         Mutex,
     },
 };
+use tokio::sync::RwLock;
 
 use axum::{
     extract::State, http::StatusCode,
@@ -14,6 +15,7 @@ use axum::{
     Json,
     Router,
 };
+use casbin::{CoreApi, DefaultModel, Enforcer, MemoryAdapter, MgmtApi};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tower_http::trace::TraceLayer;
@@ -26,6 +28,7 @@ struct AppState {
     instance_id: Uuid,
     users: Arc<Mutex<Vec<NevenaUser>>>,
     next_user_id: Arc<AtomicI64>,
+    enforcer: Arc<RwLock<Enforcer>>,
 }
 
 const VERSION: &str = "0.1.0";
@@ -183,6 +186,17 @@ async fn not_found() -> AppError {
     AppError::NotFound
 }
 
+async fn two_users_handler(State(state): State<AppState>) -> impl IntoResponse {
+    debug!("Handling request for /two-users");
+    let count = state.users.lock().unwrap().len().to_string();
+    let enforcer = state.enforcer.read().await;
+
+    match enforcer.enforce((count, "two-users", "access")) {
+        Ok(true) => StatusCode::OK,
+        _ => StatusCode::FORBIDDEN,
+    }
+}
+
 fn build_router(state: AppState) -> Router {
     Router::new()
         .route(
@@ -192,6 +206,7 @@ fn build_router(state: AppState) -> Router {
                 .delete(delete_users_handler),
         )
         .route("/healthz", get(health_handler))
+        .route("/two-users", get(two_users_handler))
         .fallback(not_found)
         .layer(TraceLayer::new_for_http())
         .with_state(state)
@@ -244,10 +259,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let users = Arc::new(Mutex::new(vec![]));
     let next_user_id = Arc::new(AtomicI64::new(1));
 
+    let model = DefaultModel::from_str(
+        r#"
+[request_definition]
+r = sub, obj, act
+
+[policy_definition]
+p = sub, obj, act
+
+[policy_effect]
+e = some(where (p.eft == allow))
+
+[matchers]
+m = r.sub == p.sub && r.obj == p.obj && r.act == p.act
+"#,
+    )
+    .await?;
+
+    let mut enforcer = Enforcer::new(model, MemoryAdapter::default()).await?;
+    enforcer
+        .add_policy(vec![
+            "2".to_string(),
+            "two-users".to_string(),
+            "access".to_string(),
+        ])
+        .await?;
+
+    let enforcer = Arc::new(RwLock::new(enforcer));
+
     let state = AppState {
         instance_id,
         users,
         next_user_id,
+        enforcer,
     };
 
     let id = 1;
