@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="RustyMarchFrontend/RustyMarchFrontend.csproj" />
+  <Project Path="RustyMarchFrontendCore/RustyMarchFrontendCore.csproj" />
+</Solution>
