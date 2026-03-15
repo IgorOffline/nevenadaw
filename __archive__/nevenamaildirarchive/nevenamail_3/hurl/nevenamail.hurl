@@ -1,5 +1,58 @@
 DELETE {{host}}/
 
+
+GET {{host}}/two-users
+
+HTTP 403
+
+
+POST {{host}}/
+{}
+
+HTTP 201
+[Asserts]
+jsonpath "$.id" exists
+jsonpath "$.id" isNumber
+jsonpath "$.id" == 1
+
+
+GET {{host}}/two-users
+
+HTTP 403
+
+
+POST {{host}}/
+{}
+
+HTTP 201
+[Asserts]
+jsonpath "$.id" exists
+jsonpath "$.id" isNumber
+jsonpath "$.id" == 2
+
+
+GET {{host}}/two-users
+
+HTTP 200
+
+
+POST {{host}}/
+{}
+
+HTTP 201
+[Asserts]
+jsonpath "$.id" exists
+jsonpath "$.id" isNumber
+jsonpath "$.id" == 3
+
+
+GET {{host}}/two-users
+
+HTTP 403
+
+
+DELETE {{host}}/
+
 HTTP 200
 [Asserts]
 jsonpath "$.version" == "0.1.0"
