@@ -4,20 +4,20 @@ using Godot;
 
 public partial class Cymbal : Node2D
 {
+	private readonly CymbalConfigLoader _loader = new();
 	private CymbalLogger? _logger;
+	private CymbalWeb? _web;
 
 	public override void _Ready()
 	{
 		_logger = new CymbalLogger();
-		var regina = new CymbalWeb().Get();
-		_logger.Print($"[Cymbal 0.1.0] Regina Success: {regina.CymbalConfig?.Success?.ToString() ?? "(-)"}");
+		_web = new CymbalWeb(_loader);
+		var regina = _web.Get();
+		_logger.Print($"[Cymbal 0.1.0] Regina Success: {regina.CymbalConfig!.Success}");
 
-		if (regina.CymbalConfig != null)
-		{
-			if (regina.ImageBlue != null) CreateImageNode(regina.ImageBlue, new Vector2(200, 600), "Blue");
-			if (regina.ImageGreen != null) CreateImageNode(regina.ImageGreen, new Vector2(400, 600), "Green");
-			if (regina.ImageRed != null) CreateImageNode(regina.ImageRed, new Vector2(600, 600), "Red");
-		}
+		if (regina.ImageBlue != null) CreateImageNode(regina.ImageBlue, new Vector2(200, 600), "Blue");
+		if (regina.ImageGreen != null) CreateImageNode(regina.ImageGreen, new Vector2(400, 600), "Green");
+		if (regina.ImageRed != null) CreateImageNode(regina.ImageRed, new Vector2(600, 600), "Red");
 
 		var icon = GetNodeOrNull<Sprite2D>("Icon");
 		if (icon != null)
@@ -28,39 +28,19 @@ public partial class Cymbal : Node2D
 
 	private void CreateImageNode(CymbalImageConfig config, Vector2 position, string name)
 	{
-		if (string.IsNullOrEmpty(config.ImageUrl))
-		{
-			_logger!.PrintErr($"ImageUrl for {name} is null or empty!");
-			return;
-		}
-
-		var web = new CymbalWeb();
-		var (bytes, sha384) = web.GetImageBytes(config.ImageUrl);
-
-		if (bytes == null || bytes.Length == 0)
-		{
-			_logger!.PrintErr($"Failed to fetch image {name} from {config.ImageUrl}");
-			return;
-		}
+		var (bytes, sha384) = _web!.GetImageBytes(config.ImageUrl);
 
 		if (!string.IsNullOrEmpty(config.ImageSha384) && !string.IsNullOrEmpty(sha384))
 		{
 			if (config.ImageSha384 != sha384)
-			{
-				_logger!.PrintErr($"SHA384 mismatch for {name}: {config.ImageSha384} != {sha384}");
-				return;
-			}
+				throw new CymbalException($"SHA384 mismatch for {name}: {config.ImageSha384} != {sha384}");
 
 			_logger!.Print($"SHA384 verified for {name}: {sha384}");
 		}
 
 		var image = new Image();
 		var error = image.LoadPngFromBuffer(bytes);
-		if (error != Error.Ok)
-		{
-			_logger!.PrintErr($"Failed to load PNG for {name} from buffer: {error}");
-			return;
-		}
+		if (error != Error.Ok) throw new CymbalException($"Failed to load PNG for {name} from buffer: {error}");
 
 		if (int.TryParse(config.ImageSampleWidth, out var sw) && int.TryParse(config.ImageSampleHeight, out var sh))
 		{

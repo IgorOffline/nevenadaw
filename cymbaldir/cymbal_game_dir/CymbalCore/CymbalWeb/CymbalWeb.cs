@@ -1,104 +1,51 @@
 ﻿using CymbalCore.Cymbal;
-using Tomlyn;
-using Tomlyn.Model;
 
 namespace CymbalCore.CymbalWeb;
 
-public class CymbalWeb
+public class CymbalWeb(CymbalConfigLoader loader)
 {
     private static readonly HttpClient Client = new();
 
     public CymbalRegina Get()
     {
-        string? url = null;
-        CymbalImageConfig? imageBlue = null;
-        CymbalImageConfig? imageGreen = null;
-        CymbalImageConfig? imageRed = null;
-        bool? success = null;
+        var regina = loader.Get();
+        if (string.IsNullOrEmpty(regina.CymbalConfig?.Url))
+            throw new CymbalException("Cymbal URL is missing in configuration");
 
         try
         {
-            const string configPath = @"C:\Users\igor\dev\nevenadawdir\nevenadaw\cymbaldir\cymbal.toml";
-
-            if (File.Exists(configPath))
-            {
-                var content = File.ReadAllText(configPath);
-                var model = TomlSerializer.Deserialize<TomlTable>(content);
-                if (model != null && model.TryGetValue("regina", out var sectionObj) && sectionObj is TomlTable section)
-                {
-                    if (section.TryGetValue("url", out var urlObj) && urlObj is string urlValue) url = urlValue;
-
-                    imageBlue = ParseImage(section, "imageblue");
-                    imageGreen = ParseImage(section, "imagegreen");
-                    imageRed = ParseImage(section, "imagered");
-                }
-            }
-            else
-            {
-                return new CymbalRegina(new CymbalConfig(null, null));
-            }
-
-            if (string.IsNullOrEmpty(url))
-                return new CymbalRegina(new CymbalConfig(url, null), imageBlue, imageGreen, imageRed);
-
-            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            using var request = new HttpRequestMessage(HttpMethod.Get, regina.CymbalConfig.Url);
             using var response = Client.Send(request);
-            success = response.IsSuccessStatusCode;
+            response.EnsureSuccessStatusCode();
+            return regina with { CymbalConfig = regina.CymbalConfig with { Success = true } };
         }
-        catch
+        catch (Exception ex) when (ex is not CymbalException)
         {
-            success = false;
+            throw new CymbalException($"Failed to get status from {regina.CymbalConfig.Url}: {ex.Message}");
         }
-
-        return new CymbalRegina(new CymbalConfig(url, success), imageBlue, imageGreen, imageRed);
     }
 
-    private static CymbalImageConfig? ParseImage(TomlTable parent, string key)
+    public (byte[] Bytes, string? Sha384) GetImageBytes(string? url)
     {
-        if (parent.TryGetValue(key, out var obj) && obj is TomlTable table)
-        {
-            string? imageUrl = null,
-                imageWidth = null,
-                imageHeight = null,
-                sampleWidth = null,
-                sampleHeight = null,
-                sha384 = null;
-            if (table.TryGetValue("image_url", out var iu) && iu is string iuv) imageUrl = iuv;
-            if (table.TryGetValue("image_width", out var iw) && iw is string iwv) imageWidth = iwv;
-            if (table.TryGetValue("image_height", out var ih) && ih is string ihv) imageHeight = ihv;
-            if (table.TryGetValue("image_sample_width", out var sw) && sw is string swv) sampleWidth = swv;
-            if (table.TryGetValue("image_sample_height", out var sh) && sh is string shv) sampleHeight = shv;
-            if (table.TryGetValue("image_sha384", out var s) && s is string sv) sha384 = sv;
-            return new CymbalImageConfig(imageUrl, imageWidth, imageHeight, sampleWidth, sampleHeight, sha384);
-        }
-
-        return null;
-    }
-
-    public (byte[]? Bytes, string? Sha384) GetImageBytes(string? url)
-    {
-        if (string.IsNullOrEmpty(url)) return (null, null);
+        if (string.IsNullOrEmpty(url)) throw new CymbalException("Image URL is null or empty");
 
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             using var response = Client.Send(request);
-            if (response.IsSuccessStatusCode)
-            {
-                string? sha384 = null;
-                if (TryGetHeader(response, "x-sha384", out var value)) sha384 = value;
+            response.EnsureSuccessStatusCode();
 
-                using var ms = new MemoryStream();
-                response.Content.ReadAsStream().CopyTo(ms);
-                return (ms.ToArray(), sha384);
-            }
+            string? sha384 = null;
+            if (TryGetHeader(response, "x-sha384", out var value)) sha384 = value;
+
+            using var ms = new MemoryStream();
+            response.Content.ReadAsStream().CopyTo(ms);
+            return (ms.ToArray(), sha384);
         }
-        catch
+        catch (Exception ex) when (ex is not CymbalException)
         {
-            throw new CymbalException("Failed to fetch image from URL");
+            throw new CymbalException($"Failed to fetch image from {url}: {ex.Message}");
         }
-
-        return (null, null);
     }
 
     private static bool TryGetHeader(HttpResponseMessage response, string name, out string? value)
