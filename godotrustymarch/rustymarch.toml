@@ -1,2 +1,5 @@
 [rustymarch]
 url = "http://localhost:8000/"
+image_url = "http://localhost:8000/alice/blue"
+image_width = "617"
+image_height = "617"
