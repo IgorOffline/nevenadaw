@@ -27,18 +27,43 @@ public class RustyWeb
                 if (model != null && model.TryGetValue("rustymarch", out var sectionObj) &&
                     sectionObj is TomlTable section)
                 {
-                    if (section.TryGetValue("url", out var urlObj) && urlObj is string urlValue)
-                        url = urlValue;
-                    if (section.TryGetValue("image_url", out var imageUrlObj) && imageUrlObj is string imageUrlValue)
-                        imageUrl = imageUrlValue;
-                    if (section.TryGetValue("image_width", out var imageWidthObj) &&
-                        imageWidthObj is string imageWidthValue)
-                        imageWidth = imageWidthValue;
-                    if (section.TryGetValue("image_height", out var imageHeightObj) &&
-                        imageHeightObj is string imageHeightValue)
-                        imageHeight = imageHeightValue;
-                    if (section.TryGetValue("image_sha384", out var sha384Obj) && sha384Obj is string sha384Value)
-                        sha384 = sha384Value;
+                    if (section.TryGetValue("url", out var urlObj) && urlObj is string urlValue) url = urlValue;
+
+                    var imageTables = section.Values.OfType<TomlTable>()
+                        .Where(t => t.ContainsKey("image_url"))
+                        .ToList();
+
+                    if (imageTables.Count > 0)
+                    {
+                        var selectedImageTable = imageTables[Random.Shared.Next(imageTables.Count)];
+
+                        if (selectedImageTable.TryGetValue("image_url", out var imageUrlObj) &&
+                            imageUrlObj is string imageUrlValue)
+                            imageUrl = imageUrlValue;
+                        if (selectedImageTable.TryGetValue("image_width", out var imageWidthObj) &&
+                            imageWidthObj is string imageWidthValue)
+                            imageWidth = imageWidthValue;
+                        if (selectedImageTable.TryGetValue("image_height", out var imageHeightObj) &&
+                            imageHeightObj is string imageHeightValue)
+                            imageHeight = imageHeightValue;
+                        if (selectedImageTable.TryGetValue("image_sha384", out var sha384Obj) &&
+                            sha384Obj is string sha384Value)
+                            sha384 = sha384Value;
+                    }
+                    else
+                    {
+                        if (section.TryGetValue("image_url", out var imageUrlObj) &&
+                            imageUrlObj is string imageUrlValue)
+                            imageUrl = imageUrlValue;
+                        if (section.TryGetValue("image_width", out var imageWidthObj) &&
+                            imageWidthObj is string imageWidthValue)
+                            imageWidth = imageWidthValue;
+                        if (section.TryGetValue("image_height", out var imageHeightObj) &&
+                            imageHeightObj is string imageHeightValue)
+                            imageHeight = imageHeightValue;
+                        if (section.TryGetValue("image_sha384", out var sha384Obj) && sha384Obj is string sha384Value)
+                            sha384 = sha384Value;
+                    }
                 }
             }
             else
