@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://b26j756wqqsa5"]
+
+[ext_resource type="Script" uid="uid://c5nr8u1pl3wkq" path="res://gd/scripts/Cymbal.cs" id="1_kwix3"]
+[ext_resource type="Texture2D" uid="uid://dtsn3qopxe5bb" path="res://icon.svg" id="1_s4apr"]
+
+[node name="Cymbal" type="Node2D" unique_id=1632883341]
+script = ExtResource("1_kwix3")
+
+[node name="Icon" type="Sprite2D" parent="." unique_id=827321666]
+position = Vector2(125, 125)
+texture = ExtResource("1_s4apr")
