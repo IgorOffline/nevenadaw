@@ -2,13 +2,12 @@
 
 namespace CymbalCore.CymbalWeb;
 
-public class CymbalWeb(CymbalConfigLoader loader)
+public class CymbalWeb(CymbalRegina regina)
 {
     private static readonly HttpClient Client = new();
 
     public CymbalRegina Get()
     {
-        var regina = loader.Get();
         if (string.IsNullOrEmpty(regina.CymbalConfig?.Url))
             throw new CymbalException("Cymbal URL is missing in configuration");
 
@@ -25,7 +24,7 @@ public class CymbalWeb(CymbalConfigLoader loader)
         }
     }
 
-    public (byte[] Bytes, string? Sha384) GetImageBytes(string? url)
+    public CymbalImageBytes GetImageBytes(string? url)
     {
         if (string.IsNullOrEmpty(url)) throw new CymbalException("Image URL is null or empty");
 
@@ -40,7 +39,7 @@ public class CymbalWeb(CymbalConfigLoader loader)
 
             using var ms = new MemoryStream();
             response.Content.ReadAsStream().CopyTo(ms);
-            return (ms.ToArray(), sha384);
+            return new CymbalImageBytes(ms.ToArray(), sha384);
         }
         catch (Exception ex) when (ex is not CymbalException)
         {
