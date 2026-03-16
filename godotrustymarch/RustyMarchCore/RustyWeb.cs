@@ -56,4 +56,27 @@ public class RustyWeb
 
         return new RustyConfig(url, imageUrl, imageWidth, imageHeight, success);
     }
+
+    public byte[]? GetImageBytes(string? url)
+    {
+        if (string.IsNullOrEmpty(url)) return null;
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            using var response = Client.Send(request);
+            if (response.IsSuccessStatusCode)
+            {
+                using var ms = new MemoryStream();
+                response.Content.ReadAsStream().CopyTo(ms);
+                return ms.ToArray();
+            }
+        }
+        catch
+        {
+            throw new RustyException("Failed to fetch image from URL");
+        }
+
+        return null;
+    }
 }
