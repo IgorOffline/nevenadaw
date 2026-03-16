@@ -8,4 +8,9 @@ public class NoopLogger : ILogger
     {
         // Noop
     }
+
+    public void PrintErr(string s)
+    {
+        // Noop
+    }
 }

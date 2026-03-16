@@ -9,4 +9,9 @@ public class CymbalLogger : ILogger
     {
         GD.Print(s);
     }
+
+    public void PrintErr(string s)
+    {
+        GD.PrintErr(s);
+    }
 }
