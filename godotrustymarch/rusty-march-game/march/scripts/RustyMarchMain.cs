@@ -12,10 +12,10 @@ public partial class RustyMarchMain : Node2D
         if (config.Regina != null)
         {
             if (config.Regina.ImageBlue != null)
-                CreateImageNode(config.Regina.ImageBlue, new Vector2(600, 600), "Blue");
+                CreateImageNode(config.Regina.ImageBlue, new Vector2(200, 600), "Blue");
             if (config.Regina.ImageGreen != null)
-                CreateImageNode(config.Regina.ImageGreen, new Vector2(700, 600), "Green");
-            if (config.Regina.ImageRed != null) CreateImageNode(config.Regina.ImageRed, new Vector2(800, 600), "Red");
+                CreateImageNode(config.Regina.ImageGreen, new Vector2(400, 600), "Green");
+            if (config.Regina.ImageRed != null) CreateImageNode(config.Regina.ImageRed, new Vector2(600, 600), "Red");
         }
 
         var icon = GetNodeOrNull<Sprite2D>("Icon");
@@ -61,7 +61,12 @@ public partial class RustyMarchMain : Node2D
             return;
         }
 
-        if (int.TryParse(config.ImageWidth, out var w) && int.TryParse(config.ImageHeight, out var h))
+        if (int.TryParse(config.ImageSampleWidth, out var sw) && int.TryParse(config.ImageSampleHeight, out var sh))
+        {
+            image.Resize(sw, sh);
+            GD.Print($"Resized image {name} to sample size {sw}x{sh}");
+        }
+        else if (int.TryParse(config.ImageWidth, out var w) && int.TryParse(config.ImageHeight, out var h))
         {
             image.Resize(w, h);
             GD.Print($"Resized image {name} to {w}x{h}");
