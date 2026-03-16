@@ -15,6 +15,7 @@ public class RustyWeb
         string? imageHeight = null;
         bool? success = null;
 
+        string? sha384 = null;
         try
         {
             const string configPath = @"C:\Users\igor\dev\nevenadawdir\nevenadaw\godotrustymarch\rustymarch.toml";
@@ -36,30 +37,33 @@ public class RustyWeb
                     if (section.TryGetValue("image_height", out var imageHeightObj) &&
                         imageHeightObj is string imageHeightValue)
                         imageHeight = imageHeightValue;
+                    if (section.TryGetValue("image_sha384", out var sha384Obj) && sha384Obj is string sha384Value)
+                        sha384 = sha384Value;
                 }
             }
             else
             {
-                return new RustyConfig(null, null, null, null, null);
+                return new RustyConfig(null, null, null, null, null, null);
             }
 
-            if (string.IsNullOrEmpty(url)) return new RustyConfig(url, imageUrl, imageWidth, imageHeight, null);
+            if (string.IsNullOrEmpty(url)) return new RustyConfig(url, imageUrl, imageWidth, imageHeight, sha384, null);
 
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             using var response = Client.Send(request);
             success = response.IsSuccessStatusCode;
+            if (TryGetHeader(response, "x-sha384", out var value)) sha384 = value;
         }
         catch
         {
             success = false;
         }
 
-        return new RustyConfig(url, imageUrl, imageWidth, imageHeight, success);
+        return new RustyConfig(url, imageUrl, imageWidth, imageHeight, sha384, success);
     }
 
-    public byte[]? GetImageBytes(string? url)
+    public (byte[]? Bytes, string? Sha384) GetImageBytes(string? url)
     {
-        if (string.IsNullOrEmpty(url)) return null;
+        if (string.IsNullOrEmpty(url)) return (null, null);
 
         try
         {
@@ -67,9 +71,12 @@ public class RustyWeb
             using var response = Client.Send(request);
             if (response.IsSuccessStatusCode)
             {
+                string? sha384 = null;
+                if (TryGetHeader(response, "x-sha384", out var value)) sha384 = value;
+
                 using var ms = new MemoryStream();
                 response.Content.ReadAsStream().CopyTo(ms);
-                return ms.ToArray();
+                return (ms.ToArray(), sha384);
             }
         }
         catch
@@ -77,6 +84,24 @@ public class RustyWeb
             throw new RustyException("Failed to fetch image from URL");
         }
 
-        return null;
+        return (null, null);
+    }
+
+    private static bool TryGetHeader(HttpResponseMessage response, string name, out string? value)
+    {
+        if (response.Headers.TryGetValues(name, out var values))
+        {
+            value = string.Join(",", values);
+            return true;
+        }
+
+        if (response.Content?.Headers.TryGetValues(name, out var contentValues) == true)
+        {
+            value = string.Join(",", contentValues);
+            return true;
+        }
+
+        value = null;
+        return false;
     }
 }

@@ -7,7 +7,8 @@ public partial class RustyMarchMain : Node2D
     {
         GD.Print("RustyMarchMain 0.1.0");
         var config = new RustyWeb().Get();
-        var image = new RustyImage("+RustyImage", config.ImageUrl, config.ImageWidth, config.ImageHeight);
+        var image = new RustyImage("+RustyImage", config.ImageUrl, config.ImageWidth, config.ImageHeight,
+            config.ImageSha384);
         GD.Print($"{image} {config.Success?.ToString() ?? "(-)"}");
 
         var icon = GetNodeOrNull<Sprite2D>("Icon");
@@ -28,12 +29,23 @@ public partial class RustyMarchMain : Node2D
         }
 
         var rustyWeb = new RustyWeb();
-        var bytes = rustyWeb.GetImageBytes(rustyImage.ImageUrl);
+        var (bytes, sha384) = rustyWeb.GetImageBytes(rustyImage.ImageUrl);
 
         if (bytes == null || bytes.Length == 0)
         {
             GD.PrintErr($"Failed to fetch image from {rustyImage.ImageUrl}");
             return;
+        }
+
+        if (!string.IsNullOrEmpty(rustyImage.ImageSha384) && !string.IsNullOrEmpty(sha384))
+        {
+            if (rustyImage.ImageSha384 != sha384)
+            {
+                GD.PrintErr($"SHA384 mismatch: {rustyImage.ImageSha384} != {sha384}");
+                return;
+            }
+
+            GD.Print($"SHA384 verified: {sha384}");
         }
 
         var image = new Image();
