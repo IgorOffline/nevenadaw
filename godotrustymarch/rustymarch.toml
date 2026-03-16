@@ -1,5 +1,17 @@
 [rustymarch]
 url = "http://localhost:8000/"
+[rustymarch.imageblue]
 image_url = "http://localhost:8000/alice/blue"
 image_width = "617"
 image_height = "617"
+image_sha384 = "675d2a766e82d77bbb1c542939e16fd98de75dca353fc865b9cddeba6380c0e2e53254d72be43bd00f7d4fffde6a82a7"
+[rustymarch.imagegreen]
+image_url = "http://localhost:8000/alice/green"
+image_width = "617"
+image_height = "617"
+image_sha384 = "1420f152701eefd972fcbe81bcbfe66a028271b52a67ef0c6efa3df8e652f560d98eca70c51d88306e4e52239377c916"
+[rustymarch.imagered]
+image_url = "http://localhost:8000/alice/red"
+image_width = "617"
+image_height = "617"
+image_sha384 = "d1649979f9d1f9ea560cf5bec6f0562c63a6153bf55741849fecefdd54ca3447a8c373550e7386f88c56bd329a2a94d3"
