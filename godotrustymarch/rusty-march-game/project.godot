@@ -12,7 +12,7 @@ config_version=5
 
 config/name="RustyMarchGame"
 run/main_scene="uid://ht1b3xy2e3pk"
-config/features=PackedStringArray("4.6", "GL Compatibility")
+config/features=PackedStringArray("4.6", "C#", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [dotnet]
