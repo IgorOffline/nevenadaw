@@ -15,4 +15,6 @@ public interface ILogger
     }
 
     void Print(string s);
+
+    void PrintErr(string s);
 }
