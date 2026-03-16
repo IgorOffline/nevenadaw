@@ -11,7 +11,7 @@ public class RustyWeb
     {
         try
         {
-            const string configPath = @"C:\Users\igor\dev\nevenadawdir\nevenadaw\godotrustymarch.toml";
+            const string configPath = @"C:\Users\igor\dev\nevenadawdir\nevenadaw\godotrustymarch\rustymarch.toml";
             string? url = null;
 
             if (File.Exists(configPath))

@@ -6,7 +6,9 @@ public partial class RustyMarchMain : Node2D
     public override void _Ready()
     {
         GD.Print("RustyMarchMain 0.1.0");
-        GD.Print($"{new RustyImage("+RustyImage")} {new RustyWeb().Get()}");
+        var fetch = new RustyWeb().Get();
+        var fetchString = fetch?.ToString() ?? "(-)";
+        GD.Print($"{new RustyImage("+RustyImage")} {fetchString}");
 
         var icon = GetNodeOrNull<Sprite2D>("Icon");
         if (icon != null)
