@@ -1,0 +1,9 @@
+[package]
+name = "march_wav_splitter"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+aubio = { version = "0.2.1", default-features = false, features = ["pkg-config"] }
+hound = "3.5.1"
+uuid = { version = "1.10.0", features = ["v4"] }
