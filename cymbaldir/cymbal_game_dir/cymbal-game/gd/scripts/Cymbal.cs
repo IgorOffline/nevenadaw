@@ -26,7 +26,9 @@ public partial class Cymbal : Node2D
 		_audioPlayer = new AudioStreamPlayer();
 		AddChild(_audioPlayer);
 
-		CreateNotePlayingNode("C3 Note", "Playing C3 Note", new Vector2(50, 150), new Vector2(120, 60));
+		CreateNotePlayingNode("C3 Note", "Playing C3 Note", new Vector2(50, 150), new Vector2(120, 60), _regina.NoteC3);
+		CreateNotePlayingNode("Cs3 Note", "Playing Cs3 Note", new Vector2(180, 150), new Vector2(120, 60),
+			_regina.NoteCs3);
 
 		var icon = GetNodeOrNull<Sprite2D>("Icon");
 		if (icon != null)
@@ -37,7 +39,9 @@ public partial class Cymbal : Node2D
 
 	private void CreateImageNode(CymbalImageConfig config, Vector2 position, string name)
 	{
-		var (bytes, sha384) = _web!.GetAssetBytes($"{_regina!.CymbalConfig!.Url!}{config.ImageUrl}");
+		var asset = _web!.GetAssetBytes($"{_regina!.CymbalConfig!.Url!}{config.ImageUrl}");
+		var bytes = asset.Bytes;
+		var sha384 = asset.Sha384;
 
 		if (!string.IsNullOrEmpty(config.ImageSha384) && !string.IsNullOrEmpty(sha384))
 		{
@@ -61,7 +65,8 @@ public partial class Cymbal : Node2D
 		_logger!.Print($"Created PNG Image Node '{name}' at {sprite.Position}");
 	}
 
-	private void CreateNotePlayingNode(string text, string logMessage, Vector2 position, Vector2 size)
+	private void CreateNotePlayingNode(string text, string logMessage, Vector2 position, Vector2 size,
+		CymbalNoteConfig? config)
 	{
 		var button = new Button();
 		button.Text = text;
@@ -69,12 +74,14 @@ public partial class Cymbal : Node2D
 		button.Size = size;
 		button.Pressed += () =>
 		{
-			if (_regina?.NoteC3 != null)
+			if (config != null)
 			{
-				var (bytes, sha384) = _web!.GetAssetBytes($"{_regina!.CymbalConfig!.Url!}{_regina.NoteC3.NoteUrl}");
-				if (!string.IsNullOrEmpty(_regina.NoteC3.NoteSha384) && !string.IsNullOrEmpty(sha384))
+				var asset = _web!.GetAssetBytes($"{_regina!.CymbalConfig!.Url!}{config.NoteUrl}");
+				var bytes = asset.Bytes;
+				var sha384 = asset.Sha384;
+				if (!string.IsNullOrEmpty(config.NoteSha384) && !string.IsNullOrEmpty(sha384))
 				{
-					if (string.Equals(_regina.NoteC3.NoteSha384, sha384, StringComparison.OrdinalIgnoreCase))
+					if (string.Equals(config.NoteSha384, sha384, StringComparison.OrdinalIgnoreCase))
 					{
 						_logger!.Print($"SHA384 verified for Note: {sha384}");
 						_logger!.Print(logMessage);
@@ -82,7 +89,7 @@ public partial class Cymbal : Node2D
 					}
 					else
 					{
-						_logger!.PrintErr($"SHA384 mismatch for Note: {_regina.NoteC3.NoteSha384} != {sha384}");
+						_logger!.PrintErr($"SHA384 mismatch for Note: {config.NoteSha384} != {sha384}");
 					}
 				}
 				else
@@ -126,7 +133,7 @@ public partial class Cymbal : Node2D
 				return;
 
 			short channels = 0;
-			int sampleRate = 0;
+			var sampleRate = 0;
 			short bitsPerSample = 0;
 			byte[]? data = null;
 
@@ -162,7 +169,7 @@ public partial class Cymbal : Node2D
 			{
 				var sampleCount = data.Length / 3;
 				var pcm16 = new byte[sampleCount * 2];
-				for (int i = 0; i < sampleCount; i++)
+				for (var i = 0; i < sampleCount; i++)
 				{
 					pcm16[i * 2] = data[i * 3 + 1];
 					pcm16[i * 2 + 1] = data[i * 3 + 2];

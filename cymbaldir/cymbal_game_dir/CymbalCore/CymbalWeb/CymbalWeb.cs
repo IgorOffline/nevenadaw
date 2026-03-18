@@ -1,4 +1,5 @@
-﻿using CymbalCore.Cymbal;
+﻿using System.Security.Cryptography;
+using CymbalCore.Cymbal;
 
 namespace CymbalCore.CymbalWeb;
 
@@ -34,12 +35,15 @@ public class CymbalWeb(CymbalRegina regina)
             using var response = Client.Send(request);
             response.EnsureSuccessStatusCode();
 
-            string? sha384 = null;
-            if (TryGetHeader(response, "x-sha384", out var value)) sha384 = value;
-
             using var ms = new MemoryStream();
             response.Content.ReadAsStream().CopyTo(ms);
-            return new CymbalAssetBytes(ms.ToArray(), sha384);
+
+            string? serverSha384 = null;
+            if (TryGetHeader(response, "x-sha384", out var value)) serverSha384 = value;
+
+            var bytes = ms.ToArray();
+            var sha384 = Convert.ToHexString(SHA384.HashData(bytes)).ToLower();
+            return new CymbalAssetBytes(bytes, sha384, serverSha384);
         }
         catch (Exception ex) when (ex is not CymbalException)
         {
