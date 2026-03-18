@@ -24,9 +24,9 @@ public class CymbalWeb(CymbalRegina regina)
         }
     }
 
-    public CymbalImageBytes GetImageBytes(string? url)
+    public CymbalAssetBytes GetAssetBytes(string? url)
     {
-        if (string.IsNullOrEmpty(url)) throw new CymbalException("Image URL is null or empty");
+        if (string.IsNullOrEmpty(url)) throw new CymbalException("Asset URL is null or empty");
 
         try
         {
@@ -39,11 +39,11 @@ public class CymbalWeb(CymbalRegina regina)
 
             using var ms = new MemoryStream();
             response.Content.ReadAsStream().CopyTo(ms);
-            return new CymbalImageBytes(ms.ToArray(), sha384);
+            return new CymbalAssetBytes(ms.ToArray(), sha384);
         }
         catch (Exception ex) when (ex is not CymbalException)
         {
-            throw new CymbalException($"Failed to fetch image from {url}: {ex.Message}");
+            throw new CymbalException($"Failed to fetch asset from {url}: {ex.Message}");
         }
     }
 
