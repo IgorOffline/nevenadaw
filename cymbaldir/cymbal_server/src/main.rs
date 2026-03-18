@@ -108,6 +108,14 @@ async fn main() {
         )
         .await,
     );
+    assets.insert(
+        "note_d3".to_string(),
+        load_asset(
+            "chunk_005_d3_16e05525-3f65-4deb-82b5-6a19f1cffc1b.wav",
+            "audio/wav",
+        )
+        .await,
+    );
 
     let state = Arc::new(AppState { assets });
 
@@ -132,6 +140,10 @@ async fn main() {
         .route(
             "/note/cs3",
             get(|s| get_asset_handler(s, AxumPath("note_cs3".to_string()))),
+        )
+        .route(
+            "/note/d3",
+            get(|s| get_asset_handler(s, AxumPath("note_d3".to_string()))),
         )
         .with_state(state);
 

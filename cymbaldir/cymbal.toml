@@ -27,3 +27,6 @@ note_sha384 = "bca08415bbef63fb223bca345a519ed0751dc409e691f1e1c0a93ea62847e64e7
 [regina.notecs3]
 note_url = "note/cs3"
 note_sha384 = "38d46f7f9f466e35d320942ea3ed6f4c5c365c350434430d402c760fb39d5d7f38af7a58e28f1ef1c8adc74da0a80bc9"
+[regina.noted3]
+note_url = "note/d3"
+note_sha384 = "8a3dc11d1dc6bb77777e903cd80d8a3ca36e77c6fe7b4e51aebdaac0f7cc9f9c8da7171d0484716219a27e0912138bde"

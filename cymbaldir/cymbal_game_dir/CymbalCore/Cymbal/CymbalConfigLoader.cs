@@ -27,8 +27,10 @@ public class CymbalConfigLoader
             var imageRed = ParseImage(section, "imagered");
             var noteC3 = ParseNote(section, "notec3");
             var noteCs3 = ParseNote(section, "notecs3");
+            var noteD3 = ParseNote(section, "noted3");
 
-            return new CymbalRegina(new CymbalConfig(url, null), imageBlue, imageGreen, imageRed, noteC3, noteCs3);
+            return new CymbalRegina(new CymbalConfig(url, null), imageBlue, imageGreen, imageRed, noteC3, noteCs3,
+                noteD3);
         }
         catch (Exception ex) when (ex is not CymbalException)
         {
