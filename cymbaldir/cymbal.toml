@@ -30,3 +30,12 @@ note_sha384 = "38d46f7f9f466e35d320942ea3ed6f4c5c365c350434430d402c760fb39d5d7f3
 [regina.noted3]
 note_url = "note/d3"
 note_sha384 = "8a3dc11d1dc6bb77777e903cd80d8a3ca36e77c6fe7b4e51aebdaac0f7cc9f9c8da7171d0484716219a27e0912138bde"
+[regina.noteds3]
+note_url = "note/ds3"
+note_sha384 = "c2c232d68fbded7ada46933eaea4623d84566561ce5304dab4cb98e59e7666df120fba5bae9f1732aeb515f4eef30509"
+[regina.notee3]
+note_url = "note/e3"
+note_sha384 = "bf7e43f0155a893e7b05060bacf2f14082ccd0bb9a7c8ec12351837217b9a10b10532db9128aa8b89624dc48391bbe80"
+[regina.notef3]
+note_url = "note/f3"
+note_sha384 = "c7b9f4cbb5fd251e0fc0ce19fa2b44848cb8d299c8367a925866a4ba1bf905ca569521dddfbb8d0b18b88fbf8967bbac"
