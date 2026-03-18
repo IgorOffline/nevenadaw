@@ -19,6 +19,7 @@ public partial class Cymbal : Node2D
 		if (regina.ImageBlue != null) CreateImageNode(regina.ImageBlue, new Vector2(80, 60), "Blue");
 		if (regina.ImageGreen != null) CreateImageNode(regina.ImageGreen, new Vector2(150, 60), "Green");
 		if (regina.ImageRed != null) CreateImageNode(regina.ImageRed, new Vector2(220, 60), "Red");
+		CreateButtonNode("Lorem", "Ipsum", new Vector2(50, 150), new Vector2(120, 60));
 
 		var icon = GetNodeOrNull<Sprite2D>("Icon");
 		if (icon != null)
@@ -51,6 +52,19 @@ public partial class Cymbal : Node2D
 		AddChild(sprite);
 
 		_logger!.Print($"Created PNG Image Node '{name}' at {sprite.Position}");
+	}
+
+	private void CreateButtonNode(string text, string logMessage, Vector2 position, Vector2 size)
+	{
+		var button = new Button();
+		button.Text = text;
+		button.Position = position;
+		button.Size = size;
+		button.Pressed += () => _logger!.Print(logMessage);
+		button.Name = $"DynamicButton_{text}";
+		AddChild(button);
+
+		_logger!.Print($"Created Button Node '{text}' at {button.Position} with size {button.Size}");
 	}
 
 	public override void _Process(double delta)
