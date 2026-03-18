@@ -34,9 +34,13 @@ public class CymbalConfigLoader
             var noteFs3 = ParseNote(section, "notefs3");
             var noteG3 = ParseNote(section, "noteg3");
             var noteGs3 = ParseNote(section, "notegs3");
+            var noteA3 = ParseNote(section, "notea3");
+            var noteAs3 = ParseNote(section, "noteas3");
+            var noteB3 = ParseNote(section, "noteb3");
+            var noteC4 = ParseNote(section, "notec4");
 
             return new CymbalRegina(new CymbalConfig(url, null), imageBlue, imageGreen, imageRed, noteC3, noteCs3,
-                noteD3, noteDs3, noteE3, noteF3, noteFs3, noteG3, noteGs3);
+                noteD3, noteDs3, noteE3, noteF3, noteFs3, noteG3, noteGs3, noteA3, noteAs3, noteB3, noteC4);
         }
         catch (Exception ex) when (ex is not CymbalException)
         {

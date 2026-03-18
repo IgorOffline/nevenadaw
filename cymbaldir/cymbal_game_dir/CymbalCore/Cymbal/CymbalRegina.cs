@@ -13,4 +13,8 @@ public record CymbalRegina(
     CymbalNoteConfig? NoteF3 = null,
     CymbalNoteConfig? NoteFs3 = null,
     CymbalNoteConfig? NoteG3 = null,
-    CymbalNoteConfig? NoteGs3 = null);
+    CymbalNoteConfig? NoteGs3 = null,
+    CymbalNoteConfig? NoteA3 = null,
+    CymbalNoteConfig? NoteAs3 = null,
+    CymbalNoteConfig? NoteB3 = null,
+    CymbalNoteConfig? NoteC4 = null);
