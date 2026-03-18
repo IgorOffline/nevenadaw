@@ -27,3 +27,36 @@ note_sha384 = "bca08415bbef63fb223bca345a519ed0751dc409e691f1e1c0a93ea62847e64e7
 [regina.notecs3]
 note_url = "note/cs3"
 note_sha384 = "38d46f7f9f466e35d320942ea3ed6f4c5c365c350434430d402c760fb39d5d7f38af7a58e28f1ef1c8adc74da0a80bc9"
+[regina.noted3]
+note_url = "note/d3"
+note_sha384 = "8a3dc11d1dc6bb77777e903cd80d8a3ca36e77c6fe7b4e51aebdaac0f7cc9f9c8da7171d0484716219a27e0912138bde"
+[regina.noteds3]
+note_url = "note/ds3"
+note_sha384 = "c2c232d68fbded7ada46933eaea4623d84566561ce5304dab4cb98e59e7666df120fba5bae9f1732aeb515f4eef30509"
+[regina.notee3]
+note_url = "note/e3"
+note_sha384 = "bf7e43f0155a893e7b05060bacf2f14082ccd0bb9a7c8ec12351837217b9a10b10532db9128aa8b89624dc48391bbe80"
+[regina.notef3]
+note_url = "note/f3"
+note_sha384 = "c7b9f4cbb5fd251e0fc0ce19fa2b44848cb8d299c8367a925866a4ba1bf905ca569521dddfbb8d0b18b88fbf8967bbac"
+[regina.notefs3]
+note_url = "note/fs3"
+note_sha384 = "49cfad35ad1f7c4b3545c8d3556d62dd59c6980d739b45909218fa9a20d2c561c7a6b34855f7910c884991e9f41cc908"
+[regina.noteg3]
+note_url = "note/g3"
+note_sha384 = "005784ce6423ed6898ad323537fb6f88773860b0cb2981bc72cbc4c60404bbe7012201dfcb7f72f4e82d09753d0246b3"
+[regina.notegs3]
+note_url = "note/gs3"
+note_sha384 = "9554ade3c129881effa33ecd6beedcb3a7e0bd5ca33c60e1f4a99130acd57f524e5fbe1adf465b87ade07472eab2baa6"
+[regina.notea3]
+note_url = "note/a3"
+note_sha384 = "b766bdda511ce072e5296d4f7a625e4f1e9f6fb922ae70d93c61c8b34f02750d6c3bf0c233de494e34c823a16940b0d3"
+[regina.noteas3]
+note_url = "note/as3"
+note_sha384 = "c737fedbced08be21e438cd6f84b1c4d54ea59ed772b0f1ea54423d8cc96a5cb47ceb4860c14c8eb0b9dbb342db74b29"
+[regina.noteb3]
+note_url = "note/b3"
+note_sha384 = "a5f251248401b37ec0b089e65d34cdfd9bc52cb4b9e55f2bc51dd890362a7e10911a0c01259b88e74874d6c5cc588efd"
+[regina.notec4]
+note_url = "note/c4"
+note_sha384 = "912e1a4c60e02ee0f8fd0a14a719054559bd9f500235193e7cd8e6dc2c7fc4eaa795ceb76676c681a179138eaed81d69"

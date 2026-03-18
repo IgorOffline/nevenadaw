@@ -108,6 +108,94 @@ async fn main() {
         )
         .await,
     );
+    assets.insert(
+        "note_d3".to_string(),
+        load_asset(
+            "chunk_005_d3_16e05525-3f65-4deb-82b5-6a19f1cffc1b.wav",
+            "audio/wav",
+        )
+        .await,
+    );
+    assets.insert(
+        "note_ds3".to_string(),
+        load_asset(
+            "chunk_006_d#3_5e97673f-6398-4df3-b95f-4d58d00980ce.wav",
+            "audio/wav",
+        )
+        .await,
+    );
+    assets.insert(
+        "note_e3".to_string(),
+        load_asset(
+            "chunk_007_e3_f4eefca0-7195-4953-b94b-8d1135062e94.wav",
+            "audio/wav",
+        )
+        .await,
+    );
+    assets.insert(
+        "note_f3".to_string(),
+        load_asset(
+            "chunk_008_f3_37bf8e4e-f58d-451a-8d91-2207b0070ca4.wav",
+            "audio/wav",
+        )
+        .await,
+    );
+    assets.insert(
+        "note_fs3".to_string(),
+        load_asset(
+            "chunk_009_f#3_b7e7dc67-06d2-4a1f-90f5-80758b6d65bd.wav",
+            "audio/wav",
+        )
+        .await,
+    );
+    assets.insert(
+        "note_g3".to_string(),
+        load_asset(
+            "chunk_010_g3_f0b2f26d-cc42-41da-b64a-bd13ce4d383b.wav",
+            "audio/wav",
+        )
+        .await,
+    );
+    assets.insert(
+        "note_gs3".to_string(),
+        load_asset(
+            "chunk_011_g#3_b8f05e57-e46c-43b5-8629-7fc01f6993c9.wav",
+            "audio/wav",
+        )
+        .await,
+    );
+    assets.insert(
+        "note_a3".to_string(),
+        load_asset(
+            "chunk_012_a3_5804cb87-a144-4385-bcc1-fee0532ee934.wav",
+            "audio/wav",
+        )
+        .await,
+    );
+    assets.insert(
+        "note_as3".to_string(),
+        load_asset(
+            "chunk_013_a#3_cc6cc1d6-6eef-4aef-a159-a86e9a86e46e.wav",
+            "audio/wav",
+        )
+        .await,
+    );
+    assets.insert(
+        "note_b3".to_string(),
+        load_asset(
+            "chunk_014_b3_777a24cd-1de2-4bbb-b808-a8772bd1e033.wav",
+            "audio/wav",
+        )
+        .await,
+    );
+    assets.insert(
+        "note_c4".to_string(),
+        load_asset(
+            "chunk_015_c4_ee2043db-78d9-4095-8dcc-c9f3d26cd376.wav",
+            "audio/wav",
+        )
+        .await,
+    );
 
     let state = Arc::new(AppState { assets });
 
@@ -132,6 +220,50 @@ async fn main() {
         .route(
             "/note/cs3",
             get(|s| get_asset_handler(s, AxumPath("note_cs3".to_string()))),
+        )
+        .route(
+            "/note/d3",
+            get(|s| get_asset_handler(s, AxumPath("note_d3".to_string()))),
+        )
+        .route(
+            "/note/ds3",
+            get(|s| get_asset_handler(s, AxumPath("note_ds3".to_string()))),
+        )
+        .route(
+            "/note/e3",
+            get(|s| get_asset_handler(s, AxumPath("note_e3".to_string()))),
+        )
+        .route(
+            "/note/f3",
+            get(|s| get_asset_handler(s, AxumPath("note_f3".to_string()))),
+        )
+        .route(
+            "/note/fs3",
+            get(|s| get_asset_handler(s, AxumPath("note_fs3".to_string()))),
+        )
+        .route(
+            "/note/g3",
+            get(|s| get_asset_handler(s, AxumPath("note_g3".to_string()))),
+        )
+        .route(
+            "/note/gs3",
+            get(|s| get_asset_handler(s, AxumPath("note_gs3".to_string()))),
+        )
+        .route(
+            "/note/a3",
+            get(|s| get_asset_handler(s, AxumPath("note_a3".to_string()))),
+        )
+        .route(
+            "/note/as3",
+            get(|s| get_asset_handler(s, AxumPath("note_as3".to_string()))),
+        )
+        .route(
+            "/note/b3",
+            get(|s| get_asset_handler(s, AxumPath("note_b3".to_string()))),
+        )
+        .route(
+            "/note/c4",
+            get(|s| get_asset_handler(s, AxumPath("note_c4".to_string()))),
         )
         .with_state(state);
 

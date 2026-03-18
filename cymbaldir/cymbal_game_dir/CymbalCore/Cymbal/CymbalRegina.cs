@@ -6,4 +6,15 @@ public record CymbalRegina(
     CymbalImageConfig? ImageGreen = null,
     CymbalImageConfig? ImageRed = null,
     CymbalNoteConfig? NoteC3 = null,
-    CymbalNoteConfig? NoteCs3 = null);
+    CymbalNoteConfig? NoteCs3 = null,
+    CymbalNoteConfig? NoteD3 = null,
+    CymbalNoteConfig? NoteDs3 = null,
+    CymbalNoteConfig? NoteE3 = null,
+    CymbalNoteConfig? NoteF3 = null,
+    CymbalNoteConfig? NoteFs3 = null,
+    CymbalNoteConfig? NoteG3 = null,
+    CymbalNoteConfig? NoteGs3 = null,
+    CymbalNoteConfig? NoteA3 = null,
+    CymbalNoteConfig? NoteAs3 = null,
+    CymbalNoteConfig? NoteB3 = null,
+    CymbalNoteConfig? NoteC4 = null);
