@@ -140,6 +140,30 @@ async fn main() {
         )
         .await,
     );
+    assets.insert(
+        "note_fs3".to_string(),
+        load_asset(
+            "chunk_009_f#3_b7e7dc67-06d2-4a1f-90f5-80758b6d65bd.wav",
+            "audio/wav",
+        )
+        .await,
+    );
+    assets.insert(
+        "note_g3".to_string(),
+        load_asset(
+            "chunk_010_g3_f0b2f26d-cc42-41da-b64a-bd13ce4d383b.wav",
+            "audio/wav",
+        )
+        .await,
+    );
+    assets.insert(
+        "note_gs3".to_string(),
+        load_asset(
+            "chunk_011_g#3_b8f05e57-e46c-43b5-8629-7fc01f6993c9.wav",
+            "audio/wav",
+        )
+        .await,
+    );
 
     let state = Arc::new(AppState { assets });
 
@@ -180,6 +204,18 @@ async fn main() {
         .route(
             "/note/f3",
             get(|s| get_asset_handler(s, AxumPath("note_f3".to_string()))),
+        )
+        .route(
+            "/note/fs3",
+            get(|s| get_asset_handler(s, AxumPath("note_fs3".to_string()))),
+        )
+        .route(
+            "/note/g3",
+            get(|s| get_asset_handler(s, AxumPath("note_g3".to_string()))),
+        )
+        .route(
+            "/note/gs3",
+            get(|s| get_asset_handler(s, AxumPath("note_gs3".to_string()))),
         )
         .with_state(state);
 

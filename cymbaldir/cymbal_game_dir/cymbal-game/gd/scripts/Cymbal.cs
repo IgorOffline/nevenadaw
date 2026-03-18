@@ -39,6 +39,13 @@ public partial class Cymbal : Node2D
 		CreateNotePlayingNode("F3 Note", "Playing F3 Note", new Vector2(310, 220), new Vector2(120, 60),
 			_regina.NoteF3);
 
+		CreateNotePlayingNode("Fs3 Note", "Playing Fs3 Note", new Vector2(50, 290), new Vector2(120, 60),
+			_regina.NoteFs3);
+		CreateNotePlayingNode("G3 Note", "Playing G3 Note", new Vector2(180, 290), new Vector2(120, 60),
+			_regina.NoteG3);
+		CreateNotePlayingNode("Gs3 Note", "Playing Gs3 Note", new Vector2(310, 290), new Vector2(120, 60),
+			_regina.NoteGs3);
+
 		var icon = GetNodeOrNull<Sprite2D>("Icon");
 		if (icon != null)
 			_logger.Print($"Icon found at: {icon.Position}");
