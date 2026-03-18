@@ -25,8 +25,10 @@ public class CymbalConfigLoader
             var imageBlue = ParseImage(section, "imageblue");
             var imageGreen = ParseImage(section, "imagegreen");
             var imageRed = ParseImage(section, "imagered");
+            var noteC3 = ParseNote(section, "notec3");
+            var noteCs3 = ParseNote(section, "notecs3");
 
-            return new CymbalRegina(new CymbalConfig(url, null), imageBlue, imageGreen, imageRed);
+            return new CymbalRegina(new CymbalConfig(url, null), imageBlue, imageGreen, imageRed, noteC3, noteCs3);
         }
         catch (Exception ex) when (ex is not CymbalException)
         {
@@ -51,6 +53,19 @@ public class CymbalConfigLoader
             if (table.TryGetValue("image_sample_height", out var sh) && sh is string shv) sampleHeight = shv;
             if (table.TryGetValue("image_sha384", out var s) && s is string sv) sha384 = sv;
             return new CymbalImageConfig(imageUrl, imageWidth, imageHeight, sampleWidth, sampleHeight, sha384);
+        }
+
+        return null;
+    }
+
+    private static CymbalNoteConfig? ParseNote(TomlTable parent, string key)
+    {
+        if (parent.TryGetValue(key, out var obj) && obj is TomlTable table)
+        {
+            string? noteUrl = null, sha384 = null;
+            if (table.TryGetValue("note_url", out var nu) && nu is string nuv) noteUrl = nuv;
+            if (table.TryGetValue("note_sha384", out var s) && s is string sv) sha384 = sv;
+            return new CymbalNoteConfig(noteUrl, sha384);
         }
 
         return null;

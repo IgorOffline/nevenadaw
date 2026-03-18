@@ -21,3 +21,9 @@ image_height = "617"
 image_sample_width = "224"
 image_sample_height = "224"
 image_sha384 = "d1649979f9d1f9ea560cf5bec6f0562c63a6153bf55741849fecefdd54ca3447a8c373550e7386f88c56bd329a2a94d3"
+[regina.notec3]
+note_url = "note/c3"
+note_sha384 = "bca08415bbef63fb223bca345a519ed0751dc409e691f1e1c0a93ea62847e64e7a5d74c17c749a60b4655ee002a677e1"
+[regina.notecs3]
+note_url = "note/cs3"
+note_sha384 = "38d46f7f9f466e35d320942ea3ed6f4c5c365c350434430d402c760fb39d5d7f38af7a58e28f1ef1c8adc74da0a80bc9"
